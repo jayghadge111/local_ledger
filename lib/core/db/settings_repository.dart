@@ -11,6 +11,8 @@ abstract class SettingsKeys {
   static const biometricEnabled = 'biometric_enabled'; // 'true' | 'false'
   static const pinHash = 'pin_hash';
   static const pinSalt = 'pin_salt';
+  static const smsLastSyncedAt = 'sms_last_synced_at'; // ISO-8601
+  static const smsAutoSync = 'sms_auto_sync'; // 'true' | 'false'
 }
 
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {

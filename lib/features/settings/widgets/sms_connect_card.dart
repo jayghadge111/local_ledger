@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:intl/intl.dart';
+
+import '../../../core/db/settings_repository.dart';
 import '../../../core/sms/sms_providers.dart';
+import '../../../shared/widgets/glass_switch_row.dart';
 import '../../../shared/widgets/glass_surface.dart';
 
 class SmsConnectCard extends ConsumerStatefulWidget {
@@ -29,11 +33,13 @@ class _SmsConnectCardState extends ConsumerState<SmsConnectCard> {
     setState(() => _scanning = true);
     try {
       final result = await service.importFromInbox();
+      await service.listenForNewMessages((_) {});
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Scanned ${result.scanned} messages, imported ${result.imported} transactions',
+              'Scanned ${result.scanned} messages, imported ${result.imported} transactions'
+              '${result.queued > 0 ? ', ${result.queued} to review' : ''}',
             ),
           ),
         );
@@ -63,7 +69,37 @@ class _SmsConnectCardState extends ConsumerState<SmsConnectCard> {
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 12),
+          StreamBuilder<String?>(
+            stream: ref.read(settingsRepositoryProvider).watch(SettingsKeys.smsLastSyncedAt),
+            builder: (context, snapshot) {
+              final last = snapshot.data == null ? null : DateTime.tryParse(snapshot.data!);
+              if (last == null) return const SizedBox.shrink();
+              final stale = DateTime.now().difference(last) > const Duration(days: 3);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Text(
+                  stale
+                      ? 'Last synced ${DateFormat.yMMMd().add_jm().format(last)} — opening the app catches up on anything missed.'
+                      : 'Last synced ${DateFormat.yMMMd().add_jm().format(last)}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: stale ? theme.colorScheme.error : theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              );
+            },
+          ),
+          StreamBuilder<String?>(
+            stream: ref.read(settingsRepositoryProvider).watch(SettingsKeys.smsAutoSync),
+            builder: (context, snapshot) => GlassSwitchRow(
+              label: 'Sync automatically when the app opens',
+              value: snapshot.data != 'false',
+              onChanged: (v) => ref
+                  .read(settingsRepositoryProvider)
+                  .set(SettingsKeys.smsAutoSync, v.toString()),
+            ),
+          ),
+          const SizedBox(height: 8),
           FilledButton.icon(
             onPressed: _scanning ? null : _connect,
             icon: _scanning

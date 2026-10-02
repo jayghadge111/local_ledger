@@ -9,7 +9,11 @@ import '../../core/theme/theme_mode_provider.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/glass_switch_row.dart';
+import '../../core/db/small_repositories.dart';
 import '../budgets/budgets_screen.dart';
+import '../import_review/own_identifiers_screen.dart';
+import '../import_review/unparsed_messages_screen.dart';
+import '../splits/splits_ui.dart';
 import '../lock/pin_setup_screen.dart';
 import '../rules/rules_screen.dart';
 import 'widgets/backup_card.dart';
@@ -73,7 +77,7 @@ class SettingsScreen extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Budgeting & categorization', style: theme.textTheme.titleMedium),
+                Text('Budgets, splits & review', style: theme.textTheme.titleMedium),
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   onPressed: () => Navigator.of(context).push(
@@ -89,6 +93,33 @@ class SettingsScreen extends ConsumerWidget {
                   ),
                   icon: const Icon(Icons.rule_outlined),
                   label: const Text('Category rules'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SplitsScreen()),
+                  ),
+                  icon: const Icon(Icons.call_split_rounded),
+                  label: const Text('Splits & IOUs'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const OwnIdentifiersScreen()),
+                  ),
+                  icon: const Icon(Icons.swap_horiz_rounded),
+                  label: const Text('My names & accounts'),
+                ),
+                const SizedBox(height: 8),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const UnparsedMessagesScreen()),
+                  ),
+                  icon: const Icon(Icons.mark_email_unread_outlined),
+                  label: Text(() {
+                    final n = ref.watch(unparsedMessagesProvider).value?.length ?? 0;
+                    return n == 0 ? 'Messages to review' : 'Messages to review ($n)';
+                  }()),
                 ),
               ],
             ),
@@ -236,9 +267,28 @@ class _SecurityCard extends ConsumerWidget {
                 return GlassSwitchRow(
                   label: 'Biometric unlock',
                   value: biometricEnabled,
-                  onChanged: (v) => ref
-                      .read(settingsRepositoryProvider)
-                      .set(SettingsKeys.biometricEnabled, v.toString()),
+                  onChanged: (v) async {
+                    // Prove biometrics work before turning the lock on, so a
+                    // broken setup can't leave the user stuck on a prompt.
+                    if (v) {
+                      final ok = await ref
+                          .read(appLockServiceProvider)
+                          .authenticate(reason: 'Confirm to enable biometric unlock');
+                      if (!ok) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Biometric check failed — unlock stays PIN-only'),
+                            ),
+                          );
+                        }
+                        return;
+                      }
+                    }
+                    await ref
+                        .read(settingsRepositoryProvider)
+                        .set(SettingsKeys.biometricEnabled, v.toString());
+                  },
                 );
               },
             ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/analytics/analytics_providers.dart';
 import '../../core/db/app_database.dart';
 import '../../core/db/providers.dart';
 import '../../shared/widgets/animated_amount.dart';
@@ -19,6 +20,7 @@ class DashboardScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final transactionsAsync = ref.watch(transactionsProvider);
+    final analytics = ref.watch(analyticsTransactionsProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
 
     return transactionsAsync.when(
@@ -38,7 +40,7 @@ class DashboardScreen extends ConsumerWidget {
         };
 
         final now = DateTime.now();
-        final thisMonth = transactions.where(
+        final thisMonth = analytics.where(
           (t) => t.date.year == now.year && t.date.month == now.month,
         );
         final spent = thisMonth
@@ -69,7 +71,7 @@ class DashboardScreen extends ConsumerWidget {
         ];
 
         final recent = transactions.take(5).toList();
-        final buckets = buildExpenseBuckets(transactions, DateRangeFilter.sixMonths, now);
+        final buckets = buildExpenseBuckets(analytics, DateRangeFilter.sixMonths, now);
         final hasTrendData = buckets.any((b) => b.amountMinor > 0);
 
         return ListView(
@@ -84,7 +86,7 @@ class DashboardScreen extends ConsumerWidget {
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (_) => ExpenseDetailScreen(
-                        transactions: transactions,
+                        transactions: analytics,
                         categoriesById: categoriesById,
                       ),
                     ),

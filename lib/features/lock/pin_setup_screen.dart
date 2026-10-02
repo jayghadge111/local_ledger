@@ -66,7 +66,14 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
       );
       
       if (useBiometric == true && mounted) {
-        await ref.read(settingsRepositoryProvider).set(SettingsKeys.biometricEnabled, 'true');
+        final ok = await appLockService.authenticate(reason: 'Confirm to enable biometric unlock');
+        if (ok) {
+          await ref.read(settingsRepositoryProvider).set(SettingsKeys.biometricEnabled, 'true');
+        } else if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Biometric check failed — you can enable it later in Settings')),
+          );
+        }
       }
     }
 

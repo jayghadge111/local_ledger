@@ -1,31 +1,44 @@
 import 'dart:io';
 
 import 'package:another_telephony/telephony.dart' hide Value;
-import 'package:drift/drift.dart' hide OrderBy;
-import 'package:uuid/uuid.dart';
+import 'package:permission_handler/permission_handler.dart';
 
-import '../db/app_database.dart';
-import '../intelligence/rule_matcher.dart';
-import '../security/encryption_service.dart';
+import '../db/settings_repository.dart';
+import '../import_window.dart';
+import '../ingest/transaction_ingestor.dart';
 import 'bank_sms_parser.dart';
 
 class SmsImportResult {
-  const SmsImportResult({required this.scanned, required this.imported});
+  const SmsImportResult({required this.scanned, required this.imported, this.queued = 0});
   final int scanned;
   final int imported;
+
+  /// Bank messages that looked like transactions but couldn't be read —
+  /// waiting in the review queue.
+  final int queued;
 }
 
 /// Reads the device's SMS inbox (Android only) and imports recognizable
 /// bank transaction messages. Everything happens on-device: parsing runs
 /// locally, and the original message is stored only as an AES-256-GCM
-/// encrypted blob (see [EncryptionService]) for later reference.
+/// encrypted blob for later reference.
+///
+/// Syncing is incremental: each run records when it finished, and the next
+/// one re-reads from a day before that. So a phone that kills background
+/// work never leaves a gap — opening the app catches up on everything still
+/// in the inbox.
 class SmsImportService {
-  SmsImportService(this._db, this._encryption);
+  SmsImportService(this._ingestor, this._settings);
 
-  final AppDatabase _db;
-  final EncryptionService _encryption;
+  final TransactionIngestor _ingestor;
+  final SettingsRepository _settings;
   final _telephony = Telephony.instance;
-  static const _uuid = Uuid();
+
+  bool _listening = false;
+  bool _syncing = false;
+
+  static const _minSyncGap = Duration(minutes: 10);
+  static const _overlap = Duration(days: 1);
 
   bool get isSupported => Platform.isAndroid;
 
@@ -35,55 +48,83 @@ class SmsImportService {
     return granted ?? false;
   }
 
-  Future<SmsImportResult> importFromInbox() async {
-    if (!isSupported) return const SmsImportResult(scanned: 0, imported: 0);
+  Future<bool> get hasPermission async => isSupported && await Permission.sms.isGranted;
 
-    final messages = await _telephony.getInboxSms(
-      columns: [SmsColumn.ADDRESS, SmsColumn.BODY, SmsColumn.DATE],
-      sortOrder: [OrderBy(SmsColumn.DATE, sort: Sort.DESC)],
+  Future<DateTime?> lastSyncedAt() async {
+    final raw = await _settings.get(SettingsKeys.smsLastSyncedAt);
+    return raw == null ? null : DateTime.tryParse(raw);
+  }
+
+  /// Full import of the 1-year window — what the "Scan SMS inbox" button runs.
+  Future<SmsImportResult> importFromInbox() => _import(since: null);
+
+  /// Silent catch-up for app start/resume: does nothing unless SMS access is
+  /// already granted, auto-sync isn't switched off, and the last sync wasn't
+  /// just now. Returns null when it didn't run.
+  Future<SmsImportResult?> syncIfDue({bool force = false}) async {
+    if (!isSupported || _syncing) return null;
+    if (await _settings.get(SettingsKeys.smsAutoSync) == 'false') return null;
+    if (!await hasPermission) return null;
+
+    final last = await lastSyncedAt();
+    if (!force && last != null && DateTime.now().difference(last) < _minSyncGap) return null;
+
+    return _import(since: last);
+  }
+
+  /// While the app is open, a newly arrived SMS triggers a sync straight
+  /// away. (There is deliberately no background receiver — see class docs.)
+  Future<void> listenForNewMessages(void Function(SmsImportResult) onImported) async {
+    if (!isSupported || _listening || !await hasPermission) return;
+    _listening = true;
+    _telephony.listenIncomingSms(
+      listenInBackground: false,
+      onNewMessage: (_) async {
+        final result = await syncIfDue(force: true);
+        if (result != null && result.imported > 0) onImported(result);
+      },
     );
+  }
 
-    final rules = await _db.select(_db.rules).get();
-    var imported = 0;
+  Future<SmsImportResult> _import({required DateTime? since}) async {
+    if (!isSupported) return const SmsImportResult(scanned: 0, imported: 0);
+    _syncing = true;
+    try {
+      final windowStart = importCutoff();
+      final from = since == null || since.subtract(_overlap).isBefore(windowStart)
+          ? windowStart
+          : since.subtract(_overlap);
 
-    for (final message in messages) {
-      final sender = message.address;
-      final body = message.body;
-      if (sender == null || body == null) continue;
-      if (!looksLikeBankSender(sender)) continue;
+      final messages = await _telephony.getInboxSms(
+        columns: [SmsColumn.ADDRESS, SmsColumn.BODY, SmsColumn.DATE],
+        filter: SmsFilter.where(SmsColumn.DATE)
+            .greaterThanOrEqualTo(from.millisecondsSinceEpoch.toString()),
+        sortOrder: [OrderBy(SmsColumn.DATE, sort: Sort.DESC)],
+      );
 
-      final parsed = parseBankSms(body);
-      if (parsed == null) continue;
+      final session = await _ingestor.begin();
+      for (final message in messages) {
+        final sender = message.address;
+        final body = message.body;
+        if (sender == null || body == null) continue;
+        if (!looksLikeBankSender(sender)) continue;
+        await session.add(
+          source: 'sms',
+          sender: sender,
+          body: body,
+          date: DateTime.fromMillisecondsSinceEpoch(message.date ?? 0),
+        );
+      }
+      await session.finish();
 
-      final date = DateTime.fromMillisecondsSinceEpoch(message.date ?? 0);
-
-      final alreadyImported = await (_db.select(_db.transactions)
-            ..where((t) =>
-                t.source.equals('sms') &
-                t.amountMinor.equals(parsed.amountMinor) &
-                t.date.equals(date)))
-          .getSingleOrNull();
-      if (alreadyImported != null) continue;
-
-      final categoryId = matchCategoryForMerchant(parsed.merchant, rules) ?? 'cat_other';
-      final encryptedBody = await _encryption.encryptString(body);
-
-      await _db.into(_db.transactions).insert(
-            TransactionsCompanion.insert(
-              id: _uuid.v4(),
-              amountMinor: parsed.amountMinor,
-              merchant: parsed.merchant,
-              rawTextEncrypted: Value(encryptedBody),
-              source: 'sms',
-              categoryId: Value(categoryId),
-              type: parsed.type,
-              date: date,
-              isInternational: Value(parsed.isInternational),
-            ),
-          );
-      imported++;
+      await _settings.set(SettingsKeys.smsLastSyncedAt, DateTime.now().toIso8601String());
+      return SmsImportResult(
+        scanned: messages.length,
+        imported: session.imported,
+        queued: session.queued,
+      );
+    } finally {
+      _syncing = false;
     }
-
-    return SmsImportResult(scanned: messages.length, imported: imported);
   }
 }

@@ -8,27 +8,40 @@ import '../../core/db/rules_repository.dart';
 import '../../core/intelligence/rule_matcher.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/glass_switch_row.dart';
+import '../splits/splits_ui.dart';
 import 'transactions_repository.dart';
 
+/// Starting values for a new transaction (e.g. from an unreadable SMS).
+class TransactionPrefill {
+  const TransactionPrefill({this.amountMinor, this.merchant, this.type, this.date});
+  final int? amountMinor;
+  final String? merchant;
+  final String? type;
+  final DateTime? date;
+}
+
 /// Opens the add/edit transaction form as a modal sheet. Pass [existing] to
-/// edit a transaction, or omit it to add a new one.
-Future<void> showTransactionFormSheet(
+/// edit a transaction, or omit it to add a new one. Completes with true if
+/// the user saved.
+Future<bool?> showTransactionFormSheet(
   BuildContext context, {
   Transaction? existing,
+  TransactionPrefill? prefill,
 }) {
-  return showModalBottomSheet(
+  return showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
     useSafeArea: true,
     backgroundColor: Colors.transparent,
-    builder: (_) => TransactionFormSheet(existing: existing),
+    builder: (_) => TransactionFormSheet(existing: existing, prefill: prefill),
   );
 }
 
 class TransactionFormSheet extends ConsumerStatefulWidget {
-  const TransactionFormSheet({super.key, this.existing});
+  const TransactionFormSheet({super.key, this.existing, this.prefill});
 
   final Transaction? existing;
+  final TransactionPrefill? prefill;
 
   @override
   ConsumerState<TransactionFormSheet> createState() =>
@@ -47,23 +60,26 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
   String _type = 'debit';
   late DateTime _date;
   late bool _isInternational;
+  late bool _isTransfer;
+  bool _paidInCash = false;
 
   @override
   void initState() {
     super.initState();
     final existing = widget.existing;
+    final prefill = widget.prefill;
+    final startAmount = existing?.amountMinor ?? prefill?.amountMinor;
     _amountController = TextEditingController(
-      text: existing == null
-          ? ''
-          : (existing.amountMinor / 100).toStringAsFixed(2),
+      text: startAmount == null ? '' : (startAmount / 100).toStringAsFixed(2),
     );
-    _merchantController = TextEditingController(text: existing?.merchant ?? '')
+    _merchantController = TextEditingController(text: existing?.merchant ?? prefill?.merchant ?? '')
       ..addListener(_tryAutoCategorize);
     _categoryId = existing?.categoryId;
     _categoryIsAutoPicked = existing == null;
-    _type = existing?.type ?? 'debit';
-    _date = existing?.date ?? DateTime.now();
+    _type = existing?.type ?? prefill?.type ?? 'debit';
+    _date = existing?.date ?? prefill?.date ?? DateTime.now();
     _isInternational = existing?.isInternational ?? false;
+    _isTransfer = existing?.kind == 'transfer';
   }
 
   void _tryAutoCategorize() {
@@ -105,6 +121,8 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
     final amountMinor = (double.parse(_amountController.text.trim()) * 100)
         .round();
     final repo = ref.read(transactionsRepositoryProvider);
+    final messenger = ScaffoldMessenger.of(context);
+    final accountId = _paidInCash ? await repo.cashAccountId() : null;
 
     if (widget.existing == null) {
       await repo.addManualTransaction(
@@ -114,9 +132,11 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
         type: _type,
         date: _date,
         isInternational: _isInternational,
+        accountId: accountId,
+        isTransfer: _isTransfer,
       );
     } else {
-      await repo.updateTransaction(
+      final renamed = await repo.updateTransaction(
         widget.existing!.id,
         amountMinor: amountMinor,
         merchant: _merchantController.text.trim(),
@@ -124,10 +144,17 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
         type: _type,
         date: _date,
         isInternational: _isInternational,
+        accountId: accountId,
+        isTransfer: _isTransfer,
       );
+      if (renamed > 0) {
+        messenger.showSnackBar(
+          SnackBar(content: Text('Also renamed $renamed similar transaction${renamed == 1 ? '' : 's'}')),
+        );
+      }
     }
 
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) Navigator.of(context).pop(true);
   }
 
   Future<void> _delete() async {
@@ -238,6 +265,26 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
                       value: _isInternational,
                       onChanged: (v) => setState(() => _isInternational = v),
                     ),
+                    GlassSwitchRow(
+                      label: 'Transfer between my own accounts',
+                      value: _isTransfer,
+                      onChanged: (v) => setState(() => _isTransfer = v),
+                    ),
+                    if (!isEditing && _type == 'debit')
+                      GlassSwitchRow(
+                        label: 'Paid in cash',
+                        value: _paidInCash,
+                        onChanged: (v) => setState(() => _paidInCash = v),
+                      ),
+                    if (isEditing && _type == 'debit')
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: () => showSplitSheet(context, widget.existing!),
+                          icon: const Icon(Icons.call_split_rounded),
+                          label: const Text('Split with others'),
+                        ),
+                      ),
                     const SizedBox(height: 20),
                     FilledButton(
                       onPressed: _submit,

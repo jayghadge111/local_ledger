@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
 
 /// Thin wrapper around `local_auth` so the rest of the app depends on a
@@ -22,7 +23,8 @@ class AppLockService {
         biometricOnly: true,
         persistAcrossBackgrounding: true,
       );
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[AppLockService] biometric authenticate failed: $e');
       return false;
     }
   }

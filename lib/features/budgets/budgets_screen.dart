@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/analytics/analytics_providers.dart';
 import '../../core/db/app_database.dart';
 import '../../core/db/budgets_repository.dart';
 import '../../core/db/providers.dart';
@@ -17,7 +18,7 @@ class BudgetsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final categories = ref.watch(categoriesProvider).value ?? <Category>[];
     final budgets = ref.watch(budgetsProvider).value ?? <Budget>[];
-    final transactions = ref.watch(transactionsProvider).value ?? <Transaction>[];
+    final transactions = ref.watch(analyticsTransactionsProvider);
 
     final budgetByCategory = {for (final b in budgets) b.categoryId: b};
 

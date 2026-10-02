@@ -18,6 +18,10 @@ part 'app_database.g.dart';
     Alerts,
     Budgets,
     AppSettings,
+    OwnIdentifiers,
+    MerchantAliases,
+    SplitShares,
+    UnparsedMessages,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -26,7 +30,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -38,6 +42,19 @@ class AppDatabase extends _$AppDatabase {
           if (from < 2) {
             await m.createTable(budgets);
             await m.createTable(appSettings);
+          }
+          if (from < 3) {
+            await m.addColumn(transactions, transactions.rawMerchant);
+            await m.addColumn(transactions, transactions.kind);
+            await m.addColumn(transactions, transactions.kindLocked);
+            await m.addColumn(transactions, transactions.transferGroupId);
+            await m.addColumn(transactions, transactions.refundOfId);
+            await m.addColumn(transactions, transactions.refundHint);
+            await m.addColumn(transactions, transactions.sourceHash);
+            await m.createTable(ownIdentifiers);
+            await m.createTable(merchantAliases);
+            await m.createTable(splitShares);
+            await m.createTable(unparsedMessages);
           }
         },
       );

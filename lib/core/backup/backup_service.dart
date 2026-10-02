@@ -33,6 +33,11 @@ class BackupService {
           (await _db.select(_db.transactions).get()).map((e) => e.toJson()).toList(),
       'budgets': (await _db.select(_db.budgets).get()).map((e) => e.toJson()).toList(),
       'rules': (await _db.select(_db.rules).get()).map((e) => e.toJson()).toList(),
+      'ownIdentifiers':
+          (await _db.select(_db.ownIdentifiers).get()).map((e) => e.toJson()).toList(),
+      'merchantAliases':
+          (await _db.select(_db.merchantAliases).get()).map((e) => e.toJson()).toList(),
+      'splitShares': (await _db.select(_db.splitShares).get()).map((e) => e.toJson()).toList(),
     };
     final jsonBytes = utf8.encode(jsonEncode(payload));
 
@@ -87,7 +92,13 @@ class BackupService {
       }
       for (final row in (payload['transactions'] as List? ?? [])) {
         await _db.into(_db.transactions).insertOnConflictUpdate(
-              Transaction.fromJson(row as Map<String, dynamic>).toCompanion(true),
+              // Backups from before schema v3 lack the newer columns.
+              Transaction.fromJson({
+                'kind': 'normal',
+                'kindLocked': false,
+                'refundHint': false,
+                ...(row as Map<String, dynamic>),
+              }).toCompanion(true),
             );
       }
       for (final row in (payload['budgets'] as List? ?? [])) {
@@ -98,6 +109,21 @@ class BackupService {
       for (final row in (payload['rules'] as List? ?? [])) {
         await _db.into(_db.rules).insertOnConflictUpdate(
               Rule.fromJson(row as Map<String, dynamic>).toCompanion(true),
+            );
+      }
+      for (final row in (payload['ownIdentifiers'] as List? ?? [])) {
+        await _db.into(_db.ownIdentifiers).insertOnConflictUpdate(
+              OwnIdentifier.fromJson(row as Map<String, dynamic>).toCompanion(true),
+            );
+      }
+      for (final row in (payload['merchantAliases'] as List? ?? [])) {
+        await _db.into(_db.merchantAliases).insertOnConflictUpdate(
+              MerchantAliase.fromJson(row as Map<String, dynamic>).toCompanion(true),
+            );
+      }
+      for (final row in (payload['splitShares'] as List? ?? [])) {
+        await _db.into(_db.splitShares).insertOnConflictUpdate(
+              SplitShare.fromJson(row as Map<String, dynamic>).toCompanion(true),
             );
       }
     });

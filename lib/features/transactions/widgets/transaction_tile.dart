@@ -21,11 +21,18 @@ class TransactionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isCredit = transaction.type == 'credit';
+    final isTransfer = transaction.kind == 'transfer';
+    final isRefund = transaction.kind == 'refund';
+    final isInr = transaction.currency == 'INR';
     final amount = NumberFormat.currency(
       locale: 'en_IN',
-      symbol: '₹',
+      symbol: isInr ? '₹' : '${transaction.currency} ',
       decimalDigits: 2,
     ).format(transaction.amountMinor / 100);
+    // Transfers aren't income or spending, so they stay neutral.
+    final amountColor = isTransfer
+        ? theme.colorScheme.onSurfaceVariant
+        : (isCredit ? Colors.green : Colors.red);
 
     return GlassCard(
       borderRadius: 20,
@@ -57,11 +64,26 @@ class TransactionTile extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (transaction.isInternational || transaction.isFlaggedUnusual) ...[
+                if (transaction.isInternational ||
+                    transaction.isFlaggedUnusual ||
+                    isTransfer ||
+                    isRefund) ...[
                   const SizedBox(height: 6),
                   Wrap(
                     spacing: 6,
                     children: [
+                      if (isTransfer)
+                        _FlagChip(
+                          icon: Icons.swap_horiz_rounded,
+                          label: 'Transfer',
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      if (isRefund)
+                        _FlagChip(
+                          icon: Icons.undo_rounded,
+                          label: 'Refund',
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       if (transaction.isInternational)
                         _FlagChip(
                           icon: Icons.public,
@@ -86,15 +108,17 @@ class TransactionTile extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+                isCredit
+                    ? Icons.arrow_downward_rounded
+                    : Icons.arrow_upward_rounded,
                 size: 14,
-                color: theme.colorScheme.onSurfaceVariant,
+                color: amountColor,
               ),
               const SizedBox(height: 2),
               Text(
                 isCredit ? '+$amount' : '-$amount',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurface,
+                  color: amountColor,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -107,7 +131,11 @@ class TransactionTile extends StatelessWidget {
 }
 
 class _FlagChip extends StatelessWidget {
-  const _FlagChip({required this.icon, required this.label, required this.color});
+  const _FlagChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
 
   final IconData icon;
   final String label;
@@ -126,7 +154,14 @@ class _FlagChip extends StatelessWidget {
         children: [
           Icon(icon, size: 12, color: color),
           const SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
         ],
       ),
     );

@@ -1,20 +1,17 @@
 import 'dart:convert';
 
-import 'package:drift/drift.dart';
 import 'package:http/http.dart' as http;
-import 'package:uuid/uuid.dart';
 
-import '../db/app_database.dart';
-import '../intelligence/rule_matcher.dart';
-import '../security/encryption_service.dart';
-import '../sms/bank_sms_parser.dart'; // parseBankSms works on any plain-text body, SMS or email.
+import '../import_window.dart';
+import '../ingest/transaction_ingestor.dart';
 import 'bank_email_matcher.dart';
 import 'gmail_auth_service.dart';
 
 class EmailImportResult {
-  const EmailImportResult({required this.scanned, required this.imported});
+  const EmailImportResult({required this.scanned, required this.imported, this.queued = 0});
   final int scanned;
   final int imported;
+  final int queued;
 }
 
 /// Fetches recent bank transaction emails directly from the Gmail REST API
@@ -22,72 +19,61 @@ class EmailImportResult {
 /// of ours — and imports the ones that parse as transactions. Mirrors
 /// [SmsImportService]'s shape closely.
 class GmailImportService {
-  GmailImportService(this._db, this._encryption, this._auth);
+  GmailImportService(this._ingestor, this._auth);
 
-  final AppDatabase _db;
-  final EncryptionService _encryption;
+  final TransactionIngestor _ingestor;
   final GmailAuthService _auth;
-  static const _uuid = Uuid();
 
   static const _apiBase = 'https://gmail.googleapis.com/gmail/v1/users/me';
 
-  Future<EmailImportResult> importRecent({int maxMessages = 50}) async {
+  /// Imports bank emails from [importCutoff] (1st of this month, a year
+  /// ago) to now. Gmail returns at most 500 ids per page, so this follows
+  /// `nextPageToken` until the window is exhausted or [maxMessages] is hit.
+  Future<EmailImportResult> importRecent({int maxMessages = 1000}) async {
     final account = await _auth.currentAccount() ?? await _auth.signIn();
     final headers = await _auth.authHeaders(account);
 
-    final listUri = Uri.parse(
-      '$_apiBase/messages?maxResults=$maxMessages&q=${Uri.encodeQueryComponent('newer_than:90d (debited OR credited OR spent)')}',
-    );
-    final listResponse = await http.get(listUri, headers: headers);
-    if (listResponse.statusCode != 200) {
-      throw StateError('Gmail list request failed: ${listResponse.statusCode}');
-    }
-    final listJson = jsonDecode(listResponse.body) as Map<String, dynamic>;
-    final messageRefs = (listJson['messages'] as List? ?? []).cast<Map<String, dynamic>>();
+    final cutoff = importCutoff();
+    final afterDate =
+        '${cutoff.year}/${cutoff.month.toString().padLeft(2, '0')}/${cutoff.day.toString().padLeft(2, '0')}';
+    final query = Uri.encodeQueryComponent('after:$afterDate (debited OR credited OR spent)');
 
-    final rules = await _db.select(_db.rules).get();
-    var imported = 0;
+    final messageRefs = <Map<String, dynamic>>[];
+    String? pageToken;
+    do {
+      final pageParam = pageToken == null ? '' : '&pageToken=$pageToken';
+      final listUri = Uri.parse('$_apiBase/messages?maxResults=100&q=$query$pageParam');
+      final listResponse = await http.get(listUri, headers: headers);
+      if (listResponse.statusCode != 200) {
+        throw StateError('Gmail list request failed: ${listResponse.statusCode}');
+      }
+      final listJson = jsonDecode(listResponse.body) as Map<String, dynamic>;
+      messageRefs.addAll((listJson['messages'] as List? ?? []).cast<Map<String, dynamic>>());
+      pageToken = listJson['nextPageToken'] as String?;
+    } while (pageToken != null && messageRefs.length < maxMessages);
 
+    final session = await _ingestor.begin();
     for (final ref in messageRefs) {
-      final id = ref['id'] as String;
-      final detail = await _fetchMessage(id, headers);
+      final detail = await _fetchMessage(ref['id'] as String, headers);
       if (detail == null) continue;
 
       final (from, dateMillis, body) = detail;
       if (!looksLikeBankEmail(from)) continue;
 
-      final parsed = parseBankSms(body);
-      if (parsed == null) continue;
-
-      final date = DateTime.fromMillisecondsSinceEpoch(dateMillis);
-      final alreadyImported = await (_db.select(_db.transactions)
-            ..where((t) =>
-                t.source.equals('email') &
-                t.amountMinor.equals(parsed.amountMinor) &
-                t.date.equals(date)))
-          .getSingleOrNull();
-      if (alreadyImported != null) continue;
-
-      final categoryId = matchCategoryForMerchant(parsed.merchant, rules) ?? 'cat_other';
-      final encryptedBody = await _encryption.encryptString(body);
-
-      await _db.into(_db.transactions).insert(
-            TransactionsCompanion.insert(
-              id: _uuid.v4(),
-              amountMinor: parsed.amountMinor,
-              merchant: parsed.merchant,
-              rawTextEncrypted: Value(encryptedBody),
-              source: 'email',
-              categoryId: Value(categoryId),
-              type: parsed.type,
-              date: date,
-              isInternational: Value(parsed.isInternational),
-            ),
-          );
-      imported++;
+      await session.add(
+        source: 'email',
+        sender: from,
+        body: body,
+        date: DateTime.fromMillisecondsSinceEpoch(dateMillis),
+      );
     }
+    await session.finish();
 
-    return EmailImportResult(scanned: messageRefs.length, imported: imported);
+    return EmailImportResult(
+      scanned: messageRefs.length,
+      imported: session.imported,
+      queued: session.queued,
+    );
   }
 
   Future<(String, int, String)?> _fetchMessage(

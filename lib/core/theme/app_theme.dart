@@ -157,6 +157,21 @@ class AppTheme {
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
+      // Thumb stays white when off (grey made it look disabled); the off
+      // track is darker than the card so the white thumb still reads.
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? colorScheme.onPrimary
+              : AppPalette.white,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? colorScheme.primary
+              : (isDark ? const Color(0xFF3A3A3C) : const Color(0xFFC7C7CC)),
+        ),
+        trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+      ),
       chipTheme: ChipThemeData(
         backgroundColor: isDark ? AppPalette.borderDark : AppPalette.neutral,
         selectedColor: colorScheme.primary,
