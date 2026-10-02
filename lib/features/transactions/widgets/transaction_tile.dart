@@ -81,12 +81,24 @@ class TransactionTile extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            isCredit ? '+$amount' : '-$amount',
-            style: theme.textTheme.titleMedium?.copyWith(
-              color: isCredit ? Colors.green.shade600 : theme.colorScheme.error,
-              fontWeight: FontWeight.w600,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isCredit ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
+                size: 14,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                isCredit ? '+$amount' : '-$amount',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
         ],
       ),

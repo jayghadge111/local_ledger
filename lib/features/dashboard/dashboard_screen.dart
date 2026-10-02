@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../core/db/app_database.dart';
 import '../../core/db/providers.dart';
 import '../../shared/widgets/animated_amount.dart';
-import '../../shared/widgets/category_icons.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/placeholder_body.dart';
 import '../transactions/widgets/transaction_tile.dart';
-import 'widgets/spend_trend_chart.dart';
+import 'expense_detail_screen.dart';
+import 'widgets/category_donut_chart.dart';
+import 'widgets/chart_buckets.dart';
+import 'widgets/spend_bar_chart.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -24,7 +25,7 @@ class DashboardScreen extends ConsumerWidget {
       data: (transactions) {
         if (transactions.isEmpty) {
           return const PlaceholderBody(
-            icon: Icons.dashboard_outlined,
+            icon: Icons.grid_view_rounded,
             title: 'Welcome to LocalLedger',
             subtitle:
                 'Add a transaction (or load sample data from Settings) to see your dashboard come alive.',
@@ -57,23 +58,19 @@ class DashboardScreen extends ConsumerWidget {
         }
         final topCategories = byCategory.entries.toList()
           ..sort((a, b) => b.value.compareTo(a.value));
-        final maxCategorySpend =
-            topCategories.isEmpty ? 1 : topCategories.first.value;
+        final categorySlices = [
+          for (final entry in topCategories.take(5))
+            CategorySlice(
+              label: categoriesById[entry.key]?.name ?? 'Uncategorized',
+              iconKey: categoriesById[entry.key]?.icon,
+              amountMinor: entry.value,
+              fraction: spent == 0 ? 0 : entry.value / spent,
+            ),
+        ];
 
         final recent = transactions.take(5).toList();
-
-        final monthSpends = <MonthSpend>[];
-        for (var i = 5; i >= 0; i--) {
-          final target = DateTime(now.year, now.month - i, 1);
-          final total = transactions
-              .where((t) =>
-                  t.type == 'debit' &&
-                  t.date.year == target.year &&
-                  t.date.month == target.month)
-              .fold<int>(0, (sum, t) => sum + t.amountMinor);
-          monthSpends.add(MonthSpend(DateFormat.MMM().format(target), total));
-        }
-        final hasTrendData = monthSpends.any((m) => m.amountMinor > 0);
+        final buckets = buildExpenseBuckets(transactions, DateRangeFilter.sixMonths, now);
+        final hasTrendData = buckets.any((b) => b.amountMinor > 0);
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
@@ -84,18 +81,35 @@ class DashboardScreen extends ConsumerWidget {
               FadeSlideIn(
                 delay: const Duration(milliseconds: 45),
                 child: GlassCard(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => ExpenseDetailScreen(
+                        transactions: transactions,
+                        categoriesById: categoriesById,
+                      ),
+                    ),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Spend trend', style: Theme.of(context).textTheme.titleMedium),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text('Spend trend',
+                                style: Theme.of(context).textTheme.titleMedium),
+                          ),
+                          Icon(Icons.chevron_right_rounded,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        ],
+                      ),
                       const SizedBox(height: 16),
-                      SpendTrendChart(months: monthSpends),
+                      SpendBarChart(buckets: buckets, barsHeight: 120),
                     ],
                   ),
                 ),
               ),
             if (hasTrendData) const SizedBox(height: 16),
-            if (topCategories.isNotEmpty)
+            if (categorySlices.isNotEmpty)
               FadeSlideIn(
                 delay: const Duration(milliseconds: 60),
                 child: GlassCard(
@@ -105,15 +119,7 @@ class DashboardScreen extends ConsumerWidget {
                       Text('This month by category',
                           style: Theme.of(context).textTheme.titleMedium),
                       const SizedBox(height: 16),
-                      for (final entry in topCategories.take(5))
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: _CategoryBar(
-                            category: categoriesById[entry.key],
-                            amountMinor: entry.value,
-                            fraction: entry.value / maxCategorySpend,
-                          ),
-                        ),
+                      CategoryDonutChart(slices: categorySlices, totalMinor: spent),
                     ],
                   ),
                 ),
@@ -159,38 +165,22 @@ class _SummaryRow extends StatelessWidget {
       children: [
         Expanded(
           child: GlassCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Spent this month',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                const SizedBox(height: 6),
-                AnimatedAmount(
-                  amountMinor: spentMinor,
-                  style: theme.textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w600, color: theme.colorScheme.error),
-                ),
-              ],
+            child: _SummaryTile(
+              icon: Icons.arrow_upward_rounded,
+              label: 'Spent this month',
+              amountMinor: spentMinor,
+              theme: theme,
             ),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: GlassCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Received this month',
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-                const SizedBox(height: 6),
-                AnimatedAmount(
-                  amountMinor: receivedMinor,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w600, color: Colors.green.shade600),
-                ),
-              ],
+            child: _SummaryTile(
+              icon: Icons.arrow_downward_rounded,
+              label: 'Received this month',
+              amountMinor: receivedMinor,
+              theme: theme,
             ),
           ),
         ),
@@ -199,52 +189,42 @@ class _SummaryRow extends StatelessWidget {
   }
 }
 
-class _CategoryBar extends StatelessWidget {
-  const _CategoryBar({
-    required this.category,
+class _SummaryTile extends StatelessWidget {
+  const _SummaryTile({
+    required this.icon,
+    required this.label,
     required this.amountMinor,
-    required this.fraction,
+    required this.theme,
   });
 
-  final Category? category;
+  final IconData icon;
+  final String label;
   final int amountMinor;
-  final double fraction;
+  final ThemeData theme;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final amount =
-        NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0)
-            .format(amountMinor / 100);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Icon(iconForKey(category?.icon), size: 16, color: theme.colorScheme.primary),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(category?.name ?? 'Uncategorized',
-                  style: theme.textTheme.bodyMedium),
-            ),
-            Text(amount, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
-          ],
-        ),
-        const SizedBox(height: 6),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(999),
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0, end: fraction.clamp(0, 1)),
-            duration: const Duration(milliseconds: 700),
-            curve: Curves.easeOutCubic,
-            builder: (context, value, _) => LinearProgressIndicator(
-              value: value,
-              minHeight: 8,
-              backgroundColor: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-              color: theme.colorScheme.secondary,
-            ),
+        Container(
+          width: 30,
+          height: 30,
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest,
+            shape: BoxShape.circle,
           ),
+          child: Icon(icon, size: 15, color: theme.colorScheme.onSurface),
+        ),
+        const SizedBox(height: 10),
+        Text(label,
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        const SizedBox(height: 4),
+        AnimatedAmount(
+          amountMinor: amountMinor,
+          style: theme.textTheme.headlineSmall
+              ?.copyWith(fontWeight: FontWeight.w700, color: theme.colorScheme.onSurface),
         ),
       ],
     );
