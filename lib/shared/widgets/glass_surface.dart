@@ -1,16 +1,16 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 
-/// A frosted-glass card: blurs whatever sits behind it (normally a
-/// [GlassBackground]) and overlays a translucent tinted surface. Scales
-/// down slightly on press when [onTap] is set, for a tactile, premium feel.
+/// A flat, bordered card — the app's standard elevated surface. White on
+/// the light "Uber Slate" theme, dark slate in dark mode; a hairline border
+/// instead of a shadow does most of the separation work, with a faint
+/// shadow underneath for depth. Scales down slightly on press when [onTap]
+/// is set, for a tactile feel.
 class GlassCard extends StatefulWidget {
   const GlassCard({
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(16),
-    this.borderRadius = 24,
+    this.borderRadius = 20,
     this.onTap,
   });
 
@@ -33,36 +33,25 @@ class _GlassCardState extends State<GlassCard> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     final radius = BorderRadius.circular(widget.borderRadius);
 
-    final content = ClipRRect(
-      borderRadius: radius,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
-        child: Container(
-          padding: widget.padding,
-          decoration: BoxDecoration(
-            color: isDark
-                ? Colors.white.withValues(alpha: 0.08)
-                : Colors.white.withValues(alpha: 0.55),
-            borderRadius: radius,
-            border: Border.all(
-              color: isDark
-                  ? Colors.white.withValues(alpha: 0.14)
-                  : Colors.white.withValues(alpha: 0.65),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
-                blurRadius: 24,
-                offset: const Offset(0, 10),
-              ),
-            ],
+    final content = Container(
+      padding: widget.padding,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: radius,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
-          child: widget.child,
-        ),
+        ],
       ),
+      child: widget.child,
     );
 
     final animated = AnimatedScale(

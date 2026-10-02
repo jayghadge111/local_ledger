@@ -11,42 +11,64 @@ import 'package:google_fonts/google_fonts.dart';
 /// own `ThemeData.textTheme`.
 final _brandFont = GoogleFonts.inter();
 
+/// "Uber Slate" — a strict black / white / gray palette. Charts, chips,
+/// buttons and nav chrome all stay monochrome; the only color left in the
+/// app is merchant brand badges (see `merchant_badge.dart`), which need
+/// their real brand hues to stay recognizable at a glance.
+class AppPalette {
+  const AppPalette._();
+
+  static const black = Color(0xFF000000);
+  static const white = Color(0xFFFFFFFF);
+  static const neutral = Color(0xFFE8E8E8);
+
+  // Light theme surfaces.
+  static const pageLight = Color(0xFFF5F5F7);
+  static const cardLight = Color(0xFFFFFFFF);
+  static const borderLight = Color(0xFFE8E8E8);
+  static const mutedTextLight = Color(0xFF6E6E73);
+
+  // Dark theme surfaces — true-black page (matches Uber's dark mode), slate
+  // (not pure black) cards so content still reads as "elevated."
+  static const pageDark = Color(0xFF000000);
+  static const cardDark = Color(0xFF1C1C1E);
+  static const borderDark = Color(0xFF2C2C2E);
+  static const mutedTextDark = Color(0xFF9A9AA1);
+}
+
 class AppTheme {
   const AppTheme._();
 
-  static const _seedColor = Color(0xFF152447); // deep navy, from the app mark
-  static const _accentColor = Color(0xFFF2B33D); // gold accent, from the app mark
+  static ThemeData light() => _build(Brightness.light);
+  static ThemeData dark() => _build(Brightness.dark);
 
-  static ThemeData light() => _build(
-        ColorScheme.fromSeed(
-          seedColor: _seedColor,
-          secondary: _accentColor,
-          brightness: Brightness.light,
-        ),
-      );
+  static ThemeData _build(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
 
-  static ThemeData dark() => _build(
-        ColorScheme.fromSeed(
-          seedColor: _seedColor,
-          secondary: _accentColor,
-          brightness: Brightness.dark,
-        ),
-      );
+    final colorScheme = ColorScheme(
+      brightness: brightness,
+      primary: isDark ? AppPalette.white : AppPalette.black,
+      onPrimary: isDark ? AppPalette.black : AppPalette.white,
+      secondary: isDark ? AppPalette.white : AppPalette.black,
+      onSecondary: isDark ? AppPalette.black : AppPalette.white,
+      error: const Color(0xFFD32F2F),
+      onError: AppPalette.white,
+      surface: isDark ? AppPalette.cardDark : AppPalette.cardLight,
+      onSurface: isDark ? AppPalette.white : AppPalette.black,
+      surfaceContainerHighest: isDark ? AppPalette.borderDark : AppPalette.neutral,
+      onSurfaceVariant: isDark ? AppPalette.mutedTextDark : AppPalette.mutedTextLight,
+      outline: isDark ? AppPalette.borderDark : AppPalette.borderLight,
+      outlineVariant: isDark ? AppPalette.borderDark : AppPalette.borderLight,
+      tertiary: isDark ? AppPalette.mutedTextDark : AppPalette.mutedTextLight,
+      onTertiary: isDark ? AppPalette.black : AppPalette.white,
+    );
 
-  static ThemeData _build(ColorScheme colorScheme) {
-    // The nav chrome and page transitions are tuned to sit on top of
-    // GlassBackground: transparent containers so the blur underneath shows
-    // through, and a gentle fade+scale between screens instead of the
-    // platform-default slide.
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       fontFamily: _brandFont.fontFamily,
       fontFamilyFallback: _brandFont.fontFamilyFallback,
-      // Transparent so every screen's GlassBackground (set once, in
-      // AppShell) shows through Scaffold's own background — both the one
-      // AdaptiveScaffold builds internally and any a feature screen adds.
-      scaffoldBackgroundColor: Colors.transparent,
+      scaffoldBackgroundColor: isDark ? AppPalette.pageDark : AppPalette.pageLight,
       splashFactory: InkSparkle.splashFactory,
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
@@ -58,18 +80,36 @@ class AppTheme {
         },
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: Colors.transparent,
+        backgroundColor: isDark ? AppPalette.cardDark : AppPalette.cardLight,
         elevation: 0,
-        indicatorColor: colorScheme.secondary.withValues(alpha: 0.25),
+        indicatorColor: colorScheme.primary,
         surfaceTintColor: Colors.transparent,
+        iconTheme: WidgetStateProperty.resolveWith(
+          (states) => IconThemeData(
+            color: states.contains(WidgetState.selected)
+                ? colorScheme.onPrimary
+                : colorScheme.onSurfaceVariant,
+          ),
+        ),
+        labelTextStyle: WidgetStateProperty.resolveWith(
+          (states) => TextStyle(
+            fontSize: 12,
+            fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
+            color: states.contains(WidgetState.selected)
+                ? colorScheme.onSurface
+                : colorScheme.onSurfaceVariant,
+          ),
+        ),
       ),
       navigationRailTheme: NavigationRailThemeData(
-        backgroundColor: Colors.transparent,
+        backgroundColor: isDark ? AppPalette.cardDark : AppPalette.cardLight,
         elevation: 0,
-        indicatorColor: colorScheme.secondary.withValues(alpha: 0.25),
+        indicatorColor: colorScheme.primary,
+        selectedIconTheme: IconThemeData(color: colorScheme.onPrimary),
+        unselectedIconTheme: IconThemeData(color: colorScheme.onSurfaceVariant),
       ),
       drawerTheme: DrawerThemeData(
-        backgroundColor: colorScheme.surface.withValues(alpha: 0.92),
+        backgroundColor: isDark ? AppPalette.cardDark : AppPalette.cardLight,
         elevation: 0,
       ),
       appBarTheme: const AppBarTheme(
@@ -79,30 +119,52 @@ class AppTheme {
         centerTitle: false,
       ),
       cardTheme: CardThemeData(
-        color: Colors.transparent,
+        color: isDark ? AppPalette.cardDark : AppPalette.cardLight,
         elevation: 0,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: isDark ? AppPalette.borderDark : AppPalette.borderLight),
+        ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
+        fillColor: isDark ? AppPalette.borderDark.withValues(alpha: 0.4) : AppPalette.neutral,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
           borderSide: BorderSide.none,
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: colorScheme.onSurface,
+          side: BorderSide(color: isDark ? AppPalette.borderDark : AppPalette.borderLight),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+      ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: colorScheme.secondary,
-        foregroundColor: colorScheme.onSecondary,
-        elevation: 4,
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: isDark ? AppPalette.borderDark : AppPalette.neutral,
+        selectedColor: colorScheme.primary,
+        labelStyle: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w600),
+        secondaryLabelStyle: TextStyle(color: colorScheme.onPrimary, fontWeight: FontWeight.w600),
+        side: BorderSide.none,
+        shape: const StadiumBorder(),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       ),
     );
   }

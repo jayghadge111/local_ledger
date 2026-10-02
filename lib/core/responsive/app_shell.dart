@@ -32,12 +32,26 @@ class _AppShellState extends State<AppShell> {
   int _selectedIndex = 0;
 
   static const _destinations = [
-    NavigationDestination(icon: Icon(Icons.dashboard_outlined), label: 'Home'),
     NavigationDestination(
-        icon: Icon(Icons.receipt_long_outlined), label: 'Transactions'),
+      icon: Icon(Icons.grid_view_rounded),
+      selectedIcon: Icon(Icons.grid_view_rounded),
+      label: 'Home',
+    ),
     NavigationDestination(
-        icon: Icon(Icons.notifications_outlined), label: 'Alerts'),
-    NavigationDestination(icon: Icon(Icons.settings_outlined), label: 'Settings'),
+      icon: Icon(Icons.receipt_long_rounded),
+      selectedIcon: Icon(Icons.receipt_long_rounded),
+      label: 'Transactions',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.notifications_rounded),
+      selectedIcon: Icon(Icons.notifications_rounded),
+      label: 'Alerts',
+    ),
+    NavigationDestination(
+      icon: Icon(Icons.settings_rounded),
+      selectedIcon: Icon(Icons.settings_rounded),
+      label: 'Settings',
+    ),
   ];
 
   static const _screens = [
