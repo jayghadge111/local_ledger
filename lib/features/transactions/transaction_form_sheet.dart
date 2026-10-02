@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/db/app_database.dart';
 import '../../core/db/providers.dart';
 import '../../core/db/rules_repository.dart';
+import '../../core/intelligence/default_category_rules.dart';
 import '../../core/intelligence/rule_matcher.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/glass_switch_row.dart';
@@ -13,7 +14,12 @@ import 'transactions_repository.dart';
 
 /// Starting values for a new transaction (e.g. from an unreadable SMS).
 class TransactionPrefill {
-  const TransactionPrefill({this.amountMinor, this.merchant, this.type, this.date});
+  const TransactionPrefill({
+    this.amountMinor,
+    this.merchant,
+    this.type,
+    this.date,
+  });
   final int? amountMinor;
   final String? merchant;
   final String? type;
@@ -28,12 +34,11 @@ Future<bool?> showTransactionFormSheet(
   Transaction? existing,
   TransactionPrefill? prefill,
 }) {
-  return showModalBottomSheet<bool>(
+  // A centered dialog (not a bottom sheet); the card inside supplies the
+  // styling, so the dialog itself is transparent.
+  return showDialog<bool>(
     context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => TransactionFormSheet(existing: existing, prefill: prefill),
+    builder: (_) => _CenteredCard(child: TransactionFormSheet(existing: existing, prefill: prefill)),
   );
 }
 
@@ -72,8 +77,9 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
     _amountController = TextEditingController(
       text: startAmount == null ? '' : (startAmount / 100).toStringAsFixed(2),
     );
-    _merchantController = TextEditingController(text: existing?.merchant ?? prefill?.merchant ?? '')
-      ..addListener(_tryAutoCategorize);
+    _merchantController = TextEditingController(
+      text: existing?.merchant ?? prefill?.merchant ?? '',
+    )..addListener(_tryAutoCategorize);
     _categoryId = existing?.categoryId;
     _categoryIsAutoPicked = existing == null;
     _type = existing?.type ?? prefill?.type ?? 'debit';
@@ -86,8 +92,10 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
     if (!_categoryIsAutoPicked) return;
     final rules = ref.read(rulesProvider).value ?? const [];
     final merchant = _merchantController.text.trim();
-    if (merchant.isEmpty || rules.isEmpty) return;
-    final match = matchCategoryForMerchant(merchant, rules);
+    if (merchant.isEmpty) return;
+    final match =
+        matchCategoryForMerchant(merchant, rules) ??
+        defaultCategoryFor(merchant, isCredit: _type == 'credit');
     if (match != null && match != _categoryId) {
       setState(() => _categoryId = match);
     }
@@ -149,7 +157,11 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
       );
       if (renamed > 0) {
         messenger.showSnackBar(
-          SnackBar(content: Text('Also renamed $renamed similar transaction${renamed == 1 ? '' : 's'}')),
+          SnackBar(
+            content: Text(
+              'Also updated $renamed similar transaction${renamed == 1 ? '' : 's'}',
+            ),
+          ),
         );
       }
     }
@@ -169,16 +181,11 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
     final isEditing = widget.existing != null;
 
     return Padding(
-      padding: EdgeInsets.only(
-        left: 16,
-        right: 16,
-        top: 16,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-      ),
+      padding: const EdgeInsets.all(16),
       child: Align(
-        alignment: Alignment.bottomCenter,
+        alignment: Alignment.center,
         child: ConstrainedBox(
-          // Keeps the sheet from stretching edge-to-edge on wide/foldable screens.
+          // Keeps the dialog from stretching edge-to-edge on wide/foldable screens.
           constraints: const BoxConstraints(maxWidth: 480),
           child: GlassCard(
             borderRadius: 28,
@@ -280,7 +287,8 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
                       Align(
                         alignment: Alignment.centerLeft,
                         child: TextButton.icon(
-                          onPressed: () => showSplitSheet(context, widget.existing!),
+                          onPressed: () =>
+                              showSplitSheet(context, widget.existing!),
                           icon: const Icon(Icons.call_split_rounded),
                           label: const Text('Split with others'),
                         ),
@@ -308,6 +316,28 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Positions a card in the middle of the screen over the dialog barrier,
+/// lifting it above the keyboard. Deliberately not a [Dialog]: that draws
+/// its own full-screen themed surface behind the card.
+class _CenteredCard extends StatelessWidget {
+  const _CenteredCard({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      type: MaterialType.transparency,
+      child: SafeArea(
+        child: AnimatedPadding(
+          duration: const Duration(milliseconds: 150),
+          padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+          child: child,
         ),
       ),
     );

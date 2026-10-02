@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../db/app_database.dart';
+import '../intelligence/default_category_rules.dart';
 import '../intelligence/merchant_normalizer.dart';
 import '../intelligence/rule_matcher.dart';
 import '../security/encryption_service.dart';
@@ -104,9 +105,7 @@ class IngestSession {
       return IngestOutcome.duplicate;
     }
 
-    final categoryId = matchCategoryForMerchant(display, _rules) ??
-        (raw == null ? null : matchCategoryForMerchant(raw, _rules)) ??
-        'cat_other';
+    final categoryId = _categoryFor(display, raw, parsed.type);
 
     await _db.into(_db.transactions).insert(
           TransactionsCompanion.insert(
@@ -130,6 +129,14 @@ class IngestSession {
     return IngestOutcome.imported;
   }
 
+  /// The user's own rules first, then the built-in dictionary, else Other.
+  String _categoryFor(String display, String? raw, String type) {
+    return matchCategoryForMerchant(display, _rules) ??
+        (raw == null ? null : matchCategoryForMerchant(raw, _rules)) ??
+        defaultCategoryFor('$display ${raw ?? ''}', isCredit: type == 'credit') ??
+        'cat_other';
+  }
+
   Future<void> _repair(
     Transaction existing,
     ParsedSmsTransaction parsed,
@@ -138,7 +145,12 @@ class IngestSession {
     String sender,
     String body,
   ) async {
-    final changed = existing.type != parsed.type ||
+    // Only fill in a category where none was ever chosen — never override one.
+    final newCategory = existing.categoryId == null || existing.categoryId == 'cat_other'
+        ? _categoryFor(display, raw, parsed.type)
+        : existing.categoryId;
+    final changed = existing.categoryId != newCategory ||
+        existing.type != parsed.type ||
         existing.amountMinor != parsed.amountMinor ||
         existing.currency != parsed.currency ||
         existing.merchant != display ||
@@ -154,6 +166,7 @@ class IngestSession {
         currency: Value(parsed.currency),
         merchant: Value(display),
         rawMerchant: Value(raw),
+        categoryId: Value(newCategory),
         isInternational: Value(parsed.isInternational),
         refundHint: Value(parsed.refundHint),
         accountId: Value(await _accountFor(sender, parsed, body) ?? existing.accountId),

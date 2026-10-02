@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -9,13 +10,7 @@ import '../../core/theme/theme_mode_provider.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/glass_switch_row.dart';
-import '../../core/db/small_repositories.dart';
-import '../budgets/budgets_screen.dart';
-import '../import_review/own_identifiers_screen.dart';
-import '../import_review/unparsed_messages_screen.dart';
-import '../splits/splits_ui.dart';
 import '../lock/pin_setup_screen.dart';
-import '../rules/rules_screen.dart';
 import 'widgets/backup_card.dart';
 import 'widgets/email_connect_card.dart';
 import 'widgets/sms_connect_card.dart';
@@ -72,106 +67,62 @@ class SettingsScreen extends ConsumerWidget {
         ),
         const SizedBox(height: 16),
         FadeSlideIn(
-          delay: const Duration(milliseconds: 22),
-          child: GlassCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Budgets, splits & review', style: theme.textTheme.titleMedium),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const BudgetsScreen()),
-                  ),
-                  icon: const Icon(Icons.pie_chart_outline),
-                  label: const Text('Manage budgets'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const RulesScreen()),
-                  ),
-                  icon: const Icon(Icons.rule_outlined),
-                  label: const Text('Category rules'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const SplitsScreen()),
-                  ),
-                  icon: const Icon(Icons.call_split_rounded),
-                  label: const Text('Splits & IOUs'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const OwnIdentifiersScreen()),
-                  ),
-                  icon: const Icon(Icons.swap_horiz_rounded),
-                  label: const Text('My names & accounts'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const UnparsedMessagesScreen()),
-                  ),
-                  icon: const Icon(Icons.mark_email_unread_outlined),
-                  label: Text(() {
-                    final n = ref.watch(unparsedMessagesProvider).value?.length ?? 0;
-                    return n == 0 ? 'Messages to review' : 'Messages to review ($n)';
-                  }()),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        FadeSlideIn(
           delay: const Duration(milliseconds: 26),
           child: const BackupCard(),
         ),
-        const SizedBox(height: 16),
-        FadeSlideIn(
-          delay: const Duration(milliseconds: 30),
-          child: GlassCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Testing & sample data', style: theme.textTheme.titleMedium),
-                const SizedBox(height: 4),
-                Text(
-                  'Populate the app with realistic sample transactions to try out the dashboard and transaction list, or clear everything to start fresh.',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                ),
-                const SizedBox(height: 16),
-                FilledButton.icon(
-                  onPressed: () async {
-                    final db = ref.read(databaseProvider);
-                    await seedMockTransactions(db);
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Sample transactions added')),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.auto_awesome_outlined),
-                  label: const Text('Load sample data'),
-                ),
-                const SizedBox(height: 8),
-                OutlinedButton.icon(
-                  onPressed: () => _confirmClear(context, ref),
-                  icon: const Icon(Icons.delete_sweep_outlined),
-                  label: const Text('Clear all transactions'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: theme.colorScheme.error,
-                    side: BorderSide(color: theme.colorScheme.error.withValues(alpha: 0.4)),
+        // Sample/test data tools exist only in debug builds.
+        if (kDebugMode) ...[
+          const SizedBox(height: 16),
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 30),
+            child: GlassCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Testing & sample data',
+                    style: theme.textTheme.titleMedium,
                   ),
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    'Populate the app with realistic sample transactions to try out the dashboard and transaction list, or clear everything to start fresh.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: () async {
+                      final db = ref.read(databaseProvider);
+                      await seedMockTransactions(db);
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Sample transactions added'),
+                          ),
+                        );
+                      }
+                    },
+                    icon: const Icon(Icons.auto_awesome_outlined),
+                    label: const Text('Load sample data'),
+                  ),
+                  const SizedBox(height: 8),
+                  OutlinedButton.icon(
+                    onPressed: () => _confirmClear(context, ref),
+                    icon: const Icon(Icons.delete_sweep_outlined),
+                    label: const Text('Clear all transactions'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: theme.colorScheme.error,
+                      side: BorderSide(
+                        color: theme.colorScheme.error.withValues(alpha: 0.4),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ),
+        ],
         const SizedBox(height: 16),
         FadeSlideIn(
           delay: const Duration(milliseconds: 50),
@@ -238,15 +189,17 @@ class _SecurityCard extends ConsumerWidget {
             hasPin
                 ? 'App lock is set up. Your PIN and biometric preference are stored only on this device.'
                 : 'No PIN set — anyone with this device can open the app.',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 16),
           if (!hasPin)
             FilledButton.icon(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => PinSetupScreen(onDone: () => Navigator.of(context).pop()),
+                  builder: (_) =>
+                      PinSetupScreen(onDone: () => Navigator.of(context).pop()),
                 ),
               ),
               icon: const Icon(Icons.lock_outline),
@@ -273,12 +226,16 @@ class _SecurityCard extends ConsumerWidget {
                     if (v) {
                       final ok = await ref
                           .read(appLockServiceProvider)
-                          .authenticate(reason: 'Confirm to enable biometric unlock');
+                          .authenticate(
+                            reason: 'Confirm to enable biometric unlock',
+                          );
                       if (!ok) {
                         if (context.mounted) {
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(
-                              content: Text('Biometric check failed — unlock stays PIN-only'),
+                              content: Text(
+                                'Biometric check failed — unlock stays PIN-only',
+                              ),
                             ),
                           );
                         }
@@ -295,7 +252,8 @@ class _SecurityCard extends ConsumerWidget {
             TextButton.icon(
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (_) => PinSetupScreen(onDone: () => Navigator.of(context).pop()),
+                  builder: (_) =>
+                      PinSetupScreen(onDone: () => Navigator.of(context).pop()),
                 ),
               ),
               icon: const Icon(Icons.edit_outlined),

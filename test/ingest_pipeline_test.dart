@@ -192,6 +192,52 @@ void main() {
     expect((await all()).single.merchant, 'My chai');
   });
 
+  test('imports are auto-categorized from the merchant name', () async {
+    final s = await ingestor.begin();
+    await s.add(source: 'sms', sender: 'VM-HDFCBK-S', body: 'Rs 150 debited from A/c XX1234 to JOFREY CAFE on 01-10-26.', date: t0);
+    await s.add(source: 'sms', sender: 'VM-HDFCBK-S', body: 'Rs 500 debited from A/c XX1234 to RAJU ENTERPRISES on 01-10-26.', date: t0.add(const Duration(hours: 5)));
+    final rows = await all();
+    expect(rows.firstWhere((t) => t.amountMinor == 15000).categoryId, 'cat_food');
+    expect(rows.firstWhere((t) => t.amountMinor == 50000).categoryId, 'cat_other');
+  });
+
+  test('re-scan categorizes older "Other" rows but never overrides a chosen category', () async {
+    const body = 'Rs 150 debited from A/c XX1234 to JOFREY CAFE on 01-10-26.';
+    final first = await ingestor.begin();
+    await first.add(source: 'sms', sender: 'VM-HDFCBK-S', body: body, date: t0);
+    await db.update(db.transactions).write(const TransactionsCompanion(categoryId: Value('cat_other')));
+    final again = await ingestor.begin();
+    await again.add(source: 'sms', sender: 'VM-HDFCBK-S', body: body, date: t0);
+    expect((await all()).single.categoryId, 'cat_food');
+
+    await db.update(db.transactions).write(const TransactionsCompanion(categoryId: Value('cat_health')));
+    final third = await ingestor.begin();
+    await third.add(source: 'sms', sender: 'VM-HDFCBK-S', body: body, date: t0);
+    expect((await all()).single.categoryId, 'cat_health');
+  });
+
+  test('re-categorizing one teaches a rule and updates the rest', () async {
+    final s = await ingestor.begin();
+    await s.add(source: 'sms', sender: 'VM-HDFCBK-S', body: 'Rs 100 debited from A/c XX1234 to RAJU ENTERPRISES on 01-10-26. Ref 1', date: t0);
+    await s.add(source: 'sms', sender: 'VM-HDFCBK-S', body: 'Rs 120 debited from A/c XX1234 to RAJU ENTERPRISES on 02-10-26. Ref 2', date: t0.add(const Duration(days: 1)));
+    final first = (await all()).first;
+    final repo = TransactionsRepository(db);
+    final others = await repo.updateTransaction(
+      first.id,
+      amountMinor: first.amountMinor,
+      merchant: first.merchant,
+      categoryId: 'cat_groceries',
+      type: first.type,
+      date: first.date,
+    );
+    expect(others, 1);
+    expect((await all()).map((t) => t.categoryId), everyElement('cat_groceries'));
+
+    final s2 = await ingestor.begin();
+    await s2.add(source: 'sms', sender: 'VM-HDFCBK-S', body: 'Rs 90 debited from A/c XX1234 to RAJU ENTERPRISES on 03-10-26. Ref 3', date: t0.add(const Duration(days: 2)));
+    expect((await all()).where((t) => t.categoryId == 'cat_groceries'), hasLength(3));
+  });
+
   group('learning from corrections', () {
     test('renaming one teaches an alias and renames the similar ones', () async {
       final s = await ingestor.begin();

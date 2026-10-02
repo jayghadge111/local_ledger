@@ -169,6 +169,7 @@ class _SummaryRow extends StatelessWidget {
           child: GlassCard(
             child: _SummaryTile(
               icon: Icons.arrow_upward_rounded,
+              color: Colors.red,
               label: 'Spent this month',
               amountMinor: spentMinor,
               theme: theme,
@@ -180,6 +181,7 @@ class _SummaryRow extends StatelessWidget {
           child: GlassCard(
             child: _SummaryTile(
               icon: Icons.arrow_downward_rounded,
+              color: Colors.green,
               label: 'Received this month',
               amountMinor: receivedMinor,
               theme: theme,
@@ -194,12 +196,14 @@ class _SummaryRow extends StatelessWidget {
 class _SummaryTile extends StatelessWidget {
   const _SummaryTile({
     required this.icon,
+    required this.color,
     required this.label,
     required this.amountMinor,
     required this.theme,
   });
 
   final IconData icon;
+  final Color color;
   final String label;
   final int amountMinor;
   final ThemeData theme;
@@ -213,10 +217,10 @@ class _SummaryTile extends StatelessWidget {
           width: 30,
           height: 30,
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest,
+            color: color.withValues(alpha: 0.14),
             shape: BoxShape.circle,
           ),
-          child: Icon(icon, size: 15, color: theme.colorScheme.onSurface),
+          child: Icon(icon, size: 15, color: color),
         ),
         const SizedBox(height: 10),
         Text(label,

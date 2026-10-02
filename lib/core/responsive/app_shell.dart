@@ -4,6 +4,7 @@ import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart';
 
 import '../../features/alerts/alerts_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
+import '../../features/manage/manage_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/transactions/transactions_screen.dart';
 import '../../shared/widgets/glass_background.dart';
@@ -86,6 +87,11 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
       label: 'Transactions',
     ),
     NavigationDestination(
+      icon: Icon(Icons.tune_rounded),
+      selectedIcon: Icon(Icons.tune_rounded),
+      label: 'Manage',
+    ),
+    NavigationDestination(
       icon: Icon(Icons.notifications_rounded),
       selectedIcon: Icon(Icons.notifications_rounded),
       label: 'Alerts',
@@ -100,6 +106,7 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
   static const _screens = [
     DashboardScreen(),
     TransactionsScreen(),
+    ManageScreen(),
     AlertsScreen(),
     SettingsScreen(),
   ];

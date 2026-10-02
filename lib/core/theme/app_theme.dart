@@ -9,7 +9,7 @@ import 'package:google_fonts/google_fonts.dart';
 /// `GoogleFonts.xTextTheme()` because the latter now returns a `TextTheme`
 /// from the `material_ui` package, which isn't assignable to Flutter SDK's
 /// own `ThemeData.textTheme`.
-final _brandFont = GoogleFonts.inter();
+final _brandFont = GoogleFonts.nunito();
 
 /// "Uber Slate" — a strict black / white / gray palette. Charts, chips,
 /// buttons and nav chrome all stay monochrome; the only color left in the
@@ -35,6 +35,11 @@ class AppPalette {
   static const borderDark = Color(0xFF2C2C2E);
   static const mutedTextDark = Color(0xFF9A9AA1);
 }
+
+OutlineInputBorder _inputBorder(Color color, {double width = 1}) => OutlineInputBorder(
+      borderRadius: BorderRadius.circular(14),
+      borderSide: BorderSide(color: color, width: width),
+    );
 
 class AppTheme {
   const AppTheme._();
@@ -62,6 +67,8 @@ class AppTheme {
       tertiary: isDark ? AppPalette.mutedTextDark : AppPalette.mutedTextLight,
       onTertiary: isDark ? AppPalette.black : AppPalette.white,
     );
+
+    final inputBorderColor = isDark ? const Color(0xFF48484A) : const Color(0xFFC7C7CC);
 
     return ThemeData(
       useMaterial3: true,
@@ -126,12 +133,29 @@ class AppTheme {
           side: BorderSide(color: isDark ? AppPalette.borderDark : AppPalette.borderLight),
         ),
       ),
+      // Outlined, unfilled fields — the same hairline-border look as the
+      // app's cards. The border darkens on focus rather than tinting.
       inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: isDark ? AppPalette.borderDark.withValues(alpha: 0.4) : AppPalette.neutral,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide.none,
+        filled: false,
+        isDense: false,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+        labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+        floatingLabelStyle: TextStyle(color: colorScheme.onSurface),
+        border: _inputBorder(inputBorderColor),
+        enabledBorder: _inputBorder(inputBorderColor),
+        disabledBorder: _inputBorder(inputBorderColor.withValues(alpha: 0.5)),
+        focusedBorder: _inputBorder(colorScheme.onSurface, width: 1.5),
+        errorBorder: _inputBorder(colorScheme.error),
+        focusedErrorBorder: _inputBorder(colorScheme.error, width: 1.5),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: isDark ? AppPalette.cardDark : AppPalette.cardLight,
+        surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(color: isDark ? AppPalette.borderDark : AppPalette.borderLight),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(

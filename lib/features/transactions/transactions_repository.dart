@@ -79,7 +79,8 @@ class TransactionsRepository {
       await setTransfer(id, isTransfer);
     }
 
-    final applied = await _learnAlias(existing, newMerchant, categoryId);
+    var applied = await _learnAlias(existing, newMerchant, categoryId);
+    if (applied == 0) applied = await _learnCategory(existing, newMerchant, categoryId);
     await Reconciler(_db).run();
     return applied;
   }
@@ -110,6 +111,37 @@ class TransactionsRepository {
       merchant: Value(newMerchant),
       categoryId: existing.categoryId != categoryId ? Value(categoryId) : const Value.absent(),
     ));
+  }
+
+  /// The user re-categorized a merchant: remember it as a rule for future
+  /// imports and apply it to the other, not-yet-edited transactions of the
+  /// same merchant. Returns how many others changed.
+  Future<int> _learnCategory(Transaction existing, String merchant, String categoryId) async {
+    if (existing.categoryId == categoryId) return 0;
+    final pattern = merchant.toLowerCase();
+    if (pattern.length < 3) return 0;
+
+    final known = await (_db.select(_db.rules)..where((r) => r.pattern.equals(pattern))).get();
+    if (known.isEmpty) {
+      await _db.into(_db.rules).insert(
+            RulesCompanion.insert(
+              id: _uuid.v4(),
+              pattern: pattern,
+              categoryId: categoryId,
+              source: 'user',
+            ),
+          );
+    } else {
+      await (_db.update(_db.rules)..where((r) => r.pattern.equals(pattern)))
+          .write(RulesCompanion(categoryId: Value(categoryId)));
+    }
+
+    return (_db.update(_db.transactions)
+          ..where((t) =>
+              t.merchant.lower().equals(pattern) &
+              t.id.equals(existing.id).not() &
+              t.userEdited.equals(false)))
+        .write(TransactionsCompanion(categoryId: Value(categoryId)));
   }
 
   /// Marks a transaction as a transfer between the user's own accounts (or

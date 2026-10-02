@@ -10,15 +10,12 @@ import '../../shared/widgets/glass_surface.dart';
 
 final _money = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
 
-/// Bottom sheet for splitting one expense with other people. The user's own
+/// Dialog for splitting one expense with other people. The user's own
 /// share is whatever's left; budgets and totals count only that.
 Future<void> showSplitSheet(BuildContext context, Transaction transaction) {
-  return showModalBottomSheet(
+  return showDialog(
     context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: Colors.transparent,
-    builder: (_) => _SplitSheet(transaction: transaction),
+    builder: (_) => _CenteredCard(child: _SplitSheet(transaction: transaction)),
   );
 }
 
@@ -86,9 +83,9 @@ class _SplitSheetState extends ConsumerState<_SplitSheet> {
     final mine = widget.transaction.amountMinor - others;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 16, 16, MediaQuery.of(context).viewInsets.bottom + 16),
+      padding: const EdgeInsets.all(16),
       child: Align(
-        alignment: Alignment.bottomCenter,
+        alignment: Alignment.center,
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
           child: GlassCard(
@@ -245,4 +242,26 @@ class SplitsScreen extends ConsumerWidget {
 
   int _owed(List<SplitShare> shares) =>
       shares.where((s) => !s.settled).fold<int>(0, (sum, s) => sum + s.shareMinor);
+}
+
+/// Positions a card in the middle of the screen over the dialog barrier,
+/// lifting it above the keyboard. Deliberately not a [Dialog]: that draws
+/// its own full-screen themed surface behind the card.
+class _CenteredCard extends StatelessWidget {
+  const _CenteredCard({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      type: MaterialType.transparency,
+      child: SafeArea(
+        child: AnimatedPadding(
+          duration: const Duration(milliseconds: 150),
+          padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+          child: child,
+        ),
+      ),
+    );
+  }
 }
