@@ -8,6 +8,18 @@ import 'providers.dart';
 
 const _uuid = Uuid();
 
+// ---- Accounts ----
+
+final accountsProvider = StreamProvider<List<Account>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.select(db.accounts).watch();
+});
+
+final accountsByIdProvider = Provider<Map<String, Account>>((ref) {
+  final accounts = ref.watch(accountsProvider).value ?? const <Account>[];
+  return {for (final a in accounts) a.id: a};
+});
+
 // ---- Own identifiers (names / VPAs that mean "me") ----
 
 final ownIdentifiersProvider = StreamProvider<List<OwnIdentifier>>((ref) {

@@ -23,6 +23,11 @@ void main() {
     expect(normalizeMerchant('PYU*BLUE TOKAI COFFEE'), 'Blue Tokai Coffee');
   });
 
+  test('POS-only text is a card payment, not UPI', () {
+    expect(normalizeMerchant('POS'), 'Card payment');
+    expect(normalizeMerchant('UPI/402910/PYMNT_RZP'), 'UPI payment');
+  });
+
   test('user aliases win over bundled ones', () {
     expect(
       normalizeMerchant('swiggy@icici', userAliases: {'swiggy@icici': 'Office lunch'}),

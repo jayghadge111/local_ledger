@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/db/app_database.dart';
+import '../../../core/db/small_repositories.dart';
 import '../../../shared/widgets/glass_surface.dart';
 import '../../../shared/widgets/merchant_avatar.dart';
 
-class TransactionTile extends StatelessWidget {
+class TransactionTile extends ConsumerWidget {
   const TransactionTile({
     super.key,
     required this.transaction,
@@ -18,8 +20,10 @@ class TransactionTile extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final account = ref.watch(accountsByIdProvider)[transaction.accountId];
+    final cardLabel = _cardChipLabel(account);
     final isCredit = transaction.type == 'credit';
     final isTransfer = transaction.kind == 'transfer';
     final isRefund = transaction.kind == 'refund';
@@ -64,7 +68,8 @@ class TransactionTile extends StatelessWidget {
                     ),
                   ],
                 ),
-                if (transaction.isInternational ||
+                if (cardLabel != null ||
+                    transaction.isInternational ||
                     transaction.isFlaggedUnusual ||
                     isTransfer ||
                     isRefund) ...[
@@ -72,6 +77,14 @@ class TransactionTile extends StatelessWidget {
                   Wrap(
                     spacing: 6,
                     children: [
+                      if (cardLabel != null)
+                        _FlagChip(
+                          icon: account!.accountType == 'forex'
+                              ? Icons.currency_exchange_rounded
+                              : Icons.credit_card_rounded,
+                          label: cardLabel,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       if (isTransfer)
                         _FlagChip(
                           icon: Icons.swap_horiz_rounded,
@@ -166,4 +179,20 @@ class _FlagChip extends StatelessWidget {
       ),
     );
   }
+}
+
+/// e.g. "Forex card ••1233" — shown for cards only, since a chip on every
+/// bank-account transaction would be noise.
+String? _cardChipLabel(Account? account) {
+  if (account == null) return null;
+  final kind = switch (account.accountType) {
+    'forex' => 'Forex card',
+    'prepaid' => 'Prepaid card',
+    'credit_card' => 'Credit card',
+    'debit_card' => 'Debit card',
+    'card' => 'Card',
+    _ => null,
+  };
+  if (kind == null) return null;
+  return account.last4 == null ? kind : '$kind ••${account.last4}';
 }

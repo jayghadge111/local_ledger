@@ -58,6 +58,33 @@ void main() {
     });
   });
 
+  group('forex card', () {
+    const msg =
+        'SAR 3.00 using ICICI Bank Forex Prepaid Card XX1233 transacted at POS on 02-Oct-26. '
+        'Bal SAR 733.42. Temporary Credit Bal SAR 0.';
+
+    test('is a debit, not a credit (balance wording ignored)', () {
+      final p = parseBankSms(msg)!;
+      expect(p.type, 'debit');
+      expect(p.amountMinor, 300);
+      expect(p.currency, 'SAR');
+      expect(p.isInternational, isTrue);
+      expect(p.last4, '1233');
+      expect(p.accountKind, 'forex');
+    });
+
+    test('other card kinds', () {
+      expect(parseBankSms('Rs 100 spent on your HDFC Bank Credit Card XX1111 at SHOP.')!.accountKind, 'credit_card');
+      expect(parseBankSms('Rs 100 spent on your Debit Card XX1111 at SHOP.')!.accountKind, 'debit_card');
+      expect(parseBankSms('Rs 100 spent on Prepaid Card XX1111 at SHOP.')!.accountKind, 'prepaid');
+      expect(parseBankSms('Rs 100 debited from A/c XX1111 to SHOP.')!.accountKind, 'bank');
+    });
+
+    test('"Credit Bal" alone never makes a credit', () {
+      expect(parseBankSms('Rs 100 spent at SHOP. Temporary Credit Bal Rs 0')!.type, 'debit');
+    });
+  });
+
   group('merchant + account', () {
     test('HDFC UPI "To" line', () {
       final p = parseBankSms(

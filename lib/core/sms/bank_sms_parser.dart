@@ -14,6 +14,7 @@ class ParsedSmsTransaction {
     this.currency = 'INR',
     this.last4,
     this.refundHint = false,
+    this.accountKind,
   });
 
   final int amountMinor; // minor units of [currency]
@@ -27,6 +28,10 @@ class ParsedSmsTransaction {
 
   /// The message mentions a refund/reversal/cancellation.
   final bool refundHint;
+
+  /// What the message says the account is: forex, prepaid, credit_card,
+  /// debit_card, or plain card/bank when it doesn't say more.
+  final String? accountKind;
 }
 
 /// Extracts the bank-code portion of a DLT SMS header — e.g. `HDFCBK` out
@@ -64,8 +69,16 @@ final _suffixAmountPattern = RegExp(
 
 final _balanceContext = RegExp(r'(bal|avl|avail|limit|outstanding)', caseSensitive: false);
 
+// "Bal SAR 733.42", "Avl Bal Rs 5,000.00", "Temporary Credit Bal SAR 0" —
+// the account's balance, not part of the transaction. Removed before the
+// debit/credit wording is read so "Credit Bal" can't pass for a credit.
+final _balanceClause = RegExp(
+  r'(?:temporary\s+credit\s+|avl\.?\s+|available\s+|total\s+)?(?:bal(?:ance)?|limit)\b[:\s]*(?:[A-Za-z]{2,3}\.?\s*|₹\s*)?[\d,]+(?:\.\d+)?',
+  caseSensitive: false,
+);
+
 final _strongDebit = RegExp(
-  r'\b(debited|spent|withdrawn|paid|purchase|purchased|sent|charged|used at)\b',
+  r'\b(debited|spent|withdrawn|paid|purchase|purchased|sent|charged|used at|transacted|swiped)\b',
   caseSensitive: false,
 );
 final _strongCredit = RegExp(
@@ -114,6 +127,20 @@ final _refundWords = RegExp(
   caseSensitive: false,
 );
 
+final _forexWords = RegExp(r'\bforex\b', caseSensitive: false);
+final _prepaidWords = RegExp(r'\bprepaid\b', caseSensitive: false);
+final _creditCardWords = RegExp(r'\bcredit\s+card\b', caseSensitive: false);
+final _debitCardWords = RegExp(r'\bdebit\s+card\b', caseSensitive: false);
+final _cardWords = RegExp(r'\bcard\b', caseSensitive: false);
+
+String _accountKind(String body) {
+  if (_forexWords.hasMatch(body)) return 'forex';
+  if (_prepaidWords.hasMatch(body)) return 'prepaid';
+  if (_creditCardWords.hasMatch(body)) return 'credit_card';
+  if (_debitCardWords.hasMatch(body)) return 'debit_card';
+  return _cardWords.hasMatch(body) ? 'card' : 'bank';
+}
+
 final _internationalKeywords = RegExp(
   r'\b(intl|international|foreign currency|forex markup|cross.?currency)\b',
   caseSensitive: false,
@@ -144,7 +171,8 @@ final _last4Pattern = RegExp(
   return null;
 }
 
-String? _type(String body) {
+String? _type(String rawBody) {
+  final body = rawBody.replaceAll(_balanceClause, ' ');
   final strongDebit = _strongDebit.firstMatch(body);
   final strongCredit = _strongCredit.firstMatch(body);
   if (strongDebit != null && strongCredit != null) {
@@ -196,6 +224,7 @@ ParsedSmsTransaction? parseBankSms(String body) {
     currency: amount.currency,
     last4: _last4Pattern.firstMatch(body)?.group(1),
     refundHint: type == 'credit' && _refundWords.hasMatch(body),
+    accountKind: _accountKind(body),
   );
 }
 

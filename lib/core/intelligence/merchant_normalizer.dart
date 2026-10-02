@@ -84,7 +84,14 @@ String normalizeMerchant(String raw, {Map<String, String> userAliases = const {}
     if (alias.regex.hasMatch(searchable)) return alias.displayName;
   }
 
-  return _tidy(searchable, isVpa: vpa != null) ?? 'UPI payment';
+  return _tidy(searchable, isVpa: vpa != null) ?? _fallbackLabel(lower);
+}
+
+// What to call a payment whose text is all bank plumbing ("POS", "UPI/123").
+String _fallbackLabel(String lower) {
+  if (lower.contains('upi') || lower.contains('@')) return 'UPI payment';
+  if (RegExp(r'\b(pos|ecom|ecomm)\b').hasMatch(lower)) return 'Card payment';
+  return 'Bank payment';
 }
 
 String? _tidy(String text, {required bool isVpa}) {

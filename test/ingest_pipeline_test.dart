@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:local_ledger/core/db/app_database.dart';
@@ -124,6 +125,71 @@ void main() {
     await s.finish();
     final again = await Reconciler(db).run();
     expect(again.transfers, 0);
+  });
+
+  test('forex card message imports as a card debit', () async {
+    final s = await ingestor.begin();
+    await s.add(
+      source: 'sms',
+      sender: 'JM-ICICIT-T',
+      body: 'SAR 3.00 using ICICI Bank Forex Prepaid Card XX1233 transacted at POS on 02-Oct-26. Bal SAR 733.42. Temporary Credit Bal SAR 0.',
+      date: t0,
+    );
+    final t = (await all()).single;
+    expect(t.type, 'debit');
+    expect(t.merchant, 'Card payment');
+    expect(t.currency, 'SAR');
+    expect(t.amountMinor, 300);
+    final account = (await db.select(db.accounts).get()).single;
+    expect(account.accountType, 'forex');
+    expect(account.name, 'ICICI Bank Forex Card •••• 1233');
+    expect(t.accountId, account.id);
+  });
+
+  test('an account first seen as a generic card is upgraded to forex', () async {
+    final s = await ingestor.begin();
+    await s.add(source: 'sms', sender: 'JM-ICICIT-T', body: 'Rs 50 spent on ICICI Bank Card XX1233 at SHOP.', date: t0);
+    await s.add(
+      source: 'sms',
+      sender: 'JM-ICICIT-T',
+      body: 'SAR 3.00 using ICICI Bank Forex Prepaid Card XX1233 transacted at POS on 02-Oct-26.',
+      date: t0.add(const Duration(days: 1)),
+    );
+    final accounts = await db.select(db.accounts).get();
+    expect(accounts, hasLength(1));
+    expect(accounts.single.accountType, 'forex');
+  });
+
+  test('re-scan repairs a row imported by an older, wrong parse', () async {
+    const body = 'SAR 3.00 using ICICI Bank Forex Prepaid Card XX1233 transacted at POS on 02-Oct-26. Bal SAR 733.42. Temporary Credit Bal SAR 0.';
+    final first = await ingestor.begin();
+    await first.add(source: 'sms', sender: 'JM-ICICIT-T', body: body, date: t0);
+    // Simulate what the old parser stored.
+    await db.update(db.transactions).write(const TransactionsCompanion(
+      type: Value('credit'),
+      merchant: Value('UPI payment'),
+    ));
+
+    final again = await ingestor.begin();
+    await again.add(source: 'sms', sender: 'JM-ICICIT-T', body: body, date: t0);
+    expect(again.repaired, 1);
+    final t = (await all()).single;
+    expect(t.type, 'debit');
+    expect(t.merchant, 'Card payment');
+  });
+
+  test('a row the user edited is not touched by a re-scan', () async {
+    const body = 'Rs 100 debited from A/c XX1234 to RAJU TEA on 01-10-26.';
+    final first = await ingestor.begin();
+    await first.add(source: 'sms', sender: 'VM-HDFCBK-S', body: body, date: t0);
+    await db.update(db.transactions).write(const TransactionsCompanion(
+      merchant: Value('My chai'),
+      userEdited: Value(true),
+    ));
+    final again = await ingestor.begin();
+    await again.add(source: 'sms', sender: 'VM-HDFCBK-S', body: body, date: t0);
+    expect(again.repaired, 0);
+    expect((await all()).single.merchant, 'My chai');
   });
 
   group('learning from corrections', () {

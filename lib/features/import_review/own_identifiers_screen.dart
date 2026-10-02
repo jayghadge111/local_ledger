@@ -106,11 +106,12 @@ class _OwnIdentifiersScreenState extends ConsumerState<OwnIdentifiersScreen> {
                         ListTile(
                           dense: true,
                           contentPadding: EdgeInsets.zero,
-                          leading: Icon(a.accountType == 'card'
-                              ? Icons.credit_card_rounded
-                              : a.accountType == 'cash'
-                                  ? Icons.payments_rounded
-                                  : Icons.account_balance_rounded),
+                          leading: Icon(switch (a.accountType) {
+                            'forex' => Icons.currency_exchange_rounded,
+                            'cash' => Icons.payments_rounded,
+                            'bank' => Icons.account_balance_rounded,
+                            _ => Icons.credit_card_rounded,
+                          }),
                           title: Text(a.name),
                           subtitle: Text(a.accountType),
                         ),
