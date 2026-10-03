@@ -249,7 +249,7 @@ void main() {
       await tester.runAsync(tick);
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.text('Update ready'), findsOneWidget);
-      expect(find.text('Restart to install'), findsOneWidget);
+      expect(find.text('Restart'), findsOneWidget);
     });
 
     testWidgets('an important update has no "Later"', (tester) async {
