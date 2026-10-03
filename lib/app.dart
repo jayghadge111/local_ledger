@@ -14,7 +14,7 @@ class LocalLedgerApp extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider).value ?? ThemeMode.system;
 
     return MaterialApp.router(
-      title: 'LocalLedger',
+      title: 'Local Ledger',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),

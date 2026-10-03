@@ -1,6 +1,6 @@
 {
-    "name": "local_ledger",
-    "short_name": "local_ledger",
+    "name": "Local Ledger",
+    "short_name": "Local Ledger",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
