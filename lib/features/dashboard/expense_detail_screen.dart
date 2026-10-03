@@ -44,17 +44,22 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     final buckets = buildExpenseBuckets(widget.transactions, _filter, now);
     final (rangeStart, rangeEnd) = rangeFor(_filter, now);
 
-    final inRange = widget.transactions.where((t) =>
-        t.type == 'debit' &&
-        !t.date.isBefore(rangeStart) &&
-        t.date.isBefore(rangeEnd));
+    final inRange = widget.transactions.where(
+      (t) =>
+          t.type == 'debit' &&
+          !t.date.isBefore(rangeStart) &&
+          t.date.isBefore(rangeEnd),
+    );
     final total = inRange.fold<int>(0, (sum, t) => sum + t.amountMinor);
 
     final byMerchant = <String, _MerchantSpend>{};
     for (final t in inRange) {
       final entry = byMerchant.putIfAbsent(
         t.merchant,
-        () => _MerchantSpend(t.merchant, widget.categoriesById[t.categoryId]?.icon),
+        () => _MerchantSpend(
+          t.merchant,
+          widget.categoriesById[t.categoryId]?.icon,
+        ),
       );
       entry.amountMinor += t.amountMinor;
       entry.purchases += 1;
@@ -62,8 +67,11 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     final topMerchants = byMerchant.values.toList()
       ..sort((a, b) => b.amountMinor.compareTo(a.amountMinor));
 
-    final amountFormatter =
-        NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+    final amountFormatter = NumberFormat.currency(
+      locale: 'en_IN',
+      symbol: '₹',
+      decimalDigits: 0,
+    );
 
     return GlassBackground(
       child: SafeArea(
@@ -75,7 +83,10 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
               child: Row(
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 20),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      size: 20,
+                    ),
                     onPressed: () => Navigator.of(context).pop(),
                   ),
                   Text('Expenses', style: theme.textTheme.titleLarge),
@@ -89,8 +100,9 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                   FadeSlideIn(
                     child: Text(
                       _periodLabel(_filter, now),
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 4),
@@ -98,7 +110,9 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                     delay: const Duration(milliseconds: 20),
                     child: Text(
                       amountFormatter.format(total / 100),
-                      style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w700),
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 18),
@@ -121,7 +135,10 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                   if (topMerchants.isNotEmpty) ...[
                     FadeSlideIn(
                       delay: const Duration(milliseconds: 80),
-                      child: Text('Top stores', style: theme.textTheme.titleMedium),
+                      child: Text(
+                        'Top stores',
+                        style: theme.textTheme.titleMedium,
+                      ),
                     ),
                     const SizedBox(height: 14),
                     for (var i = 0; i < topMerchants.length && i < 10; i++)
@@ -133,28 +150,40 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
                             children: [
                               MerchantAvatar(
                                 merchant: topMerchants[i].merchant,
-                                categoryIconKey: topMerchants[i].categoryIconKey,
+                                categoryIconKey:
+                                    topMerchants[i].categoryIconKey,
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(topMerchants[i].merchant,
-                                        style: theme.textTheme.bodyMedium
-                                            ?.copyWith(fontWeight: FontWeight.w600)),
+                                    Text(
+                                      topMerchants[i].merchant,
+                                      style: theme.textTheme.bodyMedium
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
                                     Text(
                                       '${topMerchants[i].purchases} purchase${topMerchants[i].purchases == 1 ? '' : 's'}',
-                                      style: theme.textTheme.bodySmall?.copyWith(
-                                          color: theme.colorScheme.onSurfaceVariant),
+                                      style: theme.textTheme.bodySmall
+                                          ?.copyWith(
+                                            color: theme
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
                                     ),
                                   ],
                                 ),
                               ),
                               Text(
-                                amountFormatter.format(topMerchants[i].amountMinor / 100),
-                                style: theme.textTheme.bodyMedium
-                                    ?.copyWith(fontWeight: FontWeight.w700),
+                                amountFormatter.format(
+                                  topMerchants[i].amountMinor / 100,
+                                ),
+                                style: theme.textTheme.bodyMedium?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ],
                           ),

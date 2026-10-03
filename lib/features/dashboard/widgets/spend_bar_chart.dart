@@ -8,7 +8,11 @@ import 'chart_buckets.dart';
 /// — matching the "Uber Slate" monochrome palette. A dashed line marks the
 /// average across all visible buckets, labeled with its amount.
 class SpendBarChart extends StatelessWidget {
-  const SpendBarChart({super.key, required this.buckets, this.barsHeight = 140});
+  const SpendBarChart({
+    super.key,
+    required this.buckets,
+    this.barsHeight = 140,
+  });
 
   final List<ChartBucket> buckets;
   final double barsHeight;
@@ -16,16 +20,21 @@ class SpendBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final maxAmount = buckets.map((b) => b.amountMinor).fold<int>(
-          0,
-          (max, v) => v > max ? v : max,
-        );
+    final maxAmount = buckets
+        .map((b) => b.amountMinor)
+        .fold<int>(0, (max, v) => v > max ? v : max);
     final average = buckets.isEmpty
         ? 0
-        : buckets.fold<int>(0, (sum, b) => sum + b.amountMinor) ~/ buckets.length;
-    final amountFormatter =
-        NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
-    final lineFraction = maxAmount == 0 ? null : (average / maxAmount).clamp(0.0, 1.0);
+        : buckets.fold<int>(0, (sum, b) => sum + b.amountMinor) ~/
+              buckets.length;
+    final amountFormatter = NumberFormat.currency(
+      locale: 'en_IN',
+      symbol: '₹',
+      decimalDigits: 0,
+    );
+    final lineFraction = maxAmount == 0
+        ? null
+        : (average / maxAmount).clamp(0.0, 1.0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,7 +68,10 @@ class SpendBarChart extends StatelessWidget {
                 Positioned(
                   left: 0,
                   right: 0,
-                  top: (barsHeight * (1 - lineFraction) - 18).clamp(2.0, barsHeight - 20),
+                  top: (barsHeight * (1 - lineFraction) - 18).clamp(
+                    2.0,
+                    barsHeight - 20,
+                  ),
                   child: _AverageLine(
                     label: amountFormatter.format(average / 100),
                     color: theme.colorScheme.onSurfaceVariant,
@@ -80,7 +92,9 @@ class SpendBarChart extends StatelessWidget {
                     color: bucket.isCurrent
                         ? theme.colorScheme.onSurface
                         : theme.colorScheme.onSurfaceVariant,
-                    fontWeight: bucket.isCurrent ? FontWeight.w700 : FontWeight.w500,
+                    fontWeight: bucket.isCurrent
+                        ? FontWeight.w700
+                        : FontWeight.w500,
                   ),
                 ),
               ),
@@ -92,7 +106,11 @@ class SpendBarChart extends StatelessWidget {
 }
 
 class _Bar extends StatelessWidget {
-  const _Bar({required this.bucket, required this.maxAmount, required this.theme});
+  const _Bar({
+    required this.bucket,
+    required this.maxAmount,
+    required this.theme,
+  });
 
   final ChartBucket bucket;
   final int maxAmount;
@@ -114,7 +132,9 @@ class _Bar extends StatelessWidget {
               color: bucket.isCurrent
                   ? theme.colorScheme.onSurface
                   : theme.colorScheme.surfaceContainerHighest,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(6),
+              ),
             ),
           ),
         );
@@ -139,9 +159,7 @@ class _AverageLine extends StatelessWidget {
           padding: const EdgeInsets.only(right: 4, bottom: 2),
           child: Text(
             label,
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall
+            style: Theme.of(context).textTheme.labelSmall
                 ?.copyWith(color: color, fontWeight: FontWeight.w600),
           ),
         ),
@@ -174,5 +192,6 @@ class _DashedLinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _DashedLinePainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(covariant _DashedLinePainter oldDelegate) =>
+      oldDelegate.color != color;
 }

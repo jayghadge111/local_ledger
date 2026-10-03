@@ -6,7 +6,10 @@
 /// becomes [displayName].
 class _Alias {
   _Alias(String pattern, this.displayName)
-      : regex = RegExp(r'(?<![a-z0-9])' + RegExp.escape(pattern) + r'(?![a-z0-9])', caseSensitive: false);
+    : regex = RegExp(
+        r'(?<![a-z0-9])' + RegExp.escape(pattern) + r'(?![a-z0-9])',
+        caseSensitive: false,
+      );
   final RegExp regex;
   final String displayName;
 }
@@ -58,16 +61,47 @@ final _bundledAliases = <_Alias>[
 
 // Bank/gateway plumbing that says nothing about who was paid.
 const _noiseWords = {
-  'upi', 'imps', 'neft', 'rtgs', 'pymnt', 'payment', 'pay', 'txn', 'ref', 'dr', 'cr',
-  'pos', 'ecom', 'ecomm', 'ib', 'mb', 'ach', 'nach', 'mandate', 'purchase', 'to', 'from',
-  'rzp', 'rzpx', 'razorpay', 'payu', 'pyu', 'ccavenue', 'billdesk', 'cashfree', 'ppsl',
+  'upi',
+  'imps',
+  'neft',
+  'rtgs',
+  'pymnt',
+  'payment',
+  'pay',
+  'txn',
+  'ref',
+  'dr',
+  'cr',
+  'pos',
+  'ecom',
+  'ecomm',
+  'ib',
+  'mb',
+  'ach',
+  'nach',
+  'mandate',
+  'purchase',
+  'to',
+  'from',
+  'rzp',
+  'rzpx',
+  'razorpay',
+  'payu',
+  'pyu',
+  'ccavenue',
+  'billdesk',
+  'cashfree',
+  'ppsl',
 };
 
 final _vpaPattern = RegExp(r'([A-Za-z0-9._\-]+)@([A-Za-z]+)');
 
 /// [userAliases] maps lowercase raw text fragments to display names the
 /// user has taught the app; they win over the bundled table.
-String normalizeMerchant(String raw, {Map<String, String> userAliases = const {}}) {
+String normalizeMerchant(
+  String raw, {
+  Map<String, String> userAliases = const {},
+}) {
   final trimmed = raw.trim();
   if (trimmed.isEmpty) return trimmed;
   final lower = trimmed.toLowerCase();
@@ -111,12 +145,84 @@ String? _tidy(String text, {required bool isVpa}) {
 }
 
 const _acronyms = {
-  'hdfc', 'icici', 'sbi', 'lic', 'irctc', 'bsnl', 'atm', 'emi', 'kfc', 'dmart', 'pnb', 'bob',
-  'tcs', 'ibm', 'hp', 'ev', 'ac',
+  'hdfc',
+  'icici',
+  'sbi',
+  'lic',
+  'irctc',
+  'bsnl',
+  'atm',
+  'emi',
+  'kfc',
+  'dmart',
+  'pnb',
+  'bob',
+  'tcs',
+  'ibm',
+  'hp',
+  'ev',
+  'ac',
 };
 
 String _titleCase(String word) {
   final lower = word.toLowerCase();
   if (_acronyms.contains(lower) || word.length <= 2) return word.toUpperCase();
   return word[0].toUpperCase() + lower.substring(1);
+}
+
+// What the parser and normalizer call a payment when the message names no
+// payee — the *purpose* or the plumbing, not who was paid.
+const _genericLabels = {
+  'upi payment',
+  'card payment',
+  'bank payment',
+  'credit',
+  'unknown merchant',
+  'neft transfer',
+  'imps transfer',
+  'rtgs transfer',
+  'mutual fund sip',
+  'insurance premium',
+  'atm withdrawal',
+  'mobile recharge',
+  'fastag toll',
+  'bill payment',
+  'cheque payment',
+  'cheque deposit',
+  'bank charges',
+  'interest',
+  'dividend',
+  'cash deposit',
+  'card load',
+  'loan emi',
+  'upi',
+  'imps',
+  'neft',
+  'rtgs',
+  'pos',
+  'ecom',
+  'ecomm',
+  'payment',
+  'transfer',
+  'debit',
+  'purchase',
+};
+
+final _loanEmiLabel = RegExp(r'^[a-z\- ]+ loan emi$');
+
+/// True when [text] says what kind of payment this was but not who it was
+/// with — "UPI payment", "NEFT transfer", "Home Loan EMI", "ATM withdrawal",
+/// or raw bank text that is only plumbing ("UPI/4059...").
+///
+/// Such a label is shared by many unrelated payments, so a correction made to
+/// one of them must never be learned as a rule for the rest.
+bool isGenericMerchantLabel(String text) {
+  final lower = text.trim().toLowerCase();
+  if (lower.isEmpty) return true;
+  if (_genericLabels.contains(lower) || _loanEmiLabel.hasMatch(lower)) {
+    return true;
+  }
+  // A payee's own address is specific.
+  if (_vpaPattern.hasMatch(lower)) return false;
+  return _tidy(lower, isVpa: false) == null;
 }

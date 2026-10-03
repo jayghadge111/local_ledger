@@ -10,6 +10,7 @@ import '../../shared/widgets/category_icons.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_background.dart';
 import '../../shared/widgets/glass_surface.dart';
+import '../dashboard/dashboard_month.dart';
 
 class BudgetsScreen extends ConsumerWidget {
   const BudgetsScreen({super.key});
@@ -22,11 +23,11 @@ class BudgetsScreen extends ConsumerWidget {
 
     final budgetByCategory = {for (final b in budgets) b.categoryId: b};
 
-    final now = DateTime.now();
+    final month = ref.watch(dashboardMonthProvider);
     final spendByCategory = <String, int>{};
     for (final t in transactions) {
       if (t.type != 'debit') continue;
-      if (t.date.year != now.year || t.date.month != now.month) continue;
+      if (t.date.year != month.year || t.date.month != month.month) continue;
       spendByCategory.update(
         t.categoryId ?? 'cat_other',
         (v) => v + t.amountMinor,
@@ -37,7 +38,7 @@ class BudgetsScreen extends ConsumerWidget {
     return GlassBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('Budgets')),
+        appBar: AppBar(title: Text('Budgets · ${monthYearLabel(month)}')),
         body: ListView.separated(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
           itemCount: categories.length,

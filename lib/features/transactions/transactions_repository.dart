@@ -5,6 +5,7 @@ import 'package:uuid/uuid.dart';
 import '../../core/db/app_database.dart';
 import '../../core/db/providers.dart';
 import '../../core/ingest/reconciler.dart';
+import '../../core/intelligence/merchant_normalizer.dart';
 
 final transactionsRepositoryProvider = Provider<TransactionsRepository>((ref) {
   return TransactionsRepository(ref.watch(databaseProvider));
@@ -102,6 +103,9 @@ class TransactionsRepository {
     if (raw == null || raw.isEmpty || newMerchant == existing.merchant) {
       return 0;
     }
+    // "UPI payment", "NEFT transfer"… are shared by unrelated payments; the
+    // user's rename describes this one payment, not all of them.
+    if (isGenericMerchantLabel(raw)) return 0;
 
     final pattern = raw.toLowerCase();
     await (_db.delete(
@@ -144,6 +148,9 @@ class TransactionsRepository {
     if (existing.categoryId == categoryId) return 0;
     final pattern = merchant.toLowerCase();
     if (pattern.length < 3) return 0;
+    // Same reason: a category chosen for one "UPI payment" says nothing about
+    // the next one — only a named payee is worth learning.
+    if (isGenericMerchantLabel(merchant)) return 0;
 
     final known = await (_db.select(
       _db.rules,

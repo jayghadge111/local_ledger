@@ -1,6 +1,8 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import '../intelligence/default_category_rules.dart';
+import '../intelligence/merchant_normalizer.dart';
 import 'default_categories.dart';
 import 'tables.dart';
 
@@ -30,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -73,8 +75,46 @@ class AppDatabase extends _$AppDatabase {
               );
             }
           }
+          if (from < 6) await undoGenericLearning();
         },
       );
+
+  /// Earlier versions learned a rule from any edit, including to generic
+  /// labels like "UPI payment" — so one payment's category or name was pushed
+  /// onto every such payment. This drops those rules and aliases, and undoes
+  /// what they did to payments the user never edited themselves.
+  Future<void> undoGenericLearning() async {
+    for (final a in await select(merchantAliases).get()) {
+      if (!isGenericMerchantLabel(a.pattern)) continue;
+      final affected = await (select(transactions)
+            ..where((t) => t.userEdited.equals(false) & t.merchant.equals(a.displayName)))
+          .get();
+      for (final t in affected) {
+        if (t.rawMerchant?.toLowerCase() != a.pattern) continue;
+        await (update(transactions)..where((x) => x.id.equals(t.id))).write(
+          TransactionsCompanion(merchant: Value(normalizeMerchant(t.rawMerchant!))),
+        );
+      }
+      await (delete(merchantAliases)..where((x) => x.id.equals(a.id))).go();
+    }
+    for (final r in await (select(rules)..where((x) => x.source.equals('user'))).get()) {
+      if (!isGenericMerchantLabel(r.pattern)) continue;
+      final affected = await (select(transactions)
+            ..where((t) => t.userEdited.equals(false) & t.categoryId.equals(r.categoryId)))
+          .get();
+      for (final t in affected) {
+        if (t.merchant.toLowerCase() != r.pattern) continue;
+        await (update(transactions)..where((x) => x.id.equals(t.id))).write(
+          TransactionsCompanion(
+            categoryId: Value(
+              defaultCategoryFor('${t.merchant} ${t.rawMerchant ?? ''}', isCredit: t.type == 'credit') ?? 'cat_other',
+            ),
+          ),
+        );
+      }
+      await (delete(rules)..where((x) => x.id.equals(r.id))).go();
+    }
+  }
 
   Future<void> _seedDefaultCategories() {
     return batch((b) {

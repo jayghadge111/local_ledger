@@ -7,13 +7,13 @@ enum DateRangeFilter { week, month, threeMonths, sixMonths, year, all }
 
 extension DateRangeFilterLabel on DateRangeFilter {
   String get chipLabel => switch (this) {
-        DateRangeFilter.week => 'W',
-        DateRangeFilter.month => 'M',
-        DateRangeFilter.threeMonths => '3M',
-        DateRangeFilter.sixMonths => '6M',
-        DateRangeFilter.year => 'Y',
-        DateRangeFilter.all => 'All',
-      };
+    DateRangeFilter.week => 'W',
+    DateRangeFilter.month => 'M',
+    DateRangeFilter.threeMonths => '3M',
+    DateRangeFilter.sixMonths => '6M',
+    DateRangeFilter.year => 'Y',
+    DateRangeFilter.all => 'All',
+  };
 }
 
 /// One bar's worth of aggregated debit spend.
@@ -83,36 +83,55 @@ List<ChartBucket> buildExpenseBuckets(
   }
 }
 
-int _debitSum(List<Transaction> transactions, DateTime start, DateTime endExclusive) {
+int _debitSum(
+  List<Transaction> transactions,
+  DateTime start,
+  DateTime endExclusive,
+) {
   return transactions
-      .where((t) =>
-          t.type == 'debit' &&
-          !t.date.isBefore(start) &&
-          t.date.isBefore(endExclusive))
+      .where(
+        (t) =>
+            t.type == 'debit' &&
+            !t.date.isBefore(start) &&
+            t.date.isBefore(endExclusive),
+      )
       .fold<int>(0, (sum, t) => sum + t.amountMinor);
 }
 
-List<ChartBucket> _dailyBuckets(List<Transaction> transactions, DateTime now, {required int days}) {
+List<ChartBucket> _dailyBuckets(
+  List<Transaction> transactions,
+  DateTime now, {
+  required int days,
+}) {
   final today = DateTime(now.year, now.month, now.day);
   final buckets = <ChartBucket>[];
   for (var i = days - 1; i >= 0; i--) {
     final day = today.subtract(Duration(days: i));
     final next = day.add(const Duration(days: 1));
-    buckets.add(ChartBucket(
-      label: DateFormat.E().format(day).substring(0, 1),
-      amountMinor: _debitSum(transactions, day, next),
-      isCurrent: i == 0,
-    ));
+    buckets.add(
+      ChartBucket(
+        label: DateFormat.E().format(day).substring(0, 1),
+        amountMinor: _debitSum(transactions, day, next),
+        isCurrent: i == 0,
+      ),
+    );
   }
   return buckets;
 }
 
-List<ChartBucket> _weeklyBucketsForMonth(List<Transaction> transactions, DateTime now) {
+List<ChartBucket> _weeklyBucketsForMonth(
+  List<Transaction> transactions,
+  DateTime now,
+) {
   final monthStart = DateTime(now.year, now.month, 1);
   final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
   final buckets = <ChartBucket>[];
   var weekIndex = 1;
-  for (var dayOfMonth = 1; dayOfMonth <= daysInMonth; dayOfMonth += 7, weekIndex++) {
+  for (
+    var dayOfMonth = 1;
+    dayOfMonth <= daysInMonth;
+    dayOfMonth += 7, weekIndex++
+  ) {
     final start = DateTime(now.year, now.month, dayOfMonth);
     final end = DateTime(
       now.year,
@@ -120,27 +139,35 @@ List<ChartBucket> _weeklyBucketsForMonth(List<Transaction> transactions, DateTim
       (dayOfMonth + 7).clamp(1, daysInMonth + 1),
     );
     final isCurrent = !now.isBefore(start) && now.isBefore(end);
-    buckets.add(ChartBucket(
-      label: 'W$weekIndex',
-      amountMinor: _debitSum(transactions, start, end),
-      isCurrent: isCurrent,
-    ));
+    buckets.add(
+      ChartBucket(
+        label: 'W$weekIndex',
+        amountMinor: _debitSum(transactions, start, end),
+        isCurrent: isCurrent,
+      ),
+    );
   }
   // monthStart is unused directly but documents the bucket's reference frame.
   assert(monthStart.month == now.month);
   return buckets;
 }
 
-List<ChartBucket> _monthlyBuckets(List<Transaction> transactions, DateTime now, {required int months}) {
+List<ChartBucket> _monthlyBuckets(
+  List<Transaction> transactions,
+  DateTime now, {
+  required int months,
+}) {
   final buckets = <ChartBucket>[];
   for (var i = months - 1; i >= 0; i--) {
     final target = DateTime(now.year, now.month - i, 1);
     final next = DateTime(target.year, target.month + 1, 1);
-    buckets.add(ChartBucket(
-      label: DateFormat.MMM().format(target),
-      amountMinor: _debitSum(transactions, target, next),
-      isCurrent: i == 0,
-    ));
+    buckets.add(
+      ChartBucket(
+        label: DateFormat.MMM().format(target),
+        amountMinor: _debitSum(transactions, target, next),
+        isCurrent: i == 0,
+      ),
+    );
   }
   return buckets;
 }

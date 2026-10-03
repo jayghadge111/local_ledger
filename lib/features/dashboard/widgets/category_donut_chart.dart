@@ -24,7 +24,11 @@ class CategorySlice {
 /// donut, so it still fits the "Uber Slate" palette while staying readable.
 /// The legend below repeats each slice's exact shade next to its amount.
 class CategoryDonutChart extends StatelessWidget {
-  const CategoryDonutChart({super.key, required this.slices, required this.totalMinor});
+  const CategoryDonutChart({
+    super.key,
+    required this.slices,
+    required this.totalMinor,
+  });
 
   final List<CategorySlice> slices;
   final int totalMinor;
@@ -43,8 +47,11 @@ class CategoryDonutChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final shades = _shadesFor(theme);
-    final amountFormatter =
-        NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+    final amountFormatter = NumberFormat.currency(
+      locale: 'en_IN',
+      symbol: '₹',
+      decimalDigits: 0,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -75,12 +82,15 @@ class CategoryDonutChart extends StatelessWidget {
                   children: [
                     Text(
                       amountFormatter.format(totalMinor / 100),
-                      style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                     Text(
                       'this month',
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -97,7 +107,10 @@ class CategoryDonutChart extends StatelessWidget {
                 Container(
                   width: 34,
                   height: 34,
-                  decoration: BoxDecoration(color: shades[i], shape: BoxShape.circle),
+                  decoration: BoxDecoration(
+                    color: shades[i],
+                    shape: BoxShape.circle,
+                  ),
                   child: Icon(
                     iconForKey(slices[i].iconKey),
                     size: 16,
@@ -106,11 +119,16 @@ class CategoryDonutChart extends StatelessWidget {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(slices[i].label, style: theme.textTheme.bodyMedium),
+                  child: Text(
+                    slices[i].label,
+                    style: theme.textTheme.bodyMedium,
+                  ),
                 ),
                 Text(
                   amountFormatter.format(slices[i].amountMinor / 100),
-                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 SizedBox(
@@ -118,8 +136,9 @@ class CategoryDonutChart extends StatelessWidget {
                   child: Text(
                     '${(slices[i].fraction * 100).round()}%',
                     textAlign: TextAlign.right,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],

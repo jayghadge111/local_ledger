@@ -203,11 +203,22 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      isEditing ? 'Edit transaction' : 'Add transaction',
-                      style: Theme.of(context).textTheme.titleLarge,
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            isEditing ? 'Edit transaction' : 'Add transaction',
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded),
+                          tooltip: 'Close',
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     SegmentedButton<String>(
                       segments: const [
                         ButtonSegment(value: 'debit', label: Text('Spent')),
@@ -300,11 +311,25 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
                         ),
                       ),
                     const SizedBox(height: 20),
-                    FilledButton(
-                      onPressed: _submit,
-                      child: Text(
-                        isEditing ? 'Save changes' : 'Add transaction',
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () => Navigator.of(context).pop(),
+                            child: const Text('Cancel'),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          flex: 2,
+                          child: FilledButton(
+                            onPressed: _submit,
+                            child: Text(
+                              isEditing ? 'Save changes' : 'Add transaction',
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     if (isEditing) ...[
                       const SizedBox(height: 8),

@@ -6,7 +6,11 @@ import 'chart_buckets.dart';
 /// Selected chip is solid black (white in dark mode); the rest are flat
 /// neutral gray pills — same monochrome treatment as the chart bars.
 class DateRangeChips extends StatelessWidget {
-  const DateRangeChips({super.key, required this.selected, required this.onChanged});
+  const DateRangeChips({
+    super.key,
+    required this.selected,
+    required this.onChanged,
+  });
 
   final DateRangeFilter selected;
   final ValueChanged<DateRangeFilter> onChanged;
@@ -47,7 +51,9 @@ class _Chip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? theme.colorScheme.onSurface : theme.colorScheme.surfaceContainerHighest,
+      color: selected
+          ? theme.colorScheme.onSurface
+          : theme.colorScheme.surfaceContainerHighest,
       shape: const StadiumBorder(),
       child: InkWell(
         customBorder: const StadiumBorder(),
@@ -58,7 +64,9 @@ class _Chip extends StatelessWidget {
           child: Text(
             label,
             style: theme.textTheme.labelMedium?.copyWith(
-              color: selected ? theme.colorScheme.surface : theme.colorScheme.onSurfaceVariant,
+              color: selected
+                  ? theme.colorScheme.surface
+                  : theme.colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
             ),
           ),

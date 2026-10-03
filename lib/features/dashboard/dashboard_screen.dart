@@ -9,9 +9,10 @@ import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/greeting_header.dart';
 import '../../shared/widgets/placeholder_body.dart';
-import '../transactions/transaction_detail_sheet.dart';
-import '../transactions/widgets/transaction_tile.dart';
+import 'dashboard_month.dart';
 import 'expense_detail_screen.dart';
+import 'widgets/home_budgets_card.dart';
+import 'widgets/month_selector.dart';
 import 'widgets/category_donut_chart.dart';
 import 'widgets/chart_buckets.dart';
 import 'widgets/spend_bar_chart.dart';
@@ -24,6 +25,7 @@ class DashboardScreen extends ConsumerWidget {
     final transactionsAsync = ref.watch(transactionsProvider);
     final analytics = ref.watch(analyticsTransactionsProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
+    final month = ref.watch(dashboardMonthProvider);
 
     return transactionsAsync.when(
       data: (transactions) {
@@ -49,10 +51,11 @@ class DashboardScreen extends ConsumerWidget {
           for (final c in categoriesAsync.value ?? <Category>[]) c.id: c,
         };
 
-        final now = DateTime.now();
-        final thisMonth = analytics.where(
-          (t) => t.date.year == now.year && t.date.month == now.month,
-        );
+        final thisMonth = analytics
+            .where(
+              (t) => t.date.year == month.year && t.date.month == month.month,
+            )
+            .toList();
         final spent = thisMonth
             .where((t) => t.type == 'debit')
             .fold<int>(0, (sum, t) => sum + t.amountMinor);
@@ -80,11 +83,14 @@ class DashboardScreen extends ConsumerWidget {
             ),
         ];
 
-        final recent = transactions.take(5).toList();
+        // The trend ends at the month on screen (its last day for a past month).
+        final anchor = isCurrentMonth(month)
+            ? DateTime.now()
+            : DateTime(month.year, month.month + 1, 0);
         final buckets = buildExpenseBuckets(
           analytics,
           DateRangeFilter.sixMonths,
-          now,
+          anchor,
         );
         final hasTrendData = buckets.any((b) => b.amountMinor > 0);
 
@@ -92,10 +98,19 @@ class DashboardScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
           children: [
             const FadeSlideIn(child: GreetingHeader()),
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
+            const FadeSlideIn(
+              delay: Duration(milliseconds: 10),
+              child: MonthSelector(),
+            ),
+            const SizedBox(height: 14),
             FadeSlideIn(
               delay: const Duration(milliseconds: 20),
-              child: _SummaryRow(spentMinor: spent, receivedMinor: received),
+              child: _SummaryRow(
+                spentMinor: spent,
+                receivedMinor: received,
+                month: month,
+              ),
             ),
             const SizedBox(height: 16),
             if (hasTrendData)
@@ -136,47 +151,48 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
             if (hasTrendData) const SizedBox(height: 16),
-            if (categorySlices.isNotEmpty)
-              FadeSlideIn(
-                delay: const Duration(milliseconds: 60),
-                child: GlassCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'This month by category',
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 16),
+            FadeSlideIn(
+              delay: const Duration(milliseconds: 60),
+              child: GlassCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isCurrentMonth(month)
+                          ? 'This month by category'
+                          : '${monthYearLabel(month)} by category',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    if (categorySlices.isEmpty)
+                      Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Center(
+                          child: Text(
+                            'No spending in ${monthYearLabel(month)}.',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                                ),
+                          ),
+                        ),
+                      )
+                    else
                       CategoryDonutChart(
                         slices: categorySlices,
                         totalMinor: spent,
                       ),
-                    ],
-                  ),
+                  ],
                 ),
-              ),
-            const SizedBox(height: 16),
-            FadeSlideIn(
-              delay: const Duration(milliseconds: 120),
-              child: Text(
-                'Recent activity',
-                style: Theme.of(context).textTheme.titleMedium,
               ),
             ),
-            const SizedBox(height: 12),
-            for (var i = 0; i < recent.length; i++)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: FadeSlideIn(
-                  delay: Duration(milliseconds: 140 + 35 * i),
-                  child: TransactionTile(
-                    transaction: recent[i],
-                    category: categoriesById[recent[i].categoryId],
-                    onTap: () => showTransactionDetail(context, recent[i]),
-                  ),
-                ),
-              ),
+            const SizedBox(height: 16),
+            const FadeSlideIn(
+              delay: Duration(milliseconds: 80),
+              child: HomeBudgetsCard(),
+            ),
           ],
         );
       },
@@ -188,10 +204,15 @@ class DashboardScreen extends ConsumerWidget {
 }
 
 class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({required this.spentMinor, required this.receivedMinor});
+  const _SummaryRow({
+    required this.spentMinor,
+    required this.receivedMinor,
+    required this.month,
+  });
 
   final int spentMinor;
   final int receivedMinor;
+  final DateTime month;
 
   @override
   Widget build(BuildContext context) {
@@ -203,7 +224,7 @@ class _SummaryRow extends StatelessWidget {
             child: _SummaryTile(
               icon: Icons.arrow_upward_rounded,
               color: Colors.red,
-              label: 'Spent this month',
+              label: 'Spent ${monthPhrase(month)}',
               amountMinor: spentMinor,
               theme: theme,
             ),
@@ -215,7 +236,7 @@ class _SummaryRow extends StatelessWidget {
             child: _SummaryTile(
               icon: Icons.arrow_downward_rounded,
               color: Colors.green,
-              label: 'Received this month',
+              label: 'Received ${monthPhrase(month)}',
               amountMinor: receivedMinor,
               theme: theme,
             ),
