@@ -1,10 +1,13 @@
-import 'bank_sender_codes.dart';
+import '../rules/parser_rules.dart';
 
 /// Best-effort parse of a bank transaction SMS into structured fields.
 /// Covers the common phrasing used by Indian banks — real-world formats
 /// vary a lot bank to bank, so unparseable-but-transaction-like messages
 /// are queued for manual review rather than silently dropped (see
 /// [looksLikeUnparsedTransaction]).
+/// The patterns the parser reads — always the rules currently in force.
+ParserPatterns get _p => ParserRules.current.parser;
+
 class ParsedSmsTransaction {
   const ParsedSmsTransaction({
     required this.amountMinor,
@@ -35,13 +38,11 @@ class ParsedSmsTransaction {
 }
 
 /// Extracts the bank-code portion of a DLT SMS header — e.g. `HDFCBK` out
-/// of `VM-HDFCBK-S` — so it can be checked against [knownBankSenderCodes]
+/// of `VM-HDFCBK-S` — so it can be checked against the known sender codes
 /// with an exact `Set` lookup. The operator/circle prefix and the -S/-T
 /// category suffix are both optional in the pattern since not every
 /// message strictly follows the full template.
-final _senderCodePattern = RegExp(
-  r'^(?:[A-Z]{2}-)?([A-Z0-9]{4,8})(?:-[A-Z])?$',
-);
+RegExp get _senderCodePattern => _p.senderCode;
 
 /// The bank code inside a sender ID (`VM-HDFCBK-S` -> `HDFCBK`), or the
 /// whole uppercased sender when it doesn't follow the DLT template.
@@ -51,156 +52,57 @@ String bankCodeOf(String sender) {
 }
 
 bool looksLikeBankSender(String sender) =>
-    knownBankSenderCodes.contains(bankCodeOf(sender));
-
-const _currencyCodes =
-    'usd|sar|eur|gbp|aed|sgd|aud|cad|jpy|cny|thb|myr|chf|qar|kwd|bhd|omr|hkd|nzd|idr|lkr|npr';
+    ParserRules.current.senderCodes.contains(bankCodeOf(sender));
 
 // "Rs.20", "INR 20.0", "₹500", "USD 10.50". The lookbehind stops "Hours 5"
 // matching as "rs 5".
-final _prefixAmountPattern = RegExp(
-  r'(?<![A-Za-z])(rs\.?|inr|₹|' +
-      _currencyCodes +
-      r')\s*[:.]?\s*([\d,]+(?:\.\d{1,2})?)',
-  caseSensitive: false,
-);
+RegExp get _prefixAmountPattern => _p.prefixAmount;
 
 // "10.50 USD" — foreign currencies only, to avoid matching stray numbers.
-final _suffixAmountPattern = RegExp(
-  r'([\d,]+(?:\.\d{1,2})?)\s*(' + _currencyCodes + r')\b',
-  caseSensitive: false,
-);
+RegExp get _suffixAmountPattern => _p.suffixAmount;
 
 // SBI-style: "debited by 150.0", "credited by 5000" — no currency at all.
-final _verbAmountPattern = RegExp(
-  r'\b(?:debited|credited|debit|credit)\s+(?:by|for|with|of)\s+([\d,]+(?:\.\d{1,2})?)',
-  caseSensitive: false,
-);
+RegExp get _verbAmountPattern => _p.verbAmount;
 
-final _balanceContext = RegExp(
-  r'(bal|avl|avail|limit|lmt|outstanding)',
-  caseSensitive: false,
-);
+RegExp get _balanceContext => _p.balanceContext;
 
 // "Bal SAR 733.42", "Avl Bal Rs 5,000.00", "Temporary Credit Bal SAR 0" —
 // the account's balance, not part of the transaction. Removed before the
 // debit/credit wording is read so "Credit Bal" can't pass for a credit.
-final _balanceClause = RegExp(
-  r'(?:temporary\s+credit\s+|avl\.?\s+|available\s+|total\s+)?(?:bal(?:ance)?|limit)\b[:\s]*(?:[A-Za-z]{2,3}\.?\s*|₹\s*)?[\d,]+(?:\.\d+)?',
-  caseSensitive: false,
-);
+RegExp get _balanceClause => _p.balanceClause;
 
-final _strongDebit = RegExp(
-  r'\b(debited|spent|withdrawn|paid|purchase|purchased|sent|charged|used (?:at|for)|transacted|swiped)\b',
-  caseSensitive: false,
-);
-final _strongCredit = RegExp(
-  r'\b(credited|received|deposited|refunded|refund|reversed|reversal|loaded|reloaded|topped up)\b',
-  caseSensitive: false,
-);
-final _weakDebit = RegExp(
-  r'\b(debit|dr|txn of|transaction of|payment of|thank you for using)\b',
-  caseSensitive: false,
-);
-final _weakCredit = RegExp(r'\b(credit(?!\s*card)|cr)\b', caseSensitive: false);
+RegExp get _strongDebit => _p.strongDebit;
+RegExp get _strongCredit => _p.strongCredit;
+RegExp get _weakDebit => _p.weakDebit;
+RegExp get _weakCredit => _p.weakCredit;
 
 // OTPs, reminders and promos that quote an amount but aren't transactions.
-final _notTransaction = RegExp(
-  r'\botp\b|one.?time.?password|do not share|never share|verification code|'
-  r'will be (?:debited|credited|charged)|is due\b|(?:min(?:imum)?\.?|total) (?:amt|amount) due|'
-  r'e-?mandate|pre-?approved|apply now|click here|upgrade|'
-  r'converted (?:in)?to (?:an )?emi|emi conversion',
-  caseSensitive: false,
-);
+RegExp get _notTransaction => _p.notTransaction;
 
 // A failed payment is not a transaction — unless it's the reversal of one.
-final _failedWords = RegExp(
-  r'\b(failed|declined|unsuccessful|insufficient)\b',
-  caseSensitive: false,
-);
+RegExp get _failedWords => _p.failedWords;
 
 // Where a captured name stops: the next field of the message.
-const _nameEnd =
-    r'(?:\s+on\b|\s+ref(?:no)?\b|\s+upi\b|\s+from\b|\s+via\b|\s+using\b|\s+avl\b|'
-    r'\s+bal\b|\s+utr\b|\s*\(|\.\s|\.$|,|$)';
 
-final _merchantPatterns = <RegExp>[
-  // Credit confirmations that label who paid: "b. Sender: MR JAYESH GHADGE
-  // (VPA: 9970900787@yescred)". Explicit, so tried first.
-  RegExp(
-    r"\b(?:sender|remitter)(?:\s+name)?\s*[:\-]\s*([A-Za-z][A-Za-z .'\-]{1,50}?)(?=\s*\(|\s+(?:vpa|upi|ref|utr|c\.)\b|\s*[,;]|\.\s|\.$|$)",
-    caseSensitive: false,
-  ),
-  // "...debited from account 0715 to VPA shop.123@hdfcbank SHOP NAME on 05-04-26"
-  // — the payee's name follows the UPI address, which is too long for the
-  // general pattern below to reach. Tried first.
-  RegExp(
-    r"\bvpa\s+\S+\s+([A-Za-z0-9&.' \-]{2,60}?)\s+on\s+\d{1,2}[-/]\d{1,2}[-/]\d{2,4}",
-    caseSensitive: false,
-  ),
-  // "UPI/DR/123456/MERCHANT NAME/HDFC", "UPI/P2M/123456/swiggy/HDFC BANK",
-  // "UPI/P2A/123456/NAME SMS BLOCKUPI…"
-  RegExp(
-    r'\bupi[/\-](?:p2[map]|dr|cr)?[/\-]?\d*[/\-]([A-Za-z0-9 ._@&]+?)(?=[/\-]|\s+(?:sms|bal|avl|not|if|call)\b|$)',
-    caseSensitive: false,
-  ),
-  // "... To MERCHANT On 01/10", "at MERCHANT.", "by NAME,"
-  RegExp(
-    r'\b(?:to|at|by|vpa|towards)\s+([A-Za-z0-9@._\-& ]{2,40}?)' + _nameEnd,
-    caseSensitive: false,
-  ),
-  // "Info: AMAZON PAY" / "Info- NETFLIX"
-  RegExp(
-    r'\binfo[:\-]\s*([A-Za-z0-9@._\-&/ ]{2,40}?)(?:\.\s|\.$|,|$)',
-    caseSensitive: false,
-  ),
-  // ICICI account debit: "...on 02-Oct-26; SUNRISE STORE credited. UPI:…"
-  RegExp(
-    r";\s*([A-Za-z][A-Za-z0-9 .&' \-]{1,40}?)\s+credited\b",
-    caseSensitive: false,
-  ),
-  // ICICI card: "...on 08-Jan-26 on SUNRISE SOFT. Avl Limit…"
-  RegExp(
-    r"\d{1,2}-[A-Za-z]{3}-\d{2,4}\s+on\s+([A-Za-z][A-Za-z0-9 .&' \-]{1,40}?)(?:\.\s|\.$|,|\s+avl\b|$)",
-    caseSensitive: false,
-  ),
-  // Axis card: "…20:30:00 IST SUNRISE STORE Avl Lmt INR …"
-  RegExp(
-    r"\bIST\s+([A-Za-z][A-Za-z0-9 .&' \-]{1,40}?)\s+(?:avl|available)\b",
-    caseSensitive: false,
-  ),
-];
+List<RegExp> get _merchantPatterns => _p.merchantPatterns;
 
-final _creditFromPattern = RegExp(
-  r'\bfrom\s+([A-Za-z0-9@._\-& ]{2,40}?)(?:\s+in\b|\s+on\b|\s+ref(?:no)?\b|\s+upi\b|\s+via\b|\s+utr\b|\s*\(|\.\s|\.$|,|$)',
-  caseSensitive: false,
-);
+RegExp get _creditFromPattern => _p.creditFrom;
 
 // Words that mean the captured "merchant" is really the user's own account.
-final _notMerchant = RegExp(
-  r'^(?:a/c|acct|account|your|card|ac\b|xx|\*|bank|the account|sb\b|savings|upi[- ]?ref|ref\b|refno|utr|txn)',
-  caseSensitive: false,
-);
+RegExp get _notMerchant => _p.notMerchant;
 
 // Everyday phrases that follow "at"/"to"/"by" in an email's closing lines
 // ("available at all times", "reach us at your convenience") — and the
 // sending bank's own name ("from ICICI Bank"), which is never the payee.
-final _genericPhrase = RegExp(
-  r'^(?:all|any|every|this|that|these|those|no|our|us|you|me)\b|'
-  r'\btimes?$|\bconvenience$|\bearliest$|\bbank(?: ltd\.?| limited)?$',
-  caseSensitive: false,
-);
+RegExp get _genericPhrase => _p.genericPhrase;
 
-final _refundWords = RegExp(
-  r'\b(refund(?:ed)?|revers(?:ed|al)|cancell?ed|returned|chargeback)\b',
-  caseSensitive: false,
-);
+RegExp get _refundWords => _p.refundWords;
 
-final _forexWords = RegExp(r'\bforex\b', caseSensitive: false);
-final _prepaidWords = RegExp(r'\bprepaid\b', caseSensitive: false);
-final _creditCardWords = RegExp(r'\bcredit\s+card\b', caseSensitive: false);
-final _debitCardWords = RegExp(r'\bdebit\s+card\b', caseSensitive: false);
-final _cardWords = RegExp(r'\bcard\b', caseSensitive: false);
+RegExp get _forexWords => _p.forexWords;
+RegExp get _prepaidWords => _p.prepaidWords;
+RegExp get _creditCardWords => _p.creditCardWords;
+RegExp get _debitCardWords => _p.debitCardWords;
+RegExp get _cardWords => _p.cardWords;
 
 String _accountKind(String body) {
   if (_forexWords.hasMatch(body)) return 'forex';
@@ -210,15 +112,9 @@ String _accountKind(String body) {
   return _cardWords.hasMatch(body) ? 'card' : 'bank';
 }
 
-final _internationalKeywords = RegExp(
-  r'\b(intl|international|foreign currency|forex markup|cross.?currency)\b',
-  caseSensitive: false,
-);
+RegExp get _internationalKeywords => _p.internationalKeywords;
 
-final _last4Pattern = RegExp(
-  r'(?:a/c|\bac\b|acct?\.?|account|card|ending(?:\s+with)?|ends\s+with)\s*(?:no\.?|number)?\s*[:\-]?\s*(?:x+|\*+|\.{2,}|#)?\s*(\d{4})\b',
-  caseSensitive: false,
-);
+RegExp get _last4Pattern => _p.last4;
 
 ({String currency, double amount})? _findAmount(String body) {
   for (final m in _prefixAmountPattern.allMatches(body)) {
@@ -275,38 +171,21 @@ String? _merchant(String body, String type) {
     var candidate = m
         .group(1)!
         .trim()
-        .replaceFirst(RegExp(r'^vpa\s+', caseSensitive: false), '')
-        .replaceFirst(
-          RegExp(
-            r'^(?:imps|neft|rtgs|upi)\s+(?:to|from)\s+',
-            caseSensitive: false,
-          ),
-          '',
-        );
+        .replaceFirst(_p.stripVpa, '')
+        .replaceFirst(_p.stripChannel, '');
     if (candidate.length < 2) continue;
     if (_notMerchant.hasMatch(candidate) ||
         _genericPhrase.hasMatch(candidate)) {
       continue;
     }
-    if (RegExp(
-      r'^(?:rs\.?|inr|₹)?\s*[\d/\-:., ]+$',
-      caseSensitive: false,
-    ).hasMatch(candidate)) {
-      continue;
-    }
+    if (_p.numericOnly.hasMatch(candidate)) continue;
     return candidate;
   }
   return null;
 }
 
-final _loanKind = RegExp(
-  r'\b(home|housing|personal|car|auto|vehicle|education|gold|business|two.?wheeler)\s+loan\b',
-  caseSensitive: false,
-);
-final _loanWords = RegExp(
-  r'\b(emi|loan|nach|ecs|instal?lment)\b',
-  caseSensitive: false,
-);
+RegExp get _loanKind => _p.loanKind;
+RegExp get _loanWords => _p.loanWords;
 
 /// "Home Loan EMI" / "Loan EMI" for a loan-repayment alert that names no
 /// payee, so it lands in Bills rather than as an unknown merchant.
@@ -323,67 +202,34 @@ String? _loanLabel(String body) {
 /// isn't left as "Unknown merchant" (and can be categorized).
 String? _purposeLabel(String body, String type) {
   final lower = body.toLowerCase();
-  bool has(String pattern) => RegExp(pattern).hasMatch(lower);
-  String? transferKind() {
-    if (has(r'\bneft\b')) return 'NEFT transfer';
-    if (has(r'\bimps\b')) return 'IMPS transfer';
-    if (has(r'\brtgs\b')) return 'RTGS transfer';
-    return null;
+  final list = type == 'debit' ? _p.debitPurposes : _p.creditPurposes;
+  for (final entry in list) {
+    if (entry.isLoan) {
+      // SIP and insurance are often debited through NACH too, so they sit
+      // before this spot in the list: the loan check treats bare NACH as an EMI.
+      final loan = _loanLabel(body);
+      if (loan != null) return loan;
+    } else if (entry.regex!.hasMatch(lower)) {
+      return entry.label;
+    }
   }
-
-  if (type == 'debit') {
-    // SIP and insurance are often debited through NACH too, so they are
-    // checked before the loan fallback (which treats bare NACH as an EMI).
-    return (has(r'\bsip\b|mutual fund') ? 'Mutual fund SIP' : null) ??
-        (has(r'insurance|premium') ? 'Insurance premium' : null) ??
-        _loanLabel(body) ??
-        (has(r'\batm\b|cash withdrawal') ? 'ATM withdrawal' : null) ??
-        (has(r'recharge') ? 'Mobile recharge' : null) ??
-        (has(r'fastag|\btoll\b') ? 'FASTag toll' : null) ??
-        (has(r'bill ?pay|bbps|\bbill\b') ? 'Bill payment' : null) ??
-        (has(r'cheque|\bchq\b') ? 'Cheque payment' : null) ??
-        transferKind() ??
-        (has(r'service charge|charges|\bfee\b|\bgst\b')
-            ? 'Bank charges'
-            : null);
-  }
-  return (has(r'interest') ? 'Interest' : null) ??
-      (has(r'dividend') ? 'Dividend' : null) ??
-      (has(r'cash deposit|\bcdm\b') ? 'Cash deposit' : null) ??
-      (has(r'cheque|\bchq\b') ? 'Cheque deposit' : null) ??
-      (has(r'loaded|reloaded|top-?up|topped up') ? 'Card load' : null) ??
-      transferKind();
+  return null;
 }
 
 // Field-by-field confirmations ("Amount: 18000.00", "Payee Name: …",
 // "Transaction Type: DR") rather than a sentence. When present they are
 // authoritative — a line like "successfully credited to the beneficiary"
 // in such a mail describes the *payee's* side of a payment the user made.
-final _structuredType = RegExp(
-  r'transaction\s+type\s*:\s*(dr|debit|cr|credit)\b',
-  caseSensitive: false,
-);
-final _structuredAmount = RegExp(
-  r'\bamount\s*:\s*(?:rs\.?|inr|₹)?\s*([\d,]+(?:\.\d{1,2})?)',
-  caseSensitive: false,
-);
-final _structuredCurrency = RegExp(
-  r'\bcurrency\s*:\s*([A-Za-z]{3})\b',
-  caseSensitive: false,
-);
-final _structuredStatus = RegExp(
-  r'transaction\s+status\s*:\s*([A-Za-z]+)',
-  caseSensitive: false,
-);
-
-const _fieldLabels =
-    r'(?:upi\s+ref(?:erence)?(?:\.?\s*no\.?)?|from\s+vpa|payer\s+name|to\s+vpa|payee\s+name|'
-    r'currency|amount|remarks|transaction\s+(?:date|status|type|id)|reason\s+for\s+failure|'
-    r'beneficiary|remitter)';
+RegExp get _structuredType => _p.structuredType;
+RegExp get _structuredAmount => _p.structuredAmount;
+RegExp get _structuredCurrency => _p.structuredCurrency;
+RegExp get _structuredStatus => _p.structuredStatus;
 
 String? _field(String text, String label) {
   final value = RegExp(
-    '$label\\s*:\\s*(.+?)(?=\\s+$_fieldLabels\\s*:|\\s*\$)',
+    _p.structuredFieldTemplate
+        .replaceAll('{label}', label)
+        .replaceAll('{fieldLabels}', _p.structuredFieldLabels),
     caseSensitive: false,
   ).firstMatch(text)?.group(1)?.trim();
   return value == null || value.isEmpty || value.toUpperCase() == 'NA'
@@ -397,30 +243,20 @@ ParsedSmsTransaction? _parseStructured(String body) {
   if (typeMatch == null || amountMatch == null) return null;
 
   final status = _structuredStatus.firstMatch(body)?.group(1)?.toLowerCase();
-  const ok = {
-    'completed',
-    'success',
-    'successful',
-    'processed',
-    'credited',
-    'debited',
-  };
-  if (status != null && !ok.contains(status)) return null; // failed / pending
+  if (status != null && !_p.structuredOkStatuses.contains(status)) {
+    return null; // failed / pending
+  }
 
   final amount = double.tryParse(amountMatch.group(1)!.replaceAll(',', ''));
   if (amount == null || amount <= 0) return null;
 
   final isDebit = typeMatch.group(1)!.toLowerCase().startsWith('d');
   // The other party: who the user paid, or who paid the user.
-  final party =
-      _field(body, isDebit ? r'payee\s+name' : r'payer\s+name') ??
-      _field(body, isDebit ? r'to\s+vpa' : r'from\s+vpa');
-  final merchant = party
-      ?.replaceFirst(
-        RegExp(r'^(?:mr|mrs|ms|miss|shri|smt|dr)\.?\s+', caseSensitive: false),
-        '',
-      )
-      .trim();
+  String? party;
+  for (final label in isDebit ? _p.debitPartyLabels : _p.creditPartyLabels) {
+    party ??= _field(body, label);
+  }
+  final merchant = party?.replaceFirst(_p.partyTitle, '').trim();
   final currency =
       _structuredCurrency.firstMatch(body)?.group(1)?.toUpperCase() ?? 'INR';
 
@@ -484,7 +320,9 @@ ParsedSmsTransaction parsedFromLearned({
     amountMinor: amountMinor,
     type: type,
     merchant:
-        (merchant == null || merchant.trim().length < 2 ? null : merchant.trim()) ??
+        (merchant == null || merchant.trim().length < 2
+            ? null
+            : merchant.trim()) ??
         _purposeLabel(body, type) ??
         (type == 'credit' ? 'Credit' : 'Unknown merchant'),
     isInternational: _internationalKeywords.hasMatch(body),
@@ -513,11 +351,7 @@ bool looksLikeUnparsedTransaction(String body) {
 }
 
 // Where an email's transaction sentence ends and the boilerplate begins.
-final _emailFooter = RegExp(
-  r'click here|for additional assistance|do not share|never share|if you did not|if you have not|if this (?:transaction )?was not|'
-  r'in case you|please call|call us|unsubscribe|disclaimer|this is an auto',
-  caseSensitive: false,
-);
+RegExp get _emailFooter => _p.emailFooter;
 
 /// For long text (an email): the stretch around the first debit/credit
 /// wording that sits next to an amount — the sentence that actually reports

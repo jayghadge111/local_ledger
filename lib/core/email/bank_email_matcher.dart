@@ -1,3 +1,5 @@
+import '../rules/parser_rules.dart';
+
 /// Which email senders count as a bank.
 ///
 /// Since RBI's 31 Oct 2025 deadline, Indian banks are moving to the
@@ -13,101 +15,10 @@
 /// (cbssbi.info@alerts.sbi.co.in), axis.bank.in (alerts@axis.bank.in). The
 /// rest are the banks' long-standing primary domains. A domain missing
 /// here can be added without touching any other code.
-const bankInSuffix = 'bank.in';
+String get bankInSuffix => ParserRules.current.emailSuffix;
 
-const knownBankEmailDomains = [
-  // Public sector banks.
-  'sbi.co.in',
-  'alerts.sbi.co.in',
-  'pnb.co.in',
-  'pnbindia.in',
-  'bankofbaroda.in',
-  'bankofbaroda.co.in',
-  'canarabank.com',
-  'unionbankofindia.co.in',
-  'bankofindia.co.in',
-  'centralbank.co.in',
-  'centralbankofindia.co.in',
-  'cboi.in',
-  'iob.in',
-  'iobnet.co.in',
-  'ucobank.com',
-  'ucobank.co.in',
-  'mahabank.co.in',
-  'bankofmaharashtra.in',
-  'psb.co.in',
-  'psbindia.com',
-  'punjabandsindbank.co.in',
-  'indianbank.co.in',
-  'indianbank.in',
-  'idbi.co.in', 'idbibank.in',
-
-  // Private banks.
-  'hdfcbank.net', 'hdfcbank.com', 'icicibank.com', 'axisbank.com', 'kotak.com',
-  'idfcfirstbank.com',
-  'yesbank.in',
-  'indusind.com',
-  'federalbank.co.in',
-  'rblbank.com',
-  'kvb.co.in',
-  'kvbmail.com',
-  'cityunionbank.com',
-  'cityunionbank.in',
-  'southindianbank.com',
-  'ktkbank.com',
-  'tmb.in',
-  'tmbank.in',
-  'dcbbank.com',
-  'bandhanbank.com',
-  'dhanbank.com',
-  'dhanbank.co.in',
-  'jkbank.com',
-  'jkbmail.com',
-  'nainitalbank.co.in',
-  'csb.co.in',
-
-  // Small finance banks.
-  'aubank.in',
-  'equitasbank.com',
-  'equitas.in',
-  'ujjivan.com',
-  'ujjivansfb.in',
-  'janabank.com',
-  'esafbank.com',
-  'utkarsh.bank',
-  'suryodaybank.com',
-  'fincarebank.com',
-  'capitalbank.co.in',
-  'sbmbank.co.in',
-
-  // Foreign banks in India and card issuers.
-  'sc.com',
-  'hsbc.co.in',
-  'citibank.com',
-  'citibank.co.in',
-  'citi.com',
-  'aexp.com',
-  'americanexpress.com', 'dbs.com', 'sbicard.com', 'bobcard.co.in',
-
-  // Payments banks.
-  'paytmbank.com', 'airtelbank.com', 'ippbonline.com', 'finobank.com',
-
-  // Urban co-operative banks. Most have moved to .bank.in (Jalgaon Janata
-  // jjsbl.bank.in, Jalgaon Peoples jpc.bank.in, Saraswat, Cosmos, TJSB,
-  // Abhyudaya, Kalupur, Mehsana…), which is matched above; these are their
-  // older domains. Any co-operative bank missing here can be added in the app.
-  'jjsbl.com',
-  'jjsbl.co.in',
-  'jpcbank.com',
-  'saraswatbank.com',
-  'cosmosbank.com',
-  'svcbank.com',
-  'nkgsb-bank.com',
-  'apnabank.co.in',
-  'dnsb.co.in',
-  'mucbank.com',
-  'rnsbindia.com', 'amcbank.in',
-];
+/// Bank sender domains known to the app (from the rules in force).
+List<String> get knownBankEmailDomains => ParserRules.current.emailDomains;
 
 final _senderDomain = RegExp(r'@([a-z0-9.\-]+)', caseSensitive: false);
 

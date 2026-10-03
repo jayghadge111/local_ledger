@@ -2,7 +2,7 @@
 
 **Goal.** Once NativeSpend is live, be able to change the strings that decide *what a message is* — bank sender codes, bank email domains, parser regexes, category keywords, merchant/brand names — **without shipping a new app version**.
 
-**Status:** plan only, nothing implemented. Written 3 Oct 2026. Repo state when written: `main` at `492da39`, DB schema v7, 346 tests passing.
+**Status (3 Oct 2026):** **P1 and P2 are done** — every matcher/parser string now lives in `rules/rules.bundled.json` and the app reads it through `ParserRules` (no network). **P3–P5 (fetch, verify, publish) are deliberately not started**: we decided not to use remote config for now. This file is the plan for if/when we do. Appendix A shows the real JSON as it is today.
 
 ---
 
@@ -32,7 +32,7 @@ What we can't hide: the host that serves the file sees the phone's IP address an
 
 ## 1. What moves — inventory
 
-Counts are from the code at `492da39`.
+Counts are from the code at `492da39`. **Since P1/P2 these lists no longer live in the Dart files named below — they come from `rules/rules.bundled.json`** (the paths are kept to show where each one came from; `bank_sender_codes.dart` was deleted).
 
 ### Tier 1 — plain data lists (safe, move first)
 
@@ -135,23 +135,25 @@ The **public key is compiled into the app**. Plan for **two keys** (current + ne
 
 ## 3. Runtime design in the app
 
-### 3.1 A `ParserRules` object instead of top-level constants
-
-Today the parser reads `final _strongDebit = RegExp(...)` etc. from file scope. Change to:
+### 3.1 How rules are read today (implemented)
 
 ```
-lib/core/rules/
-  rules_pack.dart        // parsed + validated model of the JSON
-  parser_rules.dart      // compiled RegExps and sets the parser needs
-  rules_repository.dart  // load bundled / cached, fetch, verify, activate
-  rules_providers.dart   // Riverpod: rulesProvider -> ParserRules
-  rules_updater.dart     // the network part (small, isolated)
-assets/rules/rules.bundled.json   // generated from today's constants
+rules/rules.bundled.json            <- the source of truth. Edit this.
+tool/gen_bundled_rules.dart         <- `dart run tool/gen_bundled_rules.dart` embeds it in the app
+lib/core/rules/bundled_rules.g.dart <- GENERATED: `const kBundledRulesJson = r'''…'''`
+lib/core/rules/parser_rules.dart    <- ParserRules / ParserPatterns: parses + compiles the JSON
 ```
 
-- `parseBankSms(body, rules)` (and `looksLikeBankSender`, `looksLikeBankEmail`, `defaultCategoryFor`, `normalizeMerchant`, `merchantBadgeFor`, `bankDisplayName`) take a `ParserRules`/`RulesSnapshot` argument.
-- Keep a `ParserRules.bundled` constant for tests and for the very first frame before async loading finishes.
-- The ingestor takes the snapshot once per `begin()`, so a single import run uses one consistent rule set even if an update lands mid-run.
+- `ParserRules.current` is what the rest of the app reads. It starts as the built-in rules and is a synchronous static, so nothing awaits an asset load and tests need no setup. **`ParserRules.use(rules)` is the swap point** a remote pack would call (`use(null)` restores the built-in rules).
+- The old top-level constants became thin getters over the current rules, e.g. `RegExp get _strongDebit => _p.strongDebit;` in `bank_sms_parser.dart`, so none of the parsing logic changed — only where the strings come from.
+- A test (`test/rules_test.dart`) fails if the generated Dart file drifts from the JSON, so the two can't disagree.
+- `ParserRules.fromJson` throws `RulesFormatException` on a wrong `format`, a missing section or an invalid regex — the same validation a downloaded pack would need.
+- Brand glyphs are code, not data: JSON names a glyph (`"icon": "swiggy"`) and `lib/shared/widgets/brand_icons.dart` maps the name to a compile-time `IconData`. A brand that needs a **new** glyph needs a line there (an app release); everything else about a brand is data. Logo images (`assets/logos/`) are bundled; JSON only points at them.
+- Differences from the original sketch below: `bankNames` is an ordered list (not an object) so order is explicit; the parser's repeated fragments are shared through `parser.vars` (`{currencyCodes}`, `{nameEnd}`, `{fieldLabels}`); purpose labels are an ordered list with a `{"special": "loan"}` marker for the loan/EMI check; `schemaVersion`/`packVersion`/`minAppVersion` exist but only `format` is enforced today.
+
+**To change a rule today:** edit `rules/rules.bundled.json` → `dart run tool/gen_bundled_rules.dart` → `flutter test` → ship an app release.
+
+Remaining work for a remote pack is now only the part in §3.2 onward (load a verified pack, call `ParserRules.use`).
 
 ### 3.2 Load order
 
@@ -290,8 +292,8 @@ Privacy copy to update when this ships:
 | Phase | Work | Done when |
 |---|---|---|
 | **P0 — Decisions** (½ day) | Resolve §10 questions: host, default on/off, key custody, copy wording | Decisions written at the bottom of this file |
-| **P1 — Extract Tier 1 to JSON, no network** (2–3 days) | `rules/src/*` for lists; `RulesPack` model + `rules.bundled.json`; loader; switch sender codes, bank names, email domains, category keywords, brands, aliases to read from it | App behaves identically; parity test green |
-| **P2 — Parser regexes into the pack** (3–4 days) | `ParserRules`; thread through `parseBankSms` and friends; move Tier 2 patterns to `parser.json`; canaries | Entire existing corpus passes on `ParserRules.bundled` |
+| **P1 — Extract Tier 1 to JSON, no network** ✅ done | `rules/src/*` for lists; `RulesPack` model + `rules.bundled.json`; loader; switch sender codes, bank names, email domains, category keywords, brands, aliases to read from it | App behaves identically; parity test green |
+| **P2 — Parser regexes into the pack** ✅ done | `ParserRules`; thread through `parseBankSms` and friends; move Tier 2 patterns to `parser.json`; canaries | Entire existing corpus passes on `ParserRules.bundled` (it does: all 346 existing tests passed unchanged) |
 | **P3 — Fetch, verify, cache** (3 days) | Updater, Ed25519 verify, atomic activation, 24 h schedule, ETag, Settings UI, beta channel | A signed pack published to the beta channel changes behaviour on a device; tampered pack is ignored |
 | **P4 — Publishing pipeline** (2 days) | Build script, CI gates (schema, corpus, canaries, ReDoS), signing, host setup, runbook, key-rotation drill | A rule edit goes from PR to phones with no app release |
 | **P5 — Optional** | Logo pack download; a privacy-preserving "this message was read wrong" action that lets the user copy a *redacted* message into a GitHub issue (no telemetry), feeding new rules back in | — |
@@ -344,4 +346,869 @@ Context that isn't obvious from the code:
 - `lib/core/sms/template_learning.dart` (user-taught message layouts) is a *separate, user-local* mechanism and must stay independent of the remote pack.
 - Run on the iOS simulator with `flutter run -d <udid>`; the simulator's app sits behind a PIN the assistant never sees.
 
-**Suggested first step tomorrow:** settle §10, then start P1 with `bank_sender_codes.dart` → `rules/src/sender_codes.json` + loader + parity test, since it is the largest pure-data list and exercises the whole load path.
+**Where things stand:** P1 and P2 are finished (see Appendix A). If remote config is ever revisited, start at §10 (decisions), then P3. Nothing in P3–P5 has been started.
+
+---
+
+## Appendix A — the real bundled JSON (as of this commit)
+
+Source: [`rules/rules.bundled.json`](../rules/rules.bundled.json) (~62 KB). Long lists are shortened here with `… N more`; the file has all of them. Counts below are from the file.
+
+| Section | Entries |
+|---|---|
+| `senderCodes` | 1408 |
+| `bankNames` | 24 |
+| `emailDomains.domains` | 89 |
+| `categoryKeywords (groups)` | 10 |
+| `categoryKeywords (words)` | 317 |
+| `incomeWords` | 6 |
+| `brands` | 124 |
+| `merchantAliases` | 42 |
+| `merchantNormalizer.noiseWords` | 31 |
+| `merchantNormalizer.acronyms` | 17 |
+| `merchantNormalizer.genericLabels` | 33 |
+| `nameTitles` | 13 |
+| `parser.merchantPatterns` | 8 |
+| `parser.purposeLabels.debit` | 12 |
+| `parser.purposeLabels.credit` | 8 |
+| `canaries` | 6 |
+
+### A.1 Header and the simple lists
+
+```json
+{
+  "format": "nativespend-rules",
+  "schemaVersion": 1,
+  "packVersion": 1,
+  "minAppVersion": "1.0.0",
+  "publishedAt": "2026-10-03T00:00:00Z",
+  "enabled": true,
+  "senderCodes": [
+    "ACBLBK",
+    "ACBLHO",
+    "ACCBNK",
+    "ACEPLC",
+    "ADARSH",
+    "ADBCCB",
+    "ADHBNK",
+    "ADINBK",
+    "ADRBNK",
+    "AEITSM",
+    "AGMITS",
+    "AGRABK",
+    "… 1396 more"
+  ],
+  "bankNames": [
+    {
+      "prefix": "HDFC",
+      "name": "HDFC Bank"
+    },
+    {
+      "prefix": "ICICI",
+      "name": "ICICI Bank"
+    },
+    {
+      "prefix": "ICIBNK",
+      "name": "ICICI Bank"
+    },
+    {
+      "prefix": "SBMIND",
+      "name": "SBM Bank India"
+    },
+    {
+      "prefix": "SBI",
+      "name": "SBI"
+    },
+    {
+      "prefix": "AXIS",
+      "name": "Axis Bank"
+    },
+    {
+      "prefix": "KOTAK",
+      "name": "Kotak Bank"
+    },
+    {
+      "prefix": "KBANK",
+      "name": "Kotak Bank"
+    },
+    {
+      "prefix": "SCBANK",
+      "name": "Standard Chartered"
+    },
+    {
+      "prefix": "EQUTAS",
+      "name": "Equitas SFB"
+    },
+    {
+      "prefix": "EQBANK",
+      "name": "Equitas SFB"
+    },
+    {
+      "prefix": "YESB",
+      "name": "Yes Bank"
+    },
+    {
+      "prefix": "IDFC",
+      "name": "IDFC First Bank"
+    },
+    {
+      "prefix": "PNB",
+      "name": "PNB"
+    },
+    {
+      "prefix": "BOB",
+      "name": "Bank of Baroda"
+    },
+    {
+      "prefix": "BOI",
+      "name": "Bank of India"
+    },
+    {
+      "prefix": "CANBNK",
+      "name": "Canara Bank"
+    },
+    {
+      "prefix": "UNIONB",
+      "name": "Union Bank"
+    },
+    {
+      "prefix": "INDUSB",
+      "name": "IndusInd Bank"
+    },
+    {
+      "prefix": "FEDBNK",
+      "name": "Federal Bank"
+    },
+    {
+      "prefix": "RBL",
+      "name": "RBL Bank"
+    },
+    {
+      "prefix": "JJSBNK",
+      "name": "Jalgaon Janata Sahakari Bank"
+    },
+    {
+      "prefix": "JPCBNK",
+      "name": "Jalgaon Peoples Co-op Bank"
+    },
+    {
+      "prefix": "PAYTMB",
+      "name": "Paytm Payments Bank"
+    }
+  ],
+  "emailDomains": {
+    "suffix": "bank.in",
+    "domains": [
+      "sbi.co.in",
+      "alerts.sbi.co.in",
+      "pnb.co.in",
+      "pnbindia.in",
+      "bankofbaroda.in",
+      "bankofbaroda.co.in",
+      "canarabank.com",
+      "unionbankofindia.co.in",
+      "bankofindia.co.in",
+      "centralbank.co.in",
+      "… 79 more"
+    ]
+  },
+  "incomeWords": [
+    "salary",
+    "interest",
+    "dividend",
+    "payroll",
+    "bonus",
+    "stipend"
+  ],
+  "nameTitles": [
+    "mr",
+    "mrs",
+    "ms",
+    "miss",
+    "mx",
+    "shri",
+    "shree",
+    "sri",
+    "smt",
+    "kumari",
+    "dr",
+    "prof",
+    "late"
+  ]
+}
+```
+
+### A.2 Category keywords (first match wins; order matters)
+
+```json
+[
+  {
+    "category": "cat_groceries",
+    "words": [
+      "dunzo",
+      "avenue supermarts",
+      "nature basket",
+      "reliance smart",
+      "instamart",
+      "blinkit",
+      "zepto",
+      "bigbasket",
+      "grofers",
+      "dmart",
+      "… 13 more"
+    ]
+  },
+  {
+    "category": "cat_food",
+    "words": [
+      "eatsure",
+      "faasos",
+      "behrouz",
+      "oven story",
+      "box8",
+      "chaayos",
+      "haldiram",
+      "ccd",
+      "cafe coffee day",
+      "barista",
+      "… 37 more"
+    ]
+  },
+  {
+    "category": "cat_transport",
+    "words": [
+      "makemytrip",
+      "goibibo",
+      "ixigo",
+      "cleartrip",
+      "yatra",
+      "indigo",
+      "air india",
+      "vistara",
+      "spicejet",
+      "akasa",
+      "… 39 more"
+    ]
+  },
+  {
+    "category": "cat_entertainment",
+    "words": [
+      "jiohotstar",
+      "disney",
+      "amazon prime",
+      "apple music",
+      "apple tv",
+      "youtube music",
+      "audible",
+      "pvr inox",
+      "sony liv",
+      "netflix",
+      "… 19 more"
+    ]
+  },
+  {
+    "category": "cat_health",
+    "words": [
+      "apollo",
+      "pharmeasy",
+      "1mg",
+      "netmeds",
+      "practo",
+      "cult.fit",
+      "cultfit",
+      "cult fit",
+      "healthkart",
+      "medplus",
+      "… 28 more"
+    ]
+  },
+  {
+    "category": "cat_investment",
+    "words": [
+      "kuvera",
+      "indmoney",
+      "paytm money",
+      "smallcase",
+      "coin by zerodha",
+      "sip",
+      "mutual fund",
+      "mutual funds",
+      "zerodha",
+      "groww",
+      "… 21 more"
+    ]
+  },
+  {
+    "category": "cat_emi",
+    "words": [
+      "emi",
+      "loan",
+      "ecs",
+      "nach",
+      "bajaj finance",
+      "bajaj finserv",
+      "hdfc ltd",
+      "tata capital",
+      "home credit",
+      "moneyview",
+      "… 2 more"
+    ]
+  },
+  {
+    "category": "cat_bills",
+    "words": [
+      "jio",
+      "vi prepaid",
+      "vi postpaid",
+      "vi recharge",
+      "vodafone",
+      "vodafone idea",
+      "tata play",
+      "tataplay",
+      "tata sky",
+      "dish tv",
+      "… 32 more"
+    ]
+  },
+  {
+    "category": "cat_shopping",
+    "words": [
+      "flipkart",
+      "myntra",
+      "ajio",
+      "nykaa",
+      "meesho",
+      "tata cliq",
+      "croma",
+      "firstcry",
+      "pepperfry",
+      "snapdeal",
+      "… 29 more"
+    ]
+  },
+  {
+    "category": "cat_transfer",
+    "words": [
+      "phonepe",
+      "google pay",
+      "gpay",
+      "paytm",
+      "bhim",
+      "mobikwik",
+      "freecharge"
+    ]
+  }
+]
+```
+
+### A.3 Brands (logos, colours, keywords)
+
+`keywords` starting with `=` must be the **whole** merchant name (e.g. `=vi`). `icon` is a glyph key (see `brand_icons.dart`); `logo` points at a bundled image.
+
+```json
+[
+  {
+    "name": "Swiggy",
+    "keywords": [
+      "swiggy"
+    ],
+    "color": "#FC8019",
+    "initial": "S",
+    "icon": "swiggy",
+    "logo": null
+  },
+  {
+    "name": "Zepto",
+    "keywords": [
+      "zepto"
+    ],
+    "color": "#8025FB",
+    "initial": "Z",
+    "icon": null,
+    "logo": {
+      "asset": "assets/logos/zepto.png",
+      "wordmark": false
+    }
+  },
+  {
+    "name": "Ola",
+    "keywords": [
+      "ola",
+      "ola cabs",
+      "ola electric"
+    ],
+    "color": "#1C1C1C",
+    "initial": "O",
+    "icon": null,
+    "logo": {
+      "asset": "assets/logos/ola.png",
+      "wordmark": true
+    }
+  },
+  {
+    "name": "Vi",
+    "keywords": [
+      "vodafone idea",
+      "vodafone",
+      "vi prepaid",
+      "vi postpaid",
+      "vi recharge",
+      "=vi"
+    ],
+    "color": "#E60000",
+    "initial": "V",
+    "icon": "vodafone",
+    "logo": null
+  },
+  {
+    "name": "HDFC Bank",
+    "keywords": [
+      "hdfc"
+    ],
+    "color": "#004B8D",
+    "initial": "H",
+    "icon": "hdfcbank",
+    "logo": null
+  }
+]
+```
+
+All brand names, in match order: Swiggy Instamart, Swiggy, Zomato, EatSure, Domino's, Pizza Hut, KFC, McDonald's, Burger King, Subway, Starbucks, Cafe Coffee Day, Chaayos, Haldiram's, Barista, Zepto, Blinkit, BigBasket, Dunzo, JioMart, DMart, Reliance Fresh, Uber, Ola, Rapido, redBus, IRCTC, MakeMyTrip, Goibibo, ixigo, Cleartrip, IndiGo, Air India, Vistara, SpiceJet, Akasa Air, FASTag, Airbnb, OYO, Amazon Pay, Prime Video, Amazon, Flipkart, Myntra, Ajio, Nykaa, Meesho, Tata CLiQ, Croma, Lenskart, FirstCry, IKEA, Nike, Adidas, Puma, Decathlon, Apple Music, Apple, Google Play, Netflix, JioHotstar, Spotify, YouTube Music, YouTube, SonyLIV, ZEE5, JioCinema, BookMyShow, PVR INOX, Gaana, Airtel, Jio, Vi, BSNL, Tata Play, Dish TV, ACT Fibernet, Hathway, BESCOM, Tata Power, Adani Electricity, PhonePe, Google Pay, Paytm, CRED, BHIM, MobiKwik, Freecharge, Razorpay, PayPal, HDFC Bank, ICICI Bank, Axis Bank, SBI, Kotak, Standard Chartered, Yes Bank, IDFC FIRST, IndusInd, Bank of Baroda, PNB, Canara Bank, Union Bank, HSBC, Citi, American Express, Federal Bank, RBL Bank, AU Small Finance, Visa, Mastercard, Apollo, PharmEasy, Tata 1mg, Netmeds, Practo, cult.fit, HealthKart, Zerodha, Groww, Upstox, Kuvera, INDmoney, LIC.
+
+### A.4 Merchant normalizer
+
+```json
+{
+  "merchantAliases": [
+    {
+      "match": "swiggy",
+      "name": "Swiggy"
+    },
+    {
+      "match": "zomato",
+      "name": "Zomato"
+    },
+    {
+      "match": "zepto",
+      "name": "Zepto"
+    },
+    {
+      "match": "blinkit",
+      "name": "Blinkit"
+    },
+    {
+      "match": "bigbasket",
+      "name": "BigBasket"
+    },
+    {
+      "match": "amzn",
+      "name": "Amazon"
+    },
+    {
+      "match": "amazon",
+      "name": "Amazon"
+    },
+    {
+      "match": "flipkart",
+      "name": "Flipkart"
+    },
+    "… 34 more"
+  ],
+  "merchantNormalizer": {
+    "noiseWords": [
+      "upi",
+      "imps",
+      "neft",
+      "rtgs",
+      "pymnt",
+      "payment",
+      "pay",
+      "txn",
+      "ref",
+      "dr",
+      "cr",
+      "pos",
+      "… 19 more"
+    ],
+    "acronyms": [
+      "hdfc",
+      "icici",
+      "sbi",
+      "lic",
+      "irctc",
+      "bsnl",
+      "atm",
+      "emi",
+      "kfc",
+      "dmart",
+      "pnb",
+      "bob",
+      "tcs",
+      "ibm",
+      "hp",
+      "ev",
+      "ac"
+    ],
+    "genericLabels": [
+      "upi payment",
+      "card payment",
+      "bank payment",
+      "credit",
+      "unknown merchant",
+      "neft transfer",
+      "imps transfer",
+      "rtgs transfer",
+      "mutual fund sip",
+      "insurance premium",
+      "atm withdrawal",
+      "mobile recharge",
+      "… 21 more"
+    ],
+    "loanEmiLabel": {
+      "pattern": "^[a-z\\- ]+ loan emi$",
+      "flags": ""
+    }
+  }
+}
+```
+
+### A.5 Parser patterns (complete)
+
+Every regex the SMS/email parser uses. `{currencyCodes}`, `{nameEnd}` and `{fieldLabels}` are replaced from `vars` before compiling; `flags` is any of `i` (ignore case), `m`, `s`.
+
+```json
+{
+  "vars": {
+    "currencyCodes": "usd|sar|eur|gbp|aed|sgd|aud|cad|jpy|cny|thb|myr|chf|qar|kwd|bhd|omr|hkd|nzd|idr|lkr|npr",
+    "nameEnd": "(?:\\s+on\\b|\\s+ref(?:no)?\\b|\\s+upi\\b|\\s+from\\b|\\s+via\\b|\\s+using\\b|\\s+avl\\b|\\s+bal\\b|\\s+utr\\b|\\s*\\(|\\.\\s|\\.$|,|$)",
+    "fieldLabels": "(?:upi\\s+ref(?:erence)?(?:\\.?\\s*no\\.?)?|from\\s+vpa|payer\\s+name|to\\s+vpa|payee\\s+name|currency|amount|remarks|transaction\\s+(?:date|status|type|id)|reason\\s+for\\s+failure|beneficiary|remitter)"
+  },
+  "senderCode": {
+    "pattern": "^(?:[A-Z]{2}-)?([A-Z0-9]{4,8})(?:-[A-Z])?$"
+  },
+  "prefixAmount": {
+    "pattern": "(?<![A-Za-z])(rs\\.?|inr|₹|{currencyCodes})\\s*[:.]?\\s*([\\d,]+(?:\\.\\d{1,2})?)",
+    "flags": "i"
+  },
+  "suffixAmount": {
+    "pattern": "([\\d,]+(?:\\.\\d{1,2})?)\\s*({currencyCodes})\\b",
+    "flags": "i"
+  },
+  "verbAmount": {
+    "pattern": "\\b(?:debited|credited|debit|credit)\\s+(?:by|for|with|of)\\s+([\\d,]+(?:\\.\\d{1,2})?)",
+    "flags": "i"
+  },
+  "balanceContext": {
+    "pattern": "(bal|avl|avail|limit|lmt|outstanding)",
+    "flags": "i"
+  },
+  "balanceClause": {
+    "pattern": "(?:temporary\\s+credit\\s+|avl\\.?\\s+|available\\s+|total\\s+)?(?:bal(?:ance)?|limit)\\b[:\\s]*(?:[A-Za-z]{2,3}\\.?\\s*|₹\\s*)?[\\d,]+(?:\\.\\d+)?",
+    "flags": "i"
+  },
+  "strongDebit": {
+    "pattern": "\\b(debited|spent|withdrawn|paid|purchase|purchased|sent|charged|used (?:at|for)|transacted|swiped)\\b",
+    "flags": "i"
+  },
+  "strongCredit": {
+    "pattern": "\\b(credited|received|deposited|refunded|refund|reversed|reversal|loaded|reloaded|topped up)\\b",
+    "flags": "i"
+  },
+  "weakDebit": {
+    "pattern": "\\b(debit|dr|txn of|transaction of|payment of|thank you for using)\\b",
+    "flags": "i"
+  },
+  "weakCredit": {
+    "pattern": "\\b(credit(?!\\s*card)|cr)\\b",
+    "flags": "i"
+  },
+  "notTransaction": {
+    "pattern": "\\botp\\b|one.?time.?password|do not share|never share|verification code|will be (?:debited|credited|charged)|is due\\b|(?:min(?:imum)?\\.?|total) (?:amt|amount) due|e-?mandate|pre-?approved|apply now|click here|upgrade|converted (?:in)?to (?:an )?emi|emi conversion",
+    "flags": "i"
+  },
+  "failedWords": {
+    "pattern": "\\b(failed|declined|unsuccessful|insufficient)\\b",
+    "flags": "i"
+  },
+  "creditFrom": {
+    "pattern": "\\bfrom\\s+([A-Za-z0-9@._\\-& ]{2,40}?)(?:\\s+in\\b|\\s+on\\b|\\s+ref(?:no)?\\b|\\s+upi\\b|\\s+via\\b|\\s+utr\\b|\\s*\\(|\\.\\s|\\.$|,|$)",
+    "flags": "i"
+  },
+  "notMerchant": {
+    "pattern": "^(?:a/c|acct|account|your|card|ac\\b|xx|\\*|bank|the account|sb\\b|savings|upi[- ]?ref|ref\\b|refno|utr|txn)",
+    "flags": "i"
+  },
+  "genericPhrase": {
+    "pattern": "^(?:all|any|every|this|that|these|those|no|our|us|you|me)\\b|\\btimes?$|\\bconvenience$|\\bearliest$|\\bbank(?: ltd\\.?| limited)?$",
+    "flags": "i"
+  },
+  "refundWords": {
+    "pattern": "\\b(refund(?:ed)?|revers(?:ed|al)|cancell?ed|returned|chargeback)\\b",
+    "flags": "i"
+  },
+  "forexWords": {
+    "pattern": "\\bforex\\b",
+    "flags": "i"
+  },
+  "prepaidWords": {
+    "pattern": "\\bprepaid\\b",
+    "flags": "i"
+  },
+  "creditCardWords": {
+    "pattern": "\\bcredit\\s+card\\b",
+    "flags": "i"
+  },
+  "debitCardWords": {
+    "pattern": "\\bdebit\\s+card\\b",
+    "flags": "i"
+  },
+  "cardWords": {
+    "pattern": "\\bcard\\b",
+    "flags": "i"
+  },
+  "internationalKeywords": {
+    "pattern": "\\b(intl|international|foreign currency|forex markup|cross.?currency)\\b",
+    "flags": "i"
+  },
+  "last4": {
+    "pattern": "(?:a/c|\\bac\\b|acct?\\.?|account|card|ending(?:\\s+with)?|ends\\s+with)\\s*(?:no\\.?|number)?\\s*[:\\-]?\\s*(?:x+|\\*+|\\.{2,}|#)?\\s*(\\d{4})\\b",
+    "flags": "i"
+  },
+  "loanKind": {
+    "pattern": "\\b(home|housing|personal|car|auto|vehicle|education|gold|business|two.?wheeler)\\s+loan\\b",
+    "flags": "i"
+  },
+  "loanWords": {
+    "pattern": "\\b(emi|loan|nach|ecs|instal?lment)\\b",
+    "flags": "i"
+  },
+  "emailFooter": {
+    "pattern": "click here|for additional assistance|do not share|never share|if you did not|if you have not|if this (?:transaction )?was not|in case you|please call|call us|unsubscribe|disclaimer|this is an auto",
+    "flags": "i"
+  },
+  "merchantPatterns": [
+    {
+      "pattern": "\\b(?:sender|remitter)(?:\\s+name)?\\s*[:\\-]\\s*([A-Za-z][A-Za-z .'\\-]{1,50}?)(?=\\s*\\(|\\s+(?:vpa|upi|ref|utr|c\\.)\\b|\\s*[,;]|\\.\\s|\\.$|$)",
+      "flags": "i"
+    },
+    {
+      "pattern": "\\bvpa\\s+\\S+\\s+([A-Za-z0-9&.' \\-]{2,60}?)\\s+on\\s+\\d{1,2}[-/]\\d{1,2}[-/]\\d{2,4}",
+      "flags": "i"
+    },
+    {
+      "pattern": "\\bupi[/\\-](?:p2[map]|dr|cr)?[/\\-]?\\d*[/\\-]([A-Za-z0-9 ._@&]+?)(?=[/\\-]|\\s+(?:sms|bal|avl|not|if|call)\\b|$)",
+      "flags": "i"
+    },
+    {
+      "pattern": "\\b(?:to|at|by|vpa|towards)\\s+([A-Za-z0-9@._\\-& ]{2,40}?){nameEnd}",
+      "flags": "i"
+    },
+    {
+      "pattern": "\\binfo[:\\-]\\s*([A-Za-z0-9@._\\-&/ ]{2,40}?)(?:\\.\\s|\\.$|,|$)",
+      "flags": "i"
+    },
+    {
+      "pattern": ";\\s*([A-Za-z][A-Za-z0-9 .&' \\-]{1,40}?)\\s+credited\\b",
+      "flags": "i"
+    },
+    {
+      "pattern": "\\d{1,2}-[A-Za-z]{3}-\\d{2,4}\\s+on\\s+([A-Za-z][A-Za-z0-9 .&' \\-]{1,40}?)(?:\\.\\s|\\.$|,|\\s+avl\\b|$)",
+      "flags": "i"
+    },
+    {
+      "pattern": "\\bIST\\s+([A-Za-z][A-Za-z0-9 .&' \\-]{1,40}?)\\s+(?:avl|available)\\b",
+      "flags": "i"
+    }
+  ],
+  "merchantCleanup": {
+    "stripVpa": {
+      "pattern": "^vpa\\s+",
+      "flags": "i"
+    },
+    "stripChannel": {
+      "pattern": "^(?:imps|neft|rtgs|upi)\\s+(?:to|from)\\s+",
+      "flags": "i"
+    },
+    "numericOnly": {
+      "pattern": "^(?:rs\\.?|inr|₹)?\\s*[\\d/\\-:., ]+$",
+      "flags": "i"
+    }
+  },
+  "structured": {
+    "type": {
+      "pattern": "transaction\\s+type\\s*:\\s*(dr|debit|cr|credit)\\b",
+      "flags": "i"
+    },
+    "amount": {
+      "pattern": "\\bamount\\s*:\\s*(?:rs\\.?|inr|₹)?\\s*([\\d,]+(?:\\.\\d{1,2})?)",
+      "flags": "i"
+    },
+    "currency": {
+      "pattern": "\\bcurrency\\s*:\\s*([A-Za-z]{3})\\b",
+      "flags": "i"
+    },
+    "status": {
+      "pattern": "transaction\\s+status\\s*:\\s*([A-Za-z]+)",
+      "flags": "i"
+    },
+    "okStatuses": [
+      "completed",
+      "success",
+      "successful",
+      "processed",
+      "credited",
+      "debited"
+    ],
+    "fieldTemplate": "{label}\\s*:\\s*(.+?)(?=\\s+{fieldLabels}\\s*:|\\s*$)",
+    "debitPartyLabels": [
+      "payee\\s+name",
+      "to\\s+vpa"
+    ],
+    "creditPartyLabels": [
+      "payer\\s+name",
+      "from\\s+vpa"
+    ],
+    "partyTitle": {
+      "pattern": "^(?:mr|mrs|ms|miss|shri|smt|dr)\\.?\\s+",
+      "flags": "i"
+    }
+  },
+  "purposeLabels": {
+    "debit": [
+      {
+        "label": "Mutual fund SIP",
+        "pattern": "\\bsip\\b|mutual fund"
+      },
+      {
+        "label": "Insurance premium",
+        "pattern": "insurance|premium"
+      },
+      {
+        "special": "loan"
+      },
+      {
+        "label": "ATM withdrawal",
+        "pattern": "\\batm\\b|cash withdrawal"
+      },
+      {
+        "label": "Mobile recharge",
+        "pattern": "recharge"
+      },
+      {
+        "label": "FASTag toll",
+        "pattern": "fastag|\\btoll\\b"
+      },
+      {
+        "label": "Bill payment",
+        "pattern": "bill ?pay|bbps|\\bbill\\b"
+      },
+      {
+        "label": "Cheque payment",
+        "pattern": "cheque|\\bchq\\b"
+      },
+      {
+        "label": "NEFT transfer",
+        "pattern": "\\bneft\\b"
+      },
+      {
+        "label": "IMPS transfer",
+        "pattern": "\\bimps\\b"
+      },
+      {
+        "label": "RTGS transfer",
+        "pattern": "\\brtgs\\b"
+      },
+      {
+        "label": "Bank charges",
+        "pattern": "service charge|charges|\\bfee\\b|\\bgst\\b"
+      }
+    ],
+    "credit": [
+      {
+        "label": "Interest",
+        "pattern": "interest"
+      },
+      {
+        "label": "Dividend",
+        "pattern": "dividend"
+      },
+      {
+        "label": "Cash deposit",
+        "pattern": "cash deposit|\\bcdm\\b"
+      },
+      {
+        "label": "Cheque deposit",
+        "pattern": "cheque|\\bchq\\b"
+      },
+      {
+        "label": "Card load",
+        "pattern": "loaded|reloaded|top-?up|topped up"
+      },
+      {
+        "label": "NEFT transfer",
+        "pattern": "\\bneft\\b"
+      },
+      {
+        "label": "IMPS transfer",
+        "pattern": "\\bimps\\b"
+      },
+      {
+        "label": "RTGS transfer",
+        "pattern": "\\brtgs\\b"
+      }
+    ]
+  }
+}
+```
+
+### A.6 Canaries
+
+Sample messages with the result they must produce (`type: null` = must not parse as a transaction). `test/rules_test.dart` runs them; a remote pack would run them before being accepted (§4).
+
+```json
+[
+  {
+    "text": "Sent Rs.500.00\nFrom HDFC Bank A/c *1234\nTo SUNRISE CAFE\nOn 02/10/26\nRef 600000000001\nNot You? Call 18002586161/SMS BLOCK UPI to 7308080808",
+    "expect": {
+      "type": "debit",
+      "amountMinor": 50000,
+      "merchantContains": "sunrise cafe"
+    }
+  },
+  {
+    "text": "UPDATE: INR 1,250.00 debited from HDFC Bank XX1234 on 02-OCT-26. Info: UPI/DR/600000000002/SUNRISE STORE/HDFC",
+    "expect": {
+      "type": "debit",
+      "amountMinor": 125000,
+      "merchantContains": "sunrise store"
+    }
+  },
+  {
+    "text": "Dear UPI user A/C X1234 debited by 150.0 on date 05Mar24 trf to SUNRISE FOODS Refno 600000000003. If not u? call 1800111109. -SBI",
+    "expect": {
+      "type": "debit",
+      "amountMinor": 15000,
+      "merchantContains": "sunrise foods"
+    }
+  },
+  {
+    "text": "Rs.2,000.00 credited to HDFC Bank A/c XX1234 on 03-10-26 from VPA riya@okaxis (UPI 600000000005)",
+    "expect": {
+      "type": "credit",
+      "amountMinor": 200000
+    }
+  },
+  {
+    "text": "Your OTP is 482913. Do not share it with anyone. Rs 500 will be debited from your account.",
+    "expect": {
+      "type": null
+    }
+  },
+  {
+    "text": "SAR 3.00 using ICICI Bank Forex Prepaid Card XX1233 transacted at POS on 02-Oct-26. Bal SAR 733.42. Temporary Credit Bal SAR 0.",
+    "expect": {
+      "type": "debit"
+    }
+  }
+]
+```

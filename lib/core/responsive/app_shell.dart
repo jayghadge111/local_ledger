@@ -10,6 +10,7 @@ import '../../features/transactions/transactions_screen.dart';
 import '../../shared/widgets/glass_background.dart';
 import '../../shared/widgets/sync_banner.dart';
 import '../alerts/alert_watcher.dart';
+import '../update/update_controller.dart';
 import '../sync/sync_controller.dart';
 
 /// The app's single navigational shell.
@@ -46,6 +47,7 @@ class _AppShellState extends ConsumerState<AppShell>
       // doesn't start over something the user can resume.
       await ref.read(syncControllerProvider.notifier).checkInterrupted();
       _syncSms();
+      ref.read(updateControllerProvider.notifier).check();
     });
   }
 
@@ -57,7 +59,10 @@ class _AppShellState extends ConsumerState<AppShell>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _syncSms();
+    if (state == AppLifecycleState.resumed) {
+      _syncSms();
+      ref.read(updateControllerProvider.notifier).check();
+    }
   }
 
   /// Silent catch-up on open/resume (Android, once SMS access is granted):

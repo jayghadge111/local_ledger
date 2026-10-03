@@ -60,6 +60,7 @@ dependencies:
   http: ^1.6.0
   flutter_svg: ^2.3.0
   simple_icons: ^16.23.0
+  in_app_update: ^5.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

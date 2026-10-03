@@ -1,0 +1,2132 @@
+{
+  "format": "nativespend-rules",
+  "schemaVersion": 1,
+  "packVersion": 1,
+  "minAppVersion": "1.0.0",
+  "publishedAt": "2026-10-03T00:00:00Z",
+  "enabled": true,
+  "senderCodes": [
+    "ACBLBK", "ACBLHO", "ACCBNK", "ACEPLC", "ADARSH", "ADBCCB", "ADHBNK", "ADINBK", "ADRBNK",
+    "AEITSM", "AGMITS", "AGRABK", "AGVBNK", "AGVCBS", "AIRBNK", "AIRBSE", "AIRBSI", "AJUSBJ",
+    "AKHAND", "AKOLAB", "ALBANK", "ALMABK", "ALMORA", "ALVIBK", "ALYBNK", "AMBUJA", "AMCBNK",
+    "AMCOBK", "AMEXBK", "AMEXBP", "AMEXBT", "AMEXEP", "AMEXIN", "AMEXSR", "ANDBNK", "ANSBNK",
+    "APCBNK", "APGBBK", "APGBHO", "APGBIT", "APGBNK", "APGECM", "APGVBK", "APHOAT", "APNABK",
+    "APNAPR", "APNATR", "APRBBK", "APRBHO", "APSCOB", "APSSBN", "APXBNK", "ASBALT", "ASBANK",
+    "ASCBNK", "ASSBNK", "ASSOBK", "ATMMON", "ATMMVS", "ATMSBI", "ATMSMS", "ATMTAD", "ATPCCB",
+    "AUBANK", "AUBMSG", "AUBSMS", "AUCBNK", "AUDOST", "AUITSM", "AXISB", "AXISBK", "AXISHR",
+    "AXISIN", "AXISMR", "AXISPR", "AXISSR", "AXPOPS", "AXPVPN", "AXSFI", "AXSFIN", "AZPSSB",
+    "BANKIT", "BASAVA", "BASBNK", "BASODA", "BCCBBK", "BCOBBK", "BCRBNK", "BCUBNK", "BDCCBK",
+    "BDNSMS", "BEGUBK", "BETDBK", "BGVBNK", "BGVCBS", "BHABHR", "BHAGNI", "BHGINI", "BHRDBK",
+    "BHUBNK", "BHUJBK", "BKDENA", "BKPNSB", "BMCBBK", "BMCBNK", "BMSHAB", "BMSNAN", "BNDNBK",
+    "BNDNHL", "BNKBCB", "BNSBKL", "BNSBL", "BNSBNK", "BOBBIZ", "BOBBNK", "BOBCMS", "BOBCRM",
+    "BOBFRM", "BOBMSG", "BOBOTP", "BOBRAJ", "BOBSCE", "BOBSCF", "BOBSMS", "BOBTRE", "BOBTXN",
+    "BOBUPG", "BOBUPI", "BOIBAL", "BOIIND", "BOIINT", "BOIJGB", "BOILON", "BOINJG", "BOIREM",
+    "BOISAF", "BOISME", "BOIVKG", "BOMSCT", "BPMCTR", "BRAMHA", "BRDSEC", "BRIMPS", "BRKGBD",
+    "BRKGBM", "BRKGBS", "BRKGBX", "BSBBMT", "BSBLBK", "BSBLTD", "BSCBNK", "BUCBBK", "BUCBKL",
+    "BUCBLB", "BUCBNK", "BUCBRJ", "BULAND", "BUPGBB", "BUPGBM", "BUPGBX", "BURBAN", "BWRUCB",
+    "BZRCMB", "CAANBK", "CANBNK", "CANMNY", "CANRRB", "CANRWD", "CBGUNA", "CBIOTP", "CBREWA",
+    "CBSKUB", "CBSLTD", "CBSSBI", "CBSTGB", "CCBANK", "CCBBTL", "CCBCHW", "CCBDTA", "CCBDWS",
+    "CCBFAZ", "CCBGUR", "CCBGWL", "CCBJBK", "CCBJMU", "CCBKGN", "CCBKNW", "CCBLTD", "CCBMOR",
+    "CCBRJG", "CCBROP", "CCBSAS", "CCBSDH", "CCBSGR", "CCBSHR", "CCBSNI", "CCBSTN", "CCBSVP",
+    "CCBTKG", "CCCDEL", "CCHRIR", "CCOBNK", "CCONLN", "CCPCAH", "CCPCCN", "CCRSBI", "CDSAFE",
+    "CENTBK", "CFOBAN", "CGAPBK", "CGBBBK", "CGGBNK", "CHADCC", "CHAMBK", "CHAMCO", "CHDSBK",
+    "CHHIBK", "CHOINS", "CHSBNK", "CHSCBK", "CHVRBK", "CIRALT", "CITI", "CITIBA", "CITIBK",
+    "CITIBN", "CITYBK", "CLABBK", "CMPHYD", "CMSRBI", "CNBANK", "CNSBLH", "CNSBNK", "COCBNG",
+    "COMCBL", "CORPBK", "COSTAL", "COVIGL", "CPCBBK", "CRGBAD", "CSBANK", "CSBBNK", "CSBN",
+    "CSBNKN", "CSCBNK", "CSDSBI", "CSFBNK", "CTDSBI", "CTMUGM", "CTRCCB", "CTZENS", "CUBANK",
+    "CUBFST", "CUBLTD", "CUBOTP", "CUBSMS", "CUBUPI", "CUCBNK", "CVELUC", "DACBNK", "DAHODB",
+    "DBALRT", "DBKTNM", "DBPSBI", "DBSBNK", "DCBANK", "DCBBNK", "DCBDCB", "DCBGZB", "DCBMBD",
+    "DCBMDL", "DCBMRT", "DCCBKC", "DCCBLK", "DCCBLN", "DCGBBK", "DDCCBK", "DEEBNK", "DEENBK",
+    "DENABK", "DEOBNK", "DEUTBK", "DGBSMS", "DGGBNK", "DGLCBK", "DGMGZB", "DGMGZD", "DGMRBD",
+    "DGTBNK", "DHANBK", "DHARBK", "DHARCB", "DHARMA", "DHRTBK", "DITATM", "DITHLP", "DMCBKL",
+    "DMCBNK", "DMCDHD", "DMNSBK", "DMSALT", "DNSBNK", "DOHABK", "DOMBNK", "DPCSDX", "DSBANK",
+    "DSUCBK", "DUBANK", "DUCBDA", "DUCOBK", "DUNDCB", "DUNICA", "DURGBK", "EASFBT", "EBTALT",
+    "ECOMPW", "EDBANK", "EDSADM", "EMLOTP", "EQBANK", "EQUTAS", "EQUTAT", "EQUTAX", "ESAFIT",
+    "ESAFOT", "ESAFPB", "ESAFPR", "ESAFSF", "ESAFTR", "ESFUAT", "EXCLCK", "EXIMBK", "FASTDV",
+    "FCHRGE", "FDBOTP", "FEDADV", "FEDBNK", "FEDFIN", "FEDOTP", "FGMCHN", "FGMMUM", "FGUCBK",
+    "FIDSBI", "FINOBK", "FINOHR", "FINOIN", "FINOPB", "FMCLUC", "FNCARE", "FNGWBK", "FROMSC",
+    "FSLOCT", "FZKCCB", "GARHBK", "GBCBBK", "GBCBBN", "GCBBNK", "GCCSBI", "GDVBNK", "GMCCDC",
+    "GMPERS", "GMSMAD", "GNDDCC", "GNSBKL", "GNSBLT", "GPPJSB", "GPPSBL", "GRAMEN", "GRBANK",
+    "GRCSBG", "GRCSBI", "GSBANK", "GSCBBK", "GSCBNK", "GSCLOC", "GSSBNK", "GTRCCB", "GUBANK",
+    "GUBNKO", "GUCBNK", "GUCBSI", "GUCBSR", "GUCBTR", "GUJAMB", "GVNSBL", "HARCOB", "HARDBK",
+    "HARIDC", "HASTIB", "HDCCBK", "HDFCAL", "HDFCBA", "HDFCBK", "HDFCBN", "HDFCCC", "HDFCDC",
+    "HDFCFD", "HDFCGC", "HDFCHI", "HDFCHL", "HDFCIT", "HDFCLI", "HDFCPL", "HDFCRD", "HDFCSD",
+    "HDFCSE", "HDFCUN", "HDFSET", "HDFTST", "HMCBNK", "HNSBLH", "HNSBNK", "HOCPPC", "HOHRMS",
+    "HORRMD", "HOSRDD", "HPGSMS", "HPSBNK", "HRHDFC", "HRMSCC", "HSBANK", "HSBCBK", "HSBCEX",
+    "HSBCIM", "HSBCIN", "HSBLBK", "HSBNKW", "HUCBNK", "HYDCCB", "IAPPRV", "ICBANK", "ICIBNK",
+    "ICICBK", "ICICIB", "ICICIH", "ICICIK", "ICICIL", "ICICIT", "ICICTC", "ICIEMP", "ICIOTP",
+    "ICMTRG", "IDBIBK", "IDBIDL", "IDFCBK", "IDFCCM", "IDFCFB", "IDFCFZ", "IDFCIT", "IDFCTS",
+    "IDFCZ", "IDFSIT", "IDRNSB", "IDRSNB", "IMAHYD", "IMCOBK", "IMSBNK", "INBUPI", "INDBNK",
+    "INDUSA", "INDUSB", "INDUSO", "INTBNK", "IOBANK", "IOBATM", "IOBBNK", "IOBBQR", "IOBCHN",
+    "IOBHRD", "IOBJLS", "IOBMKT", "IOBOTP", "IPBCOM", "IPBKYC", "IPBMSG", "IPBOFR", "IPBOTP",
+    "IPBSEC", "IPCBBK", "IPCBNK", "IPSBNK", "IPSHOI", "IPSHOT", "ISBANK", "ISDSBI", "ISECLD",
+    "ISRVCE", "ITCBBK", "ITCBNK", "ITCOMP", "ITRISK", "ITRSNC", "ITSDEL", "ITSLHO", "JALAUN",
+    "JALORE", "JANABK", "JANATR", "JANATX", "JANSVA", "JANTHA", "JAOLIB", "JCBANK", "JCCB",
+    "JCCBNK", "JCOMBK", "JGRAMN", "JIVAJI", "JJSBNK", "JKBANK", "JKBFSL", "JKCARD", "JKGRAM",
+    "JKGRMN", "JKGRNB", "JKSBLM", "JLRNSB", "JMCBNK", "JMSBLP", "JMSBNK", "JNJCBL", "JNSBBM",
+    "JNSBJU", "JNSBKL", "JNSEVA", "JPCBNK", "JPNBNK", "JRGBNK", "JSBANK", "JSBGON", "JSBLBK",
+    "JSBLHG", "JSBLHO", "JSBLPN", "JSBRYP", "JSCBKL", "JSKABK", "JSKBBG", "JSKBBK", "JSKBCP",
+    "JSKBDA", "JSKBHB", "JSKBJH", "JSKBJP", "JSKBMS", "JSKBNP", "JSKBRS", "JSKBRT", "JSKBSD",
+    "JSKBSJ", "JSKBUJ", "JSKBVI", "JSKJBK", "JUCBNK", "JUSBNK", "KAGBNK", "KAIJSB", "KARBNK",
+    "KBANKT", "KBLBNK", "KBSBBK", "KBSBNK", "KCBANK", "KCCBNK", "KCCBPS", "KCCDWD", "KCDCCB",
+    "KCMEET", "KCMSGS", "KCOBBK", "KCRBNK", "KCUBNK", "KDCBAK", "KDCCBK", "KDCCBL", "KDGCCB",
+    "KDPCCB", "KEBANK", "KGBANK", "KHEDAB", "KHLADM", "KKDCCB", "KMBCBL", "KMCBK", "KMCBLT",
+    "KMCBNK", "KMNBNK", "KNBOTP", "KNSBBK", "KNSBKL", "KNSBKN", "KNSBLK", "KNSBNK", "KOTABK",
+    "KOTAKB", "KOTAKP", "KOTSBN", "KOYANA", "KPCOBL", "KPMCCB", "KRICCB", "KRNBNK", "KRNDBK",
+    "KRTBNK", "KRUSHI", "KSBLBK", "KTCCBL", "KTKBNK", "KTKREM", "KTWBNK", "KUBANK", "KUBOTP",
+    "KUBPRO", "KUBSMS", "KUBTRN", "KUCBBK", "KUCBNK", "KUCBOT", "KUCBTR", "KUNSBB", "KUNSUB",
+    "KVBANK", "KVBOTP", "KVBUPI", "KVGBBK", "KVGBNK", "KVGECM", "LALABK", "LAXBNK", "LCTSCS",
+    "LDMFBD", "LHOABU", "LHOBAN", "LHOGMI", "LHOKOL", "LHOPAT", "LICCRD", "LMPUCB", "LNSBNK",
+    "LUCBNK", "LVBANK", "LVBSMS", "MABHYD", "MAHABK", "MAKBNK", "MALOJI", "MAMCOB", "MANSBK",
+    "MARSCB", "MAYANI", "MBIMPS", "MBTEST", "MCAPEX", "MCBANK", "MCBATM", "MCBBNK", "MCBLTD",
+    "MCBNSK", "MCBOTP", "MCBTRN", "MCCBNK", "MCDCCB", "MCNBBK", "MCOBNK", "MCUBLH", "MCUBNK",
+    "MDCBKL", "MDCBNK", "MDKNSB", "MDLUCB", "MDMSBK", "MEGRRB", "MFDUBK", "MGBBNK", "MGBSMS",
+    "MGRBBK", "MGSBBK", "MHAVIR", "MHSJPN", "MIAMEX", "MIECBL", "MIMTMX", "MISDEP", "MLBANK",
+    "MLTBNK", "MMSBNK", "MNBANK", "MNSBKL", "MNSBNK", "MODNAG", "MOGBNK", "MORADA", "MPAPEX",
+    "MPAUCB", "MPRSBK", "MPSCBK", "MPSSBK", "MPSSBN", "MRBANK", "MRBBBK", "MRBCBS", "MSBLPN",
+    "MSBLTD", "MSCBKN", "MSCBNK", "MUBANK", "MUCATM", "MUCBLP", "MUCBNK", "MUCBNP", "MUCCBS",
+    "MUCINB", "MUCINF", "MUCIPO", "MUCMBS", "MUCOBK", "MUCOTP", "MUCUPI", "MVCBLS", "MYAMEX",
+    "MYIPPB", "MZBANK", "MZBBBK", "MZSBNK", "NABARD", "NCBANK", "NCBLBK", "NDVSBK", "NICBNK",
+    "NISBNK", "NJMSBL", "NKDCCB", "NKRDBK", "NPCMPL", "NSBANK", "NSBETW", "NSBNKN", "NSCBAK",
+    "NSCBNK", "NSDLCD", "NSDLPB", "NSDLRM", "NSTCBL", "NTLBNK", "NUCBNK", "NUCBRM", "NUTANB",
+    "NVNBNK", "NVSHUP", "NZBCCB", "OBCBNK", "OBCCBS", "OBCINB", "OBCMBK", "OBCOLS", "OBCOTP",
+    "OBCSMS", "OBCSVC", "OBCTXN", "OBCUPI", "OCUBNK", "OSCBNK", "OTPSKN", "PALUSB", "PANCHB",
+    "PANDBK", "PANIPT", "PATANB", "PATSCB", "PAYTMB", "PAYZAP", "PBGBBN", "PBGKOL", "PBGMPB",
+    "PCBANK", "PCBDLK", "PCCBNK", "PCOBNK", "PCSBNK", "PCUBNK", "PGBSMS", "PIMSBI", "PITDCC",
+    "PITOBK", "PMCBNK", "PMNSBM", "PMRYBK", "PMTYBK", "PNBACS", "PNBCCD", "PNBCRD", "PNBCRM",
+    "PNBDBD", "PNBHRD", "PNBJNK", "PNBLKO", "PNBMKT", "PNBOTP", "PNBRTS", "PNBSMS", "PNBTBD",
+    "PNNSBL", "PNSBKB", "PNSBNK", "POUCBK", "PPCBNK", "PPGDEP", "PRIBNK", "PRIMEB", "PRYBNK",
+    "PSBANK", "PSBLTD", "PSCBNK", "PSTBNK", "PUBANK", "PUBBNK", "PUBLTD", "PUCBLL", "PUCBLM",
+    "PUCBLP", "PUCBNK", "PUPGBK", "PURBNK", "PUSBNK", "PVIJAY", "RACBNK", "RAIBNK", "RAJABK",
+    "RAJNAG", "RAMDCC", "RATNAK", "RAVISC", "RBISAY", "RBLBBB", "RBLBNK", "RBLCCC", "RBLCRD",
+    "RBLHRD", "RBLINF", "RBLKYC", "RBLOFR", "RBLOSR", "RBLPIL", "RBLPLN", "RBLSSU", "RBLTEC",
+    "RBLVPN", "RBLWCM", "RBOPEN", "RCBANK", "RCBRNG", "RCMSBN", "RCOBKL", "RIMUMB", "RMCBNK",
+    "RMGBBK", "RMMBNR", "RMRBLY", "RNBASB", "RNBCRM", "RNBUPI", "RNSBAL", "RNSBBC", "RNSBKT",
+    "RNSBLD", "RNSBLT", "RNSBMB", "RNSBMF", "RNSBNK", "RNUBNK", "ROATPM", "ROKDPA", "ROKDRI",
+    "ROKRNL", "ROLUDH", "RONDYL", "RONELL", "RONELR", "ROONGL", "RORJPA", "RORURL", "ROTVPM",
+    "ROUDPI", "ROVARN", "RPCOBL", "RPRDBK", "RSBANK", "RSBLPT", "RSSBBK", "RUBANK", "RUKBNK",
+    "RUMBNK", "SACBNK", "SADHNA", "SAIBNK", "SAINIK", "SAMBNK", "SAMLMS", "SAMMCO", "SAMSAH",
+    "SANDUR", "SANMTI", "SARNSB", "SAROBK", "SASCCB", "SATBNK", "SAVLIP", "SBALRT", "SBBJNB",
+    "SBCDRE", "SBCWMS", "SBDBTL", "SBDCBK", "SBDCOG", "SBECOM", "SBEPAY", "SBEREG", "SBERIN",
+    "SBERMS", "SBFIAH", "SBFIMF", "SBGALR", "SBGITC", "SBGLMS", "SBGMBS", "SBGPPC", "SBHART",
+    "SBHIGH", "SBHINB", "SBHRMS", "SBIABD", "SBIABU", "SBIACS", "SBIADS", "SBIAHM", "SBIAND",
+    "SBIAOR", "SBIAPP", "SBIATM", "SBIATT", "SBIAVS", "SBIBAN", "SBIBHO", "SBIBHU", "SBIBNK",
+    "SBIBOG", "SBIBSC", "SBIBTU", "SBICAA", "SBICAR", "SBICBG", "SBICDC", "SBICDS", "SBICHA",
+    "SBICHD", "SBICHE", "SBICMD", "SBICMP", "SBICMS", "SBICON", "SBICOS", "SBICPA", "SBICPC",
+    "SBICPP", "SBICRS", "SBICVC", "SBICVE", "SBICVS", "SBICWS", "SBIDAK", "SBIDBT", "SBIDCL",
+    "SBIDEL", "SBIDGT", "SBIDIA", "SBIDMO", "SBIDMT", "SBIDRC", "SBIDRT", "SBIDSB", "SBIDTB",
+    "SBIDYN", "SBIEES", "SBIEIS", "SBIEMM", "SBIEST", "SBIETC", "SBIETF", "SBIETM", "SBIEWS",
+    "SBIFIJ", "SBIFMC", "SBIFMS", "SBIFOB", "SBIFRW", "SBIFXT", "SBIGAD", "SBIGCC", "SBIGKP",
+    "SBIGLM", "SBIGLS", "SBIGMU", "SBIGOC", "SBIGRC", "SBIGUW", "SBIHOM", "SBIHRD", "SBIHSG",
+    "SBIHUB", "SBIHYD", "SBIINB", "SBIINF", "SBIITS", "SBIIVM", "SBIJAI", "SBIKBN", "SBIKBP",
+    "SBIKER", "SBIKOL", "SBIKYC", "SBILCM", "SBILCO", "SBILKL", "SBILON", "SBILOS", "SBILOT",
+    "SBILTP", "SBILUC", "SBILWF", "SBIMAB", "SBIMAH", "SBIMAP", "SBIMAT", "SBIMBD", "SBIMBS",
+    "SBIMET", "SBIMFK", "SBIMUM", "SBINPA", "SBINPS", "SBINTH", "SBINWC", "SBINWD", "SBINZB",
+    "SBIOEM", "SBIONB", "SBIOTP", "SBIOTS", "SBIPAY", "SBIPBS", "SBIPBU", "SBIPEN", "SBIPER",
+    "SBIPNJ", "SBIPOS", "SBIPPC", "SBIPRM", "SBIPSG", "SBIPSP", "SBIQCK", "SBIRBH", "SBIRBU",
+    "SBIRCH", "SBIRDH", "SBIREG", "SBIREH", "SBIRMD", "SBIRPR", "SBIRTI", "SBIRWZ", "SBISAM",
+    "SBISBD", "SBISEC", "SBISFG", "SBISMA", "SBISMB", "SBISMC", "SBISME", "SBISMP", "SBISNB",
+    "SBISNC", "SBISNP", "SBISOC", "SBISOM", "SBISRP", "SBITBU", "SBITDS", "SBITFF", "SBITFO",
+    "SBITRB", "SBITRI", "SBITRN", "SBITRS", "SBITSM", "SBITSS", "SBITST", "SBIUDR", "SBIUPI",
+    "SBIVMT", "SBIVPN", "SBIWAL", "SBIWEB", "SBJSMS", "SBLCPC", "SBLLMS", "SBLSOL", "SBLSPC",
+    "SBMBNK", "SBMCB", "SBMCBK", "SBMCSH", "SBMINB", "SBMIND", "SBOCAS", "SBPBBU", "SBPINB",
+    "SBRACC", "SBRLMS", "SBRWDZ", "SBSSBI", "SBTABK", "SBTINB", "SBWLTH", "SBYONO", "SCBANK",
+    "SCDCCB", "SCOPBL", "SCSBNK", "SCUBLT", "SCUBNK", "SDCCBL", "SDCCBS", "SDCOBK", "SEVABK",
+    "SGBBNK", "SGBBTI", "SGMCBL", "SGMUCB", "SHAHUB", "SHBIND", "SHGSMS", "SHIVBK", "SHSBLH",
+    "SIBCNP", "SIBPRD", "SIBSMS", "SIDBIB", "SIKSBK", "SIWANB", "SJSBLH", "SKBANK", "SKNSBK",
+    "SKNSBL", "SLMSBL", "SMBANK", "SMCBLT", "SMCBNK", "SMFLTD", "SMGPAY", "SMNBNK", "SMPBNK",
+    "SMSBNK", "SMSSBK", "SMUCBK", "SMUCBL", "SMUCBS", "SNBHMT", "SNCOBL", "SNSBLS", "SNSBMS",
+    "SNSBNK", "SOCINC", "SONBNK", "SPCBAK", "SPNSBK", "SPRCRD", "SPROFR", "SRGBBK", "SRIBNK",
+    "SRKCOB", "SRYLTD", "SSBANK", "SSBFNK", "SSBKLP", "SSBMAN", "SSBMJA", "SSBMOD", "SSBNAG",
+    "SSBNBL", "SSBPUN", "SSCORE", "SSFBNK", "SSKSBH", "SSKSBI", "SSKSBM", "SSKSBP", "SSKSBT",
+    "SSNSBK", "SSNSBM", "SSSBKN", "SSSBNB", "SSSBNK", "SSSSBK", "STCBLR", "STELLA", "STNSBL",
+    "SUBANK", "SUCBLS", "SUCNAG", "SUCOBK", "SUDBNK", "SUDHAB", "SUDICO", "SULBNK", "SUNBNK",
+    "SUPRNA", "SURATB", "SUSSBN", "SUTEXB", "SUVKAS", "SVBANK", "SVCBNK", "SVCINF", "SVCTXN",
+    "SWDEPT", "SWMUCB", "SWNCCB", "SYBGOV", "SYBKDC", "SYDBTL", "SYNBNK", "SYNBPR", "SYNDBK",
+    "SYNDBT", "SYNDCT", "SYNDLN", "SYNDPG", "SYNEPB", "SYNIBD", "SYNINS", "SYNKSD", "SYNMOB",
+    "SYNRBD", "SYNRUP", "SYNTAB", "SYNTST", "SYNVIG", "TADCBK", "TANCBL", "TBCBKL", "TBCOOP",
+    "TBNSBL", "TBSBNK", "TBTCOB", "TBUCBK", "TCBMEH", "TCNSBK", "TCSBNK", "TCUBKK", "TCUBNK",
+    "TDANCB", "TDCBBK", "TDCBNK", "TDCCBE", "TDCELL", "TECUBK", "TEHBIK", "TGBANK", "TGBATM",
+    "TGBBNK", "TGBCBS", "TGBEBK", "TGBINB", "TGBMBS", "TGBTXN", "TGBUPI", "TGCUBK", "TGDCBT",
+    "TGMCBK", "TGPCBK", "TGUCBK", "THIRUV", "THNSBL", "TJCCBL", "TJMSBL", "TJNSBK", "TJSBIB",
+    "TJSBNK", "TJSBPM", "TJSBSB", "TJSBVV", "TKCUBL", "TKPCBL", "TKTCBK", "TKTCCB", "TKUBNK",
+    "TKUCBL", "TLUBNK", "TMBANK", "TMBFST", "TMBOTP", "TMBSMS", "TMBUPI", "TMCCOB", "TMNSBL",
+    "TMSCHT", "TMUCBL", "TNBLTD", "TNCCBK", "TNCCBNK", "TNJCBL", "TNJMSB", "TNMCBL", "TNSBLT",
+    "TNSCBK", "TNYCBK", "TPMCBK", "TRBANK", "TRMUCB", "TSMCBK", "TSSKBK", "TTCOBK", "TUCBLD",
+    "TVCBNK", "TVPCBK", "TVPCBL", "TYUBNK", "UBGBNK", "UBIBNK", "UBISMS", "UBKGBK", "UBKGBM",
+    "UCBANK", "UCBDHN", "UCOBNK", "UCTBNK", "UGBBNK", "UJJIVN", "UJVNBP", "UKASHI", "UKGBBK",
+    "UMABNK", "UMACOB", "UMUCBK", "UMUCBL", "UNIONB", "UNIXCE", "UNSBNK", "UPCBNK", "UPIPWD",
+    "UPSBBK", "URBANK", "USCBNK", "UTGBBK", "UTKBNK", "UTKDBK", "UTKLGB", "UTKMIS", "UTKSBK",
+    "UTKSFB", "UUCBUD", "UUNSBL", "VALSCB", "VARABK", "VASBNK", "VBANKL", "VCBANK", "VCCBNK",
+    "VCNBNK", "VIDBBK", "VIDYBK", "VIJBNK", "VIKASB", "VIKBNK", "VKSBNK", "VMCBDC", "VMNBNK",
+    "VNSBBR", "VNSBLK", "VSBANK", "VSBNKL", "VSPCCB", "VSVBNK", "VUCBKP", "VUCBNK", "VUVSBJ",
+    "VVCCBK", "VVSBNK", "WANABK", "WASHIM", "WDCBNK", "WGLCCB", "WMBSMS", "WUCBKL", "WYDDCB",
+    "YASHBK", "YDRVBK", "YESBCC", "YESBCM", "YESBNK", "YESPAY", "YUCBLY", "ZPSBNK", "ZSAGRA",
+    "ZSBGZB", "ZSBJBK", "ZSBMRT", "ZSBRMP"
+  ],
+  "bankNames": [
+    {"prefix": "HDFC", "name": "HDFC Bank"},
+    {"prefix": "ICICI", "name": "ICICI Bank"},
+    {"prefix": "ICIBNK", "name": "ICICI Bank"},
+    {"prefix": "SBMIND", "name": "SBM Bank India"},
+    {"prefix": "SBI", "name": "SBI"},
+    {"prefix": "AXIS", "name": "Axis Bank"},
+    {"prefix": "KOTAK", "name": "Kotak Bank"},
+    {"prefix": "KBANK", "name": "Kotak Bank"},
+    {"prefix": "SCBANK", "name": "Standard Chartered"},
+    {"prefix": "EQUTAS", "name": "Equitas SFB"},
+    {"prefix": "EQBANK", "name": "Equitas SFB"},
+    {"prefix": "YESB", "name": "Yes Bank"},
+    {"prefix": "IDFC", "name": "IDFC First Bank"},
+    {"prefix": "PNB", "name": "PNB"},
+    {"prefix": "BOB", "name": "Bank of Baroda"},
+    {"prefix": "BOI", "name": "Bank of India"},
+    {"prefix": "CANBNK", "name": "Canara Bank"},
+    {"prefix": "UNIONB", "name": "Union Bank"},
+    {"prefix": "INDUSB", "name": "IndusInd Bank"},
+    {"prefix": "FEDBNK", "name": "Federal Bank"},
+    {"prefix": "RBL", "name": "RBL Bank"},
+    {"prefix": "JJSBNK", "name": "Jalgaon Janata Sahakari Bank"},
+    {"prefix": "JPCBNK", "name": "Jalgaon Peoples Co-op Bank"},
+    {"prefix": "PAYTMB", "name": "Paytm Payments Bank"}
+  ],
+  "emailDomains": {
+    "suffix": "bank.in",
+    "domains": [
+      "sbi.co.in", "alerts.sbi.co.in", "pnb.co.in", "pnbindia.in", "bankofbaroda.in",
+      "bankofbaroda.co.in", "canarabank.com", "unionbankofindia.co.in", "bankofindia.co.in",
+      "centralbank.co.in", "centralbankofindia.co.in", "cboi.in", "iob.in", "iobnet.co.in",
+      "ucobank.com", "ucobank.co.in", "mahabank.co.in", "bankofmaharashtra.in", "psb.co.in",
+      "psbindia.com", "punjabandsindbank.co.in", "indianbank.co.in", "indianbank.in", "idbi.co.in",
+      "idbibank.in", "hdfcbank.net", "hdfcbank.com", "icicibank.com", "axisbank.com", "kotak.com",
+      "idfcfirstbank.com", "yesbank.in", "indusind.com", "federalbank.co.in", "rblbank.com",
+      "kvb.co.in", "kvbmail.com", "cityunionbank.com", "cityunionbank.in", "southindianbank.com",
+      "ktkbank.com", "tmb.in", "tmbank.in", "dcbbank.com", "bandhanbank.com", "dhanbank.com",
+      "dhanbank.co.in", "jkbank.com", "jkbmail.com", "nainitalbank.co.in", "csb.co.in", "aubank.in",
+      "equitasbank.com", "equitas.in", "ujjivan.com", "ujjivansfb.in", "janabank.com",
+      "esafbank.com", "utkarsh.bank", "suryodaybank.com", "fincarebank.com", "capitalbank.co.in",
+      "sbmbank.co.in", "sc.com", "hsbc.co.in", "citibank.com", "citibank.co.in", "citi.com",
+      "aexp.com", "americanexpress.com", "dbs.com", "sbicard.com", "bobcard.co.in", "paytmbank.com",
+      "airtelbank.com", "ippbonline.com", "finobank.com", "jjsbl.com", "jjsbl.co.in", "jpcbank.com",
+      "saraswatbank.com", "cosmosbank.com", "svcbank.com", "nkgsb-bank.com", "apnabank.co.in",
+      "dnsb.co.in", "mucbank.com", "rnsbindia.com", "amcbank.in"
+    ]
+  },
+  "categoryKeywords": [
+    {
+      "category": "cat_groceries",
+      "words": [
+        "dunzo", "avenue supermarts", "nature basket", "reliance smart", "instamart", "blinkit",
+        "zepto", "bigbasket", "grofers", "dmart", "jiomart", "more retail", "reliance fresh",
+        "nature basket", "supermarket", "grocery", "groceries", "kirana", "vegetable", "vegetables",
+        "fruits", "milk", "dairy"
+      ]
+    },
+    {
+      "category": "cat_food",
+      "words": [
+        "eatsure", "faasos", "behrouz", "oven story", "box8", "chaayos", "haldiram", "ccd",
+        "cafe coffee day", "barista", "third wave", "blue tokai", "theobroma", "wow momo", "pizza hut",
+        "pizzahut", "hyperpure", "swiggy", "zomato", "starbucks", "mcdonalds", "mcdonald's", "dominos",
+        "domino's", "kfc", "burger king", "subway", "pizza", "burger", "cafe", "coffee", "tea", "chai",
+        "restaurant", "bakery", "biryani", "canteen", "dining", "eats", "kitchen", "dhaba", "juice",
+        "ice cream", "food", "bar", "pub", "brewery"
+      ]
+    },
+    {
+      "category": "cat_transport",
+      "words": [
+        "makemytrip", "goibibo", "ixigo", "cleartrip", "yatra", "indigo", "air india", "vistara",
+        "spicejet", "akasa", "airasia", "ola cabs", "ola electric", "namma yatri", "bluesmart",
+        "airbnb", "oyo", "uber", "ola", "rapido", "redbus", "irctc", "railway", "metro", "fastag",
+        "toll", "parking", "petrol", "diesel", "fuel", "indian oil", "iocl", "bpcl", "hpcl", "shell",
+        "air india", "indigo", "spicejet", "vistara", "akasa", "makemytrip", "goibibo", "cleartrip",
+        "bmtc", "ksrtc", "msrtc", "cab", "taxi", "auto"
+      ]
+    },
+    {
+      "category": "cat_entertainment",
+      "words": [
+        "jiohotstar", "disney", "amazon prime", "apple music", "apple tv", "youtube music", "audible",
+        "pvr inox", "sony liv", "netflix", "spotify", "hotstar", "primevideo", "prime video",
+        "youtube", "bookmyshow", "pvr", "inox", "sonyliv", "zee5", "jiocinema", "gaana", "steam",
+        "playstation", "xbox", "google play", "cinema", "movies", "gaming"
+      ]
+    },
+    {
+      "category": "cat_health",
+      "words": [
+        "apollo", "pharmeasy", "1mg", "netmeds", "practo", "cult.fit", "cultfit", "cult fit",
+        "healthkart", "medplus", "lenskart", "apollo", "practo", "pharmeasy", "netmeds", "1mg",
+        "medplus", "pharmacy", "pharma", "chemist", "hospital", "clinic", "medical", "diagnostic",
+        "diagnostics", "dental", "lab", "doctor", "healthcare", "fitness", "gym", "cult.fit",
+        "cultfit", "spa", "salon", "wellness", "parlour", "yoga"
+      ]
+    },
+    {
+      "category": "cat_investment",
+      "words": [
+        "kuvera", "indmoney", "paytm money", "smallcase", "coin by zerodha", "sip", "mutual fund",
+        "mutual funds", "zerodha", "groww", "kuvera", "upstox", "indmoney", "smallcase", "paytm money",
+        "coin by zerodha", "icclgrowth", "indian clearing", "nse clearing", "bse star", "bsestar",
+        "nps", "ppf", "national pension", "demat", "stock", "stocks", "securities", "wealth",
+        "recurring deposit", "fixed deposit"
+      ]
+    },
+    {
+      "category": "cat_emi",
+      "words": [
+        "emi", "loan", "ecs", "nach", "bajaj finance", "bajaj finserv", "hdfc ltd", "tata capital",
+        "home credit", "moneyview", "kreditbee", "lendingkart"
+      ]
+    },
+    {
+      "category": "cat_bills",
+      "words": [
+        "jio", "vi prepaid", "vi postpaid", "vi recharge", "vodafone", "vodafone idea", "tata play",
+        "tataplay", "tata sky", "dish tv", "dishtv", "act fibernet", "hathway", "tata power",
+        "adani electricity", "cred", "bescom", "mseb", "tneb", "electricity", "airtel", "jio",
+        "vodafone", "bsnl", "recharge", "broadband", "fibernet", "postpaid", "prepaid recharge", "dth",
+        "tata play", "tatasky", "gas", "water bill", "insurance", "lic", "bill", "utility",
+        "municipal", "rent", "maintenance", "society"
+      ]
+    },
+    {
+      "category": "cat_shopping",
+      "words": [
+        "flipkart", "myntra", "ajio", "nykaa", "meesho", "tata cliq", "croma", "firstcry", "pepperfry",
+        "snapdeal", "ikea", "decathlon", "amazon pay", "nike", "adidas", "puma", "itunes", "icloud",
+        "amazon", "amzn", "flipkart", "myntra", "ajio", "nykaa", "meesho", "croma", "reliance digital",
+        "lifestyle", "decathlon", "ikea", "tata cliq", "shoppers stop", "westside", "pantaloons",
+        "mall", "store", "mart", "fashion", "electronics"
+      ]
+    },
+    {
+      "category": "cat_transfer",
+      "words": [
+        "phonepe", "google pay", "gpay", "paytm", "bhim", "mobikwik", "freecharge"
+      ]
+    }
+  ],
+  "incomeWords": [
+    "salary", "interest", "dividend", "payroll", "bonus", "stipend"
+  ],
+  "merchantAliases": [
+    {"match": "swiggy", "name": "Swiggy"},
+    {"match": "zomato", "name": "Zomato"},
+    {"match": "zepto", "name": "Zepto"},
+    {"match": "blinkit", "name": "Blinkit"},
+    {"match": "bigbasket", "name": "BigBasket"},
+    {"match": "amzn", "name": "Amazon"},
+    {"match": "amazon", "name": "Amazon"},
+    {"match": "flipkart", "name": "Flipkart"},
+    {"match": "myntra", "name": "Myntra"},
+    {"match": "nykaa", "name": "Nykaa"},
+    {"match": "ajio", "name": "Ajio"},
+    {"match": "uber", "name": "Uber"},
+    {"match": "olacabs", "name": "Ola"},
+    {"match": "ola", "name": "Ola"},
+    {"match": "rapido", "name": "Rapido"},
+    {"match": "irctc", "name": "IRCTC"},
+    {"match": "makemytrip", "name": "MakeMyTrip"},
+    {"match": "redbus", "name": "redBus"},
+    {"match": "bookmyshow", "name": "BookMyShow"},
+    {"match": "netflix", "name": "Netflix"},
+    {"match": "spotify", "name": "Spotify"},
+    {"match": "hotstar", "name": "Hotstar"},
+    {"match": "primevideo", "name": "Prime Video"},
+    {"match": "youtube", "name": "YouTube"},
+    {"match": "google play", "name": "Google Play"},
+    {"match": "googleplay", "name": "Google Play"},
+    {"match": "apple.com/bill", "name": "Apple"},
+    {"match": "apple", "name": "Apple"},
+    {"match": "jio", "name": "Jio"},
+    {"match": "airtel", "name": "Airtel"},
+    {"match": "vodafone", "name": "Vi"},
+    {"match": "bescom", "name": "BESCOM"},
+    {"match": "starbucks", "name": "Starbucks"},
+    {"match": "mcdonalds", "name": "McDonald's"},
+    {"match": "dominos", "name": "Domino's"},
+    {"match": "kfc", "name": "KFC"},
+    {"match": "dmart", "name": "DMart"},
+    {"match": "cred", "name": "CRED"},
+    {"match": "phonepe", "name": "PhonePe"},
+    {"match": "paytm", "name": "Paytm"},
+    {"match": "practo", "name": "Practo"},
+    {"match": "apollo", "name": "Apollo"}
+  ],
+  "merchantNormalizer": {
+    "noiseWords": [
+      "upi", "imps", "neft", "rtgs", "pymnt", "payment", "pay", "txn", "ref", "dr", "cr", "pos",
+      "ecom", "ecomm", "ib", "mb", "ach", "nach", "mandate", "purchase", "to", "from", "rzp", "rzpx",
+      "razorpay", "payu", "pyu", "ccavenue", "billdesk", "cashfree", "ppsl"
+    ],
+    "acronyms": [
+      "hdfc", "icici", "sbi", "lic", "irctc", "bsnl", "atm", "emi", "kfc", "dmart", "pnb", "bob",
+      "tcs", "ibm", "hp", "ev", "ac"
+    ],
+    "genericLabels": [
+      "upi payment", "card payment", "bank payment", "credit", "unknown merchant", "neft transfer",
+      "imps transfer", "rtgs transfer", "mutual fund sip", "insurance premium", "atm withdrawal",
+      "mobile recharge", "fastag toll", "bill payment", "cheque payment", "cheque deposit",
+      "bank charges", "interest", "dividend", "cash deposit", "card load", "loan emi", "upi", "imps",
+      "neft", "rtgs", "pos", "ecom", "ecomm", "payment", "transfer", "debit", "purchase"
+    ],
+    "loanEmiLabel": {
+      "pattern": "^[a-z\\- ]+ loan emi$",
+      "flags": ""
+    }
+  },
+  "nameTitles": [
+    "mr", "mrs", "ms", "miss", "mx", "shri", "shree", "sri", "smt", "kumari", "dr", "prof", "late"
+  ],
+  "brands": [
+    {
+      "name": "Swiggy Instamart",
+      "keywords": [
+        "instamart", "swiggy instamart"
+      ],
+      "color": "#FC8019",
+      "initial": "S",
+      "icon": "swiggy",
+      "logo": null
+    },
+    {
+      "name": "Swiggy",
+      "keywords": [
+        "swiggy"
+      ],
+      "color": "#FC8019",
+      "initial": "S",
+      "icon": "swiggy",
+      "logo": null
+    },
+    {
+      "name": "Zomato",
+      "keywords": [
+        "zomato", "blinkit hyperpure"
+      ],
+      "color": "#E23744",
+      "initial": "Z",
+      "icon": "zomato",
+      "logo": null
+    },
+    {
+      "name": "EatSure",
+      "keywords": [
+        "eatsure", "faasos", "behrouz biryani", "oven story"
+      ],
+      "color": "#E5173F",
+      "initial": "E",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/eatsure.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Domino's",
+      "keywords": [
+        "dominos", "domino's", "domino"
+      ],
+      "color": "#006491",
+      "initial": "D",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/domino_s.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "Pizza Hut",
+      "keywords": [
+        "pizza hut", "pizzahut"
+      ],
+      "color": "#EE3124",
+      "initial": "P",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/pizza_hut.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "KFC",
+      "keywords": [
+        "kfc"
+      ],
+      "color": "#F40027",
+      "initial": "K",
+      "icon": "kfc",
+      "logo": null
+    },
+    {
+      "name": "McDonald's",
+      "keywords": [
+        "mcdonalds", "mcdonald's", "mcdonald"
+      ],
+      "color": "#FBC817",
+      "initial": "M",
+      "icon": "mcdonalds",
+      "logo": null
+    },
+    {
+      "name": "Burger King",
+      "keywords": [
+        "burger king"
+      ],
+      "color": "#D62300",
+      "initial": "B",
+      "icon": "burgerking",
+      "logo": null
+    },
+    {
+      "name": "Subway",
+      "keywords": [
+        "subway"
+      ],
+      "color": "#009743",
+      "initial": "S",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/subway.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "Starbucks",
+      "keywords": [
+        "starbucks"
+      ],
+      "color": "#006241",
+      "initial": "S",
+      "icon": "starbucks",
+      "logo": null
+    },
+    {
+      "name": "Cafe Coffee Day",
+      "keywords": [
+        "cafe coffee day", "ccd"
+      ],
+      "color": "#8C1D2F",
+      "initial": "C",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/cafe_coffee_day.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Chaayos",
+      "keywords": [
+        "chaayos"
+      ],
+      "color": "#1E7B4B",
+      "initial": "C",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/chaayos.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Haldiram's",
+      "keywords": [
+        "haldiram", "haldiram's"
+      ],
+      "color": "#E31E24",
+      "initial": "H",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/haldiram_s.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Barista",
+      "keywords": [
+        "barista", "third wave coffee", "blue tokai", "theobroma"
+      ],
+      "color": "#6F4E37",
+      "initial": "B",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/barista.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Zepto",
+      "keywords": [
+        "zepto"
+      ],
+      "color": "#8025FB",
+      "initial": "Z",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/zepto.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Blinkit",
+      "keywords": [
+        "blinkit"
+      ],
+      "color": "#F8CB46",
+      "initial": "B",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/blinkit.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "BigBasket",
+      "keywords": [
+        "bigbasket"
+      ],
+      "color": "#A5CD39",
+      "initial": "B",
+      "icon": "bigbasket",
+      "logo": null
+    },
+    {
+      "name": "Dunzo",
+      "keywords": [
+        "dunzo"
+      ],
+      "color": "#00D290",
+      "initial": "D",
+      "icon": "dunzo",
+      "logo": null
+    },
+    {
+      "name": "JioMart",
+      "keywords": [
+        "jiomart"
+      ],
+      "color": "#0078AD",
+      "initial": "J",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/jiomart.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "DMart",
+      "keywords": [
+        "dmart", "avenue supermarts"
+      ],
+      "color": "#2E8B3E",
+      "initial": "D",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/dmart.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Reliance Fresh",
+      "keywords": [
+        "reliance fresh", "reliance smart", "more retail", "nature basket"
+      ],
+      "color": "#E42529",
+      "initial": "R",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/reliance_fresh.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Uber",
+      "keywords": [
+        "uber"
+      ],
+      "color": "#000000",
+      "initial": "U",
+      "icon": "uber",
+      "logo": null
+    },
+    {
+      "name": "Ola",
+      "keywords": [
+        "ola", "ola cabs", "ola electric"
+      ],
+      "color": "#1C1C1C",
+      "initial": "O",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/ola.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "Rapido",
+      "keywords": [
+        "rapido"
+      ],
+      "color": "#FFC82C",
+      "initial": "R",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/rapido.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "redBus",
+      "keywords": [
+        "redbus"
+      ],
+      "color": "#D63941",
+      "initial": "r",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/redbus.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "IRCTC",
+      "keywords": [
+        "irctc"
+      ],
+      "color": "#1B4F9C",
+      "initial": "I",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/irctc.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "MakeMyTrip",
+      "keywords": [
+        "makemytrip", "mmt"
+      ],
+      "color": "#EB2226",
+      "initial": "M",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/makemytrip.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Goibibo",
+      "keywords": [
+        "goibibo"
+      ],
+      "color": "#EC6E2B",
+      "initial": "G",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/goibibo.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "ixigo",
+      "keywords": [
+        "ixigo"
+      ],
+      "color": "#E8573F",
+      "initial": "i",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/ixigo.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Cleartrip",
+      "keywords": [
+        "cleartrip"
+      ],
+      "color": "#FF4F17",
+      "initial": "C",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/cleartrip.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "IndiGo",
+      "keywords": [
+        "indigo", "6e"
+      ],
+      "color": "#09009B",
+      "initial": "I",
+      "icon": "indigo",
+      "logo": null
+    },
+    {
+      "name": "Air India",
+      "keywords": [
+        "air india", "airindia"
+      ],
+      "color": "#DA0E29",
+      "initial": "A",
+      "icon": "airindia",
+      "logo": null
+    },
+    {
+      "name": "Vistara",
+      "keywords": [
+        "vistara"
+      ],
+      "color": "#4B2A5E",
+      "initial": "V",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/vistara.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "SpiceJet",
+      "keywords": [
+        "spicejet"
+      ],
+      "color": "#E41F26",
+      "initial": "S",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/spicejet.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Akasa Air",
+      "keywords": [
+        "akasa"
+      ],
+      "color": "#FF6A00",
+      "initial": "A",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/akasa_air.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "FASTag",
+      "keywords": [
+        "fastag"
+      ],
+      "color": "#1F6FB5",
+      "initial": "F",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/fastag.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "Airbnb",
+      "keywords": [
+        "airbnb"
+      ],
+      "color": "#FF5A5F",
+      "initial": "A",
+      "icon": "airbnb",
+      "logo": null
+    },
+    {
+      "name": "OYO",
+      "keywords": [
+        "oyo"
+      ],
+      "color": "#EE2E24",
+      "initial": "O",
+      "icon": "oyo",
+      "logo": null
+    },
+    {
+      "name": "Amazon Pay",
+      "keywords": [
+        "amazon pay"
+      ],
+      "color": "#FF9900",
+      "initial": "a",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/amazon_pay.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "Prime Video",
+      "keywords": [
+        "prime video", "primevideo", "amazon prime"
+      ],
+      "color": "#00A8E1",
+      "initial": "P",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/prime_video.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Amazon",
+      "keywords": [
+        "amazon", "amzn"
+      ],
+      "color": "#FF9900",
+      "initial": "a",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/amazon.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "Flipkart",
+      "keywords": [
+        "flipkart"
+      ],
+      "color": "#2874F0",
+      "initial": "F",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/flipkart.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Myntra",
+      "keywords": [
+        "myntra"
+      ],
+      "color": "#FF3F6C",
+      "initial": "M",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/myntra.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "Ajio",
+      "keywords": [
+        "ajio"
+      ],
+      "color": "#2C4152",
+      "initial": "A",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/ajio.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Nykaa",
+      "keywords": [
+        "nykaa"
+      ],
+      "color": "#FC2779",
+      "initial": "N",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/nykaa.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Meesho",
+      "keywords": [
+        "meesho"
+      ],
+      "color": "#F43397",
+      "initial": "M",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/meesho.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "Tata CLiQ",
+      "keywords": [
+        "tata cliq", "tatacliq"
+      ],
+      "color": "#DA1C5C",
+      "initial": "T",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/tata_cliq.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Croma",
+      "keywords": [
+        "croma"
+      ],
+      "color": "#00A99D",
+      "initial": "C",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/croma.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Lenskart",
+      "keywords": [
+        "lenskart"
+      ],
+      "color": "#00BAC6",
+      "initial": "L",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/lenskart.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "FirstCry",
+      "keywords": [
+        "firstcry"
+      ],
+      "color": "#F9A01B",
+      "initial": "F",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/firstcry.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "IKEA",
+      "keywords": [
+        "ikea"
+      ],
+      "color": "#0058A3",
+      "initial": "I",
+      "icon": "ikea",
+      "logo": null
+    },
+    {
+      "name": "Nike",
+      "keywords": [
+        "nike"
+      ],
+      "color": "#111111",
+      "initial": "N",
+      "icon": "nike",
+      "logo": null
+    },
+    {
+      "name": "Adidas",
+      "keywords": [
+        "adidas"
+      ],
+      "color": "#000000",
+      "initial": "A",
+      "icon": "adidas",
+      "logo": null
+    },
+    {
+      "name": "Puma",
+      "keywords": [
+        "puma"
+      ],
+      "color": "#242B2F",
+      "initial": "P",
+      "icon": "puma",
+      "logo": null
+    },
+    {
+      "name": "Decathlon",
+      "keywords": [
+        "decathlon"
+      ],
+      "color": "#0082C3",
+      "initial": "D",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/decathlon.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Apple Music",
+      "keywords": [
+        "apple music"
+      ],
+      "color": "#FA243C",
+      "initial": "A",
+      "icon": "applemusic",
+      "logo": null
+    },
+    {
+      "name": "Apple",
+      "keywords": [
+        "apple", "itunes", "icloud"
+      ],
+      "color": "#000000",
+      "initial": "A",
+      "icon": "apple",
+      "logo": null
+    },
+    {
+      "name": "Google Play",
+      "keywords": [
+        "google play", "googleplay"
+      ],
+      "color": "#414141",
+      "initial": "G",
+      "icon": "googleplay",
+      "logo": null
+    },
+    {
+      "name": "Netflix",
+      "keywords": [
+        "netflix"
+      ],
+      "color": "#E50914",
+      "initial": "N",
+      "icon": "netflix",
+      "logo": null
+    },
+    {
+      "name": "JioHotstar",
+      "keywords": [
+        "hotstar", "jiohotstar", "disney"
+      ],
+      "color": "#1F3C88",
+      "initial": "H",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/jiohotstar.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Spotify",
+      "keywords": [
+        "spotify"
+      ],
+      "color": "#1ED760",
+      "initial": "S",
+      "icon": "spotify",
+      "logo": null
+    },
+    {
+      "name": "YouTube Music",
+      "keywords": [
+        "youtube music"
+      ],
+      "color": "#FF0000",
+      "initial": "Y",
+      "icon": "youtubemusic",
+      "logo": null
+    },
+    {
+      "name": "YouTube",
+      "keywords": [
+        "youtube"
+      ],
+      "color": "#FF0000",
+      "initial": "Y",
+      "icon": "youtube",
+      "logo": null
+    },
+    {
+      "name": "SonyLIV",
+      "keywords": [
+        "sonyliv", "sony liv"
+      ],
+      "color": "#1A1A1A",
+      "initial": "S",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/sonyliv.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "ZEE5",
+      "keywords": [
+        "zee5"
+      ],
+      "color": "#8230C6",
+      "initial": "Z",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/zee5.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "JioCinema",
+      "keywords": [
+        "jiocinema"
+      ],
+      "color": "#D6247A",
+      "initial": "J",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/jiocinema.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "BookMyShow",
+      "keywords": [
+        "bookmyshow"
+      ],
+      "color": "#C4242B",
+      "initial": "B",
+      "icon": "bookmyshow",
+      "logo": null
+    },
+    {
+      "name": "PVR INOX",
+      "keywords": [
+        "pvr", "inox"
+      ],
+      "color": "#B8860B",
+      "initial": "P",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/pvr_inox.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Gaana",
+      "keywords": [
+        "gaana"
+      ],
+      "color": "#E72C30",
+      "initial": "G",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/gaana.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Airtel",
+      "keywords": [
+        "airtel"
+      ],
+      "color": "#E40000",
+      "initial": "A",
+      "icon": "airtel",
+      "logo": null
+    },
+    {
+      "name": "Jio",
+      "keywords": [
+        "jio", "reliance jio"
+      ],
+      "color": "#0A2885",
+      "initial": "J",
+      "icon": "jio",
+      "logo": null
+    },
+    {
+      "name": "Vi",
+      "keywords": [
+        "vodafone idea", "vodafone", "vi prepaid", "vi postpaid", "vi recharge", "=vi"
+      ],
+      "color": "#E60000",
+      "initial": "V",
+      "icon": "vodafone",
+      "logo": null
+    },
+    {
+      "name": "BSNL",
+      "keywords": [
+        "bsnl"
+      ],
+      "color": "#1565A8",
+      "initial": "B",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/bsnl.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "Tata Play",
+      "keywords": [
+        "tata play", "tataplay", "tata sky", "tatasky"
+      ],
+      "color": "#E5007D",
+      "initial": "T",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/tata_play.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "Dish TV",
+      "keywords": [
+        "dish tv", "dishtv"
+      ],
+      "color": "#E5460F",
+      "initial": "D",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/dish_tv.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "ACT Fibernet",
+      "keywords": [
+        "act fibernet", "actfibernet"
+      ],
+      "color": "#00A3E0",
+      "initial": "A",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/act_fibernet.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Hathway",
+      "keywords": [
+        "hathway"
+      ],
+      "color": "#EC1C24",
+      "initial": "H",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/hathway.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "BESCOM",
+      "keywords": [
+        "bescom"
+      ],
+      "color": "#F2B33D",
+      "initial": "B",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/bescom.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Tata Power",
+      "keywords": [
+        "tata power"
+      ],
+      "color": "#005DAA",
+      "initial": "T",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/tata_power.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "Adani Electricity",
+      "keywords": [
+        "adani electricity", "adani"
+      ],
+      "color": "#0B74B8",
+      "initial": "A",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/adani_electricity.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "PhonePe",
+      "keywords": [
+        "phonepe"
+      ],
+      "color": "#5F259F",
+      "initial": "P",
+      "icon": "phonepe",
+      "logo": null
+    },
+    {
+      "name": "Google Pay",
+      "keywords": [
+        "google pay", "gpay"
+      ],
+      "color": "#4285F4",
+      "initial": "G",
+      "icon": "googlepay",
+      "logo": null
+    },
+    {
+      "name": "Paytm",
+      "keywords": [
+        "paytm"
+      ],
+      "color": "#20336B",
+      "initial": "P",
+      "icon": "paytm",
+      "logo": null
+    },
+    {
+      "name": "CRED",
+      "keywords": [
+        "cred"
+      ],
+      "color": "#0D0D0D",
+      "initial": "C",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/cred.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "BHIM",
+      "keywords": [
+        "bhim"
+      ],
+      "color": "#00A859",
+      "initial": "B",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/bhim.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "MobiKwik",
+      "keywords": [
+        "mobikwik"
+      ],
+      "color": "#2E6BE6",
+      "initial": "M",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/mobikwik.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Freecharge",
+      "keywords": [
+        "freecharge"
+      ],
+      "color": "#F36F21",
+      "initial": "F",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/freecharge.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Razorpay",
+      "keywords": [
+        "razorpay"
+      ],
+      "color": "#0C2451",
+      "initial": "R",
+      "icon": "razorpay",
+      "logo": null
+    },
+    {
+      "name": "PayPal",
+      "keywords": [
+        "paypal"
+      ],
+      "color": "#002991",
+      "initial": "P",
+      "icon": "paypal",
+      "logo": null
+    },
+    {
+      "name": "HDFC Bank",
+      "keywords": [
+        "hdfc"
+      ],
+      "color": "#004B8D",
+      "initial": "H",
+      "icon": "hdfcbank",
+      "logo": null
+    },
+    {
+      "name": "ICICI Bank",
+      "keywords": [
+        "icici"
+      ],
+      "color": "#AE282E",
+      "initial": "I",
+      "icon": "icicibank",
+      "logo": null
+    },
+    {
+      "name": "Axis Bank",
+      "keywords": [
+        "axis bank", "axis"
+      ],
+      "color": "#971A4D",
+      "initial": "A",
+      "icon": "axisbank",
+      "logo": null
+    },
+    {
+      "name": "SBI",
+      "keywords": [
+        "sbi", "state bank"
+      ],
+      "color": "#22409A",
+      "initial": "SBI",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/sbi.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "Kotak",
+      "keywords": [
+        "kotak"
+      ],
+      "color": "#ED1C24",
+      "initial": "K",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/kotak.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Standard Chartered",
+      "keywords": [
+        "standard chartered", "stanchart", "sc bank"
+      ],
+      "color": "#0473EA",
+      "initial": "SC",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/standard_chartered.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Yes Bank",
+      "keywords": [
+        "yes bank"
+      ],
+      "color": "#0A5AA3",
+      "initial": "Y",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/yes_bank.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "IDFC FIRST",
+      "keywords": [
+        "idfc"
+      ],
+      "color": "#9C1D26",
+      "initial": "I",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/idfc_first.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "IndusInd",
+      "keywords": [
+        "indusind"
+      ],
+      "color": "#8C1C2D",
+      "initial": "I",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/indusind.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Bank of Baroda",
+      "keywords": [
+        "bank of baroda", "bob"
+      ],
+      "color": "#F26B21",
+      "initial": "B",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/bank_of_baroda.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "PNB",
+      "keywords": [
+        "punjab national", "pnb"
+      ],
+      "color": "#A20E37",
+      "initial": "P",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/pnb.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "Canara Bank",
+      "keywords": [
+        "canara"
+      ],
+      "color": "#00A3DA",
+      "initial": "C",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/canara_bank.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Union Bank",
+      "keywords": [
+        "union bank"
+      ],
+      "color": "#D81921",
+      "initial": "U",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/union_bank.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "HSBC",
+      "keywords": [
+        "hsbc"
+      ],
+      "color": "#DB0011",
+      "initial": "H",
+      "icon": "hsbc",
+      "logo": null
+    },
+    {
+      "name": "Citi",
+      "keywords": [
+        "citibank", "citi bank", "citi"
+      ],
+      "color": "#056DAE",
+      "initial": "C",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/citi.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "American Express",
+      "keywords": [
+        "american express", "amex"
+      ],
+      "color": "#2E77BC",
+      "initial": "A",
+      "icon": "americanexpress",
+      "logo": null
+    },
+    {
+      "name": "Federal Bank",
+      "keywords": [
+        "federal bank"
+      ],
+      "color": "#005BAA",
+      "initial": "F",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/federal_bank.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "RBL Bank",
+      "keywords": [
+        "rbl"
+      ],
+      "color": "#1B4DA1",
+      "initial": "R",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/rbl_bank.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "AU Small Finance",
+      "keywords": [
+        "au small finance", "au bank"
+      ],
+      "color": "#8B1538",
+      "initial": "AU",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/au_small_finance.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Visa",
+      "keywords": [
+        "visa"
+      ],
+      "color": "#1A1F71",
+      "initial": "V",
+      "icon": "visa",
+      "logo": null
+    },
+    {
+      "name": "Mastercard",
+      "keywords": [
+        "mastercard"
+      ],
+      "color": "#EB001B",
+      "initial": "M",
+      "icon": "mastercard",
+      "logo": null
+    },
+    {
+      "name": "Apollo",
+      "keywords": [
+        "apollo"
+      ],
+      "color": "#0072BC",
+      "initial": "A",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/apollo.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "PharmEasy",
+      "keywords": [
+        "pharmeasy"
+      ],
+      "color": "#10847E",
+      "initial": "P",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/pharmeasy.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "Tata 1mg",
+      "keywords": [
+        "1mg"
+      ],
+      "color": "#FF6F61",
+      "initial": "1",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/tata_1mg.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Netmeds",
+      "keywords": [
+        "netmeds"
+      ],
+      "color": "#24AEB1",
+      "initial": "N",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/netmeds.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Practo",
+      "keywords": [
+        "practo"
+      ],
+      "color": "#1AA37A",
+      "initial": "P",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/practo.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "cult.fit",
+      "keywords": [
+        "cult.fit", "cultfit", "cult fit"
+      ],
+      "color": "#FF3C46",
+      "initial": "c",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/cult_fit.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "HealthKart",
+      "keywords": [
+        "healthkart"
+      ],
+      "color": "#8DC63F",
+      "initial": "H",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/healthkart.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Zerodha",
+      "keywords": [
+        "zerodha", "kite", "coin by zerodha"
+      ],
+      "color": "#387ED1",
+      "initial": "Z",
+      "icon": "zerodha",
+      "logo": null
+    },
+    {
+      "name": "Groww",
+      "keywords": [
+        "groww"
+      ],
+      "color": "#00D09C",
+      "initial": "G",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/groww.png",
+        "wordmark": true
+      }
+    },
+    {
+      "name": "Upstox",
+      "keywords": [
+        "upstox"
+      ],
+      "color": "#5B2D90",
+      "initial": "U",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/upstox.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "Kuvera",
+      "keywords": [
+        "kuvera"
+      ],
+      "color": "#0A8A8A",
+      "initial": "K",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/kuvera.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "INDmoney",
+      "keywords": [
+        "indmoney"
+      ],
+      "color": "#1A1A1A",
+      "initial": "I",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/indmoney.png",
+        "wordmark": false
+      }
+    },
+    {
+      "name": "LIC",
+      "keywords": [
+        "lic", "life insurance corporation"
+      ],
+      "color": "#0A4C8A",
+      "initial": "L",
+      "icon": null,
+      "logo": {
+        "asset": "assets/logos/lic.png",
+        "wordmark": true
+      }
+    }
+  ],
+  "parser": {
+    "vars": {
+      "currencyCodes": "usd|sar|eur|gbp|aed|sgd|aud|cad|jpy|cny|thb|myr|chf|qar|kwd|bhd|omr|hkd|nzd|idr|lkr|npr",
+      "nameEnd": "(?:\\s+on\\b|\\s+ref(?:no)?\\b|\\s+upi\\b|\\s+from\\b|\\s+via\\b|\\s+using\\b|\\s+avl\\b|\\s+bal\\b|\\s+utr\\b|\\s*\\(|\\.\\s|\\.$|,|$)",
+      "fieldLabels": "(?:upi\\s+ref(?:erence)?(?:\\.?\\s*no\\.?)?|from\\s+vpa|payer\\s+name|to\\s+vpa|payee\\s+name|currency|amount|remarks|transaction\\s+(?:date|status|type|id)|reason\\s+for\\s+failure|beneficiary|remitter)"
+    },
+    "senderCode": {
+      "pattern": "^(?:[A-Z]{2}-)?([A-Z0-9]{4,8})(?:-[A-Z])?$"
+    },
+    "prefixAmount": {
+      "pattern": "(?<![A-Za-z])(rs\\.?|inr|₹|{currencyCodes})\\s*[:.]?\\s*([\\d,]+(?:\\.\\d{1,2})?)",
+      "flags": "i"
+    },
+    "suffixAmount": {
+      "pattern": "([\\d,]+(?:\\.\\d{1,2})?)\\s*({currencyCodes})\\b",
+      "flags": "i"
+    },
+    "verbAmount": {
+      "pattern": "\\b(?:debited|credited|debit|credit)\\s+(?:by|for|with|of)\\s+([\\d,]+(?:\\.\\d{1,2})?)",
+      "flags": "i"
+    },
+    "balanceContext": {
+      "pattern": "(bal|avl|avail|limit|lmt|outstanding)",
+      "flags": "i"
+    },
+    "balanceClause": {
+      "pattern": "(?:temporary\\s+credit\\s+|avl\\.?\\s+|available\\s+|total\\s+)?(?:bal(?:ance)?|limit)\\b[:\\s]*(?:[A-Za-z]{2,3}\\.?\\s*|₹\\s*)?[\\d,]+(?:\\.\\d+)?",
+      "flags": "i"
+    },
+    "strongDebit": {
+      "pattern": "\\b(debited|spent|withdrawn|paid|purchase|purchased|sent|charged|used (?:at|for)|transacted|swiped)\\b",
+      "flags": "i"
+    },
+    "strongCredit": {
+      "pattern": "\\b(credited|received|deposited|refunded|refund|reversed|reversal|loaded|reloaded|topped up)\\b",
+      "flags": "i"
+    },
+    "weakDebit": {
+      "pattern": "\\b(debit|dr|txn of|transaction of|payment of|thank you for using)\\b",
+      "flags": "i"
+    },
+    "weakCredit": {
+      "pattern": "\\b(credit(?!\\s*card)|cr)\\b",
+      "flags": "i"
+    },
+    "notTransaction": {
+      "pattern": "\\botp\\b|one.?time.?password|do not share|never share|verification code|will be (?:debited|credited|charged)|is due\\b|(?:min(?:imum)?\\.?|total) (?:amt|amount) due|e-?mandate|pre-?approved|apply now|click here|upgrade|converted (?:in)?to (?:an )?emi|emi conversion",
+      "flags": "i"
+    },
+    "failedWords": {
+      "pattern": "\\b(failed|declined|unsuccessful|insufficient)\\b",
+      "flags": "i"
+    },
+    "creditFrom": {
+      "pattern": "\\bfrom\\s+([A-Za-z0-9@._\\-& ]{2,40}?)(?:\\s+in\\b|\\s+on\\b|\\s+ref(?:no)?\\b|\\s+upi\\b|\\s+via\\b|\\s+utr\\b|\\s*\\(|\\.\\s|\\.$|,|$)",
+      "flags": "i"
+    },
+    "notMerchant": {
+      "pattern": "^(?:a/c|acct|account|your|card|ac\\b|xx|\\*|bank|the account|sb\\b|savings|upi[- ]?ref|ref\\b|refno|utr|txn)",
+      "flags": "i"
+    },
+    "genericPhrase": {
+      "pattern": "^(?:all|any|every|this|that|these|those|no|our|us|you|me)\\b|\\btimes?$|\\bconvenience$|\\bearliest$|\\bbank(?: ltd\\.?| limited)?$",
+      "flags": "i"
+    },
+    "refundWords": {
+      "pattern": "\\b(refund(?:ed)?|revers(?:ed|al)|cancell?ed|returned|chargeback)\\b",
+      "flags": "i"
+    },
+    "forexWords": {
+      "pattern": "\\bforex\\b",
+      "flags": "i"
+    },
+    "prepaidWords": {
+      "pattern": "\\bprepaid\\b",
+      "flags": "i"
+    },
+    "creditCardWords": {
+      "pattern": "\\bcredit\\s+card\\b",
+      "flags": "i"
+    },
+    "debitCardWords": {
+      "pattern": "\\bdebit\\s+card\\b",
+      "flags": "i"
+    },
+    "cardWords": {
+      "pattern": "\\bcard\\b",
+      "flags": "i"
+    },
+    "internationalKeywords": {
+      "pattern": "\\b(intl|international|foreign currency|forex markup|cross.?currency)\\b",
+      "flags": "i"
+    },
+    "last4": {
+      "pattern": "(?:a/c|\\bac\\b|acct?\\.?|account|card|ending(?:\\s+with)?|ends\\s+with)\\s*(?:no\\.?|number)?\\s*[:\\-]?\\s*(?:x+|\\*+|\\.{2,}|#)?\\s*(\\d{4})\\b",
+      "flags": "i"
+    },
+    "loanKind": {
+      "pattern": "\\b(home|housing|personal|car|auto|vehicle|education|gold|business|two.?wheeler)\\s+loan\\b",
+      "flags": "i"
+    },
+    "loanWords": {
+      "pattern": "\\b(emi|loan|nach|ecs|instal?lment)\\b",
+      "flags": "i"
+    },
+    "emailFooter": {
+      "pattern": "click here|for additional assistance|do not share|never share|if you did not|if you have not|if this (?:transaction )?was not|in case you|please call|call us|unsubscribe|disclaimer|this is an auto",
+      "flags": "i"
+    },
+    "merchantPatterns": [
+      {
+        "pattern": "\\b(?:sender|remitter)(?:\\s+name)?\\s*[:\\-]\\s*([A-Za-z][A-Za-z .'\\-]{1,50}?)(?=\\s*\\(|\\s+(?:vpa|upi|ref|utr|c\\.)\\b|\\s*[,;]|\\.\\s|\\.$|$)",
+        "flags": "i"
+      },
+      {
+        "pattern": "\\bvpa\\s+\\S+\\s+([A-Za-z0-9&.' \\-]{2,60}?)\\s+on\\s+\\d{1,2}[-/]\\d{1,2}[-/]\\d{2,4}",
+        "flags": "i"
+      },
+      {
+        "pattern": "\\bupi[/\\-](?:p2[map]|dr|cr)?[/\\-]?\\d*[/\\-]([A-Za-z0-9 ._@&]+?)(?=[/\\-]|\\s+(?:sms|bal|avl|not|if|call)\\b|$)",
+        "flags": "i"
+      },
+      {
+        "pattern": "\\b(?:to|at|by|vpa|towards)\\s+([A-Za-z0-9@._\\-& ]{2,40}?){nameEnd}",
+        "flags": "i"
+      },
+      {
+        "pattern": "\\binfo[:\\-]\\s*([A-Za-z0-9@._\\-&/ ]{2,40}?)(?:\\.\\s|\\.$|,|$)",
+        "flags": "i"
+      },
+      {
+        "pattern": ";\\s*([A-Za-z][A-Za-z0-9 .&' \\-]{1,40}?)\\s+credited\\b",
+        "flags": "i"
+      },
+      {
+        "pattern": "\\d{1,2}-[A-Za-z]{3}-\\d{2,4}\\s+on\\s+([A-Za-z][A-Za-z0-9 .&' \\-]{1,40}?)(?:\\.\\s|\\.$|,|\\s+avl\\b|$)",
+        "flags": "i"
+      },
+      {
+        "pattern": "\\bIST\\s+([A-Za-z][A-Za-z0-9 .&' \\-]{1,40}?)\\s+(?:avl|available)\\b",
+        "flags": "i"
+      }
+    ],
+    "merchantCleanup": {
+      "stripVpa": {
+        "pattern": "^vpa\\s+",
+        "flags": "i"
+      },
+      "stripChannel": {
+        "pattern": "^(?:imps|neft|rtgs|upi)\\s+(?:to|from)\\s+",
+        "flags": "i"
+      },
+      "numericOnly": {
+        "pattern": "^(?:rs\\.?|inr|₹)?\\s*[\\d/\\-:., ]+$",
+        "flags": "i"
+      }
+    },
+    "structured": {
+      "type": {
+        "pattern": "transaction\\s+type\\s*:\\s*(dr|debit|cr|credit)\\b",
+        "flags": "i"
+      },
+      "amount": {
+        "pattern": "\\bamount\\s*:\\s*(?:rs\\.?|inr|₹)?\\s*([\\d,]+(?:\\.\\d{1,2})?)",
+        "flags": "i"
+      },
+      "currency": {
+        "pattern": "\\bcurrency\\s*:\\s*([A-Za-z]{3})\\b",
+        "flags": "i"
+      },
+      "status": {
+        "pattern": "transaction\\s+status\\s*:\\s*([A-Za-z]+)",
+        "flags": "i"
+      },
+      "okStatuses": [
+        "completed", "success", "successful", "processed", "credited", "debited"
+      ],
+      "fieldTemplate": "{label}\\s*:\\s*(.+?)(?=\\s+{fieldLabels}\\s*:|\\s*$)",
+      "debitPartyLabels": [
+        "payee\\s+name", "to\\s+vpa"
+      ],
+      "creditPartyLabels": [
+        "payer\\s+name", "from\\s+vpa"
+      ],
+      "partyTitle": {
+        "pattern": "^(?:mr|mrs|ms|miss|shri|smt|dr)\\.?\\s+",
+        "flags": "i"
+      }
+    },
+    "purposeLabels": {
+      "debit": [
+        {"label": "Mutual fund SIP", "pattern": "\\bsip\\b|mutual fund"},
+        {"label": "Insurance premium", "pattern": "insurance|premium"},
+        {"special": "loan"},
+        {"label": "ATM withdrawal", "pattern": "\\batm\\b|cash withdrawal"},
+        {"label": "Mobile recharge", "pattern": "recharge"},
+        {"label": "FASTag toll", "pattern": "fastag|\\btoll\\b"},
+        {"label": "Bill payment", "pattern": "bill ?pay|bbps|\\bbill\\b"},
+        {"label": "Cheque payment", "pattern": "cheque|\\bchq\\b"},
+        {"label": "NEFT transfer", "pattern": "\\bneft\\b"},
+        {"label": "IMPS transfer", "pattern": "\\bimps\\b"},
+        {"label": "RTGS transfer", "pattern": "\\brtgs\\b"},
+        {"label": "Bank charges", "pattern": "service charge|charges|\\bfee\\b|\\bgst\\b"}
+      ],
+      "credit": [
+        {"label": "Interest", "pattern": "interest"},
+        {"label": "Dividend", "pattern": "dividend"},
+        {"label": "Cash deposit", "pattern": "cash deposit|\\bcdm\\b"},
+        {"label": "Cheque deposit", "pattern": "cheque|\\bchq\\b"},
+        {"label": "Card load", "pattern": "loaded|reloaded|top-?up|topped up"},
+        {"label": "NEFT transfer", "pattern": "\\bneft\\b"},
+        {"label": "IMPS transfer", "pattern": "\\bimps\\b"},
+        {"label": "RTGS transfer", "pattern": "\\brtgs\\b"}
+      ]
+    }
+  },
+  "canaries": [
+    {
+      "text": "Sent Rs.500.00\nFrom HDFC Bank A/c *1234\nTo SUNRISE CAFE\nOn 02/10/26\nRef 600000000001\nNot You? Call 18002586161/SMS BLOCK UPI to 7308080808",
+      "expect": {
+        "type": "debit",
+        "amountMinor": 50000,
+        "merchantContains": "sunrise cafe"
+      }
+    },
+    {
+      "text": "UPDATE: INR 1,250.00 debited from HDFC Bank XX1234 on 02-OCT-26. Info: UPI/DR/600000000002/SUNRISE STORE/HDFC",
+      "expect": {
+        "type": "debit",
+        "amountMinor": 125000,
+        "merchantContains": "sunrise store"
+      }
+    },
+    {
+      "text": "Dear UPI user A/C X1234 debited by 150.0 on date 05Mar24 trf to SUNRISE FOODS Refno 600000000003. If not u? call 1800111109. -SBI",
+      "expect": {
+        "type": "debit",
+        "amountMinor": 15000,
+        "merchantContains": "sunrise foods"
+      }
+    },
+    {
+      "text": "Rs.2,000.00 credited to HDFC Bank A/c XX1234 on 03-10-26 from VPA riya@okaxis (UPI 600000000005)",
+      "expect": {
+        "type": "credit",
+        "amountMinor": 200000
+      }
+    },
+    {
+      "text": "Your OTP is 482913. Do not share it with anyone. Rs 500 will be debited from your account.",
+      "expect": {
+        "type": null
+      }
+    },
+    {
+      "text": "SAR 3.00 using ICICI Bank Forex Prepaid Card XX1233 transacted at POS on 02-Oct-26. Bal SAR 733.42. Temporary Credit Bal SAR 0.",
+      "expect": {
+        "type": "debit"
+      }
+    }
+  ]
+}

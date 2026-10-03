@@ -9,6 +9,7 @@ import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/greeting_header.dart';
 import '../../shared/widgets/placeholder_body.dart';
+import '../update/update_banner.dart';
 import 'dashboard_month.dart';
 import 'expense_detail_screen.dart';
 import 'widgets/home_budgets_card.dart';
@@ -34,7 +35,7 @@ class DashboardScreen extends ConsumerWidget {
             children: [
               Padding(
                 padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: GreetingHeader(),
+                child: Column(children: [GreetingHeader(), SizedBox(height: 12), UpdateBanner()]),
               ),
               Expanded(
                 child: PlaceholderBody(
@@ -98,7 +99,9 @@ class DashboardScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
           children: [
             const FadeSlideIn(child: GreetingHeader()),
-            const SizedBox(height: 16),
+            const SizedBox(height: 12),
+            const UpdateBanner(),
+            const SizedBox(height: 4),
             const FadeSlideIn(
               delay: Duration(milliseconds: 10),
               child: MonthSelector(),

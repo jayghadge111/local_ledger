@@ -11,6 +11,7 @@ import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/glass_switch_row.dart';
 import '../lock/pin_setup_screen.dart';
+import '../update/update_test_card.dart';
 import 'widgets/backup_card.dart';
 import 'widgets/email_connect_card.dart';
 import 'widgets/profile_card.dart';
@@ -76,6 +77,8 @@ class SettingsScreen extends ConsumerWidget {
         ),
         // Sample/test data tools exist only in debug builds.
         if (kDebugMode) ...[
+          const SizedBox(height: 16),
+          const UpdateTestCard(),
           const SizedBox(height: 16),
           FadeSlideIn(
             delay: const Duration(milliseconds: 30),

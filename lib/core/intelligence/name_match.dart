@@ -8,21 +8,7 @@
 /// can share a first name or a surname, but rarely both.
 library;
 
-const _titles = {
-  'mr',
-  'mrs',
-  'ms',
-  'miss',
-  'mx',
-  'shri',
-  'shree',
-  'sri',
-  'smt',
-  'kumari',
-  'dr',
-  'prof',
-  'late',
-};
+import '../rules/parser_rules.dart';
 
 /// Lower-case words of [name], without titles, punctuation or UPI-style
 /// suffixes (anything after an "@").
@@ -32,7 +18,7 @@ List<String> nameWords(String name) {
       .toLowerCase()
       .replaceAll(RegExp(r"[^a-z\s]"), ' ')
       .split(RegExp(r'\s+'))
-      .where((w) => w.isNotEmpty && !_titles.contains(w))
+      .where((w) => w.isNotEmpty && !ParserRules.current.nameTitles.contains(w))
       .toList();
 }
 
