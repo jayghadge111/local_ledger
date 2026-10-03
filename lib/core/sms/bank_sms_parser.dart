@@ -471,6 +471,30 @@ ParsedSmsTransaction? parseBankSms(String body) {
   );
 }
 
+/// A transaction read from a message layout the user taught the app (see
+/// `template_learning.dart`): the template supplied the amount, direction
+/// and, if it has one, the payee; everything else is read the usual way.
+ParsedSmsTransaction parsedFromLearned({
+  required String body,
+  required String type,
+  required int amountMinor,
+  String? merchant,
+}) {
+  return ParsedSmsTransaction(
+    amountMinor: amountMinor,
+    type: type,
+    merchant:
+        (merchant == null || merchant.trim().length < 2 ? null : merchant.trim()) ??
+        _purposeLabel(body, type) ??
+        (type == 'credit' ? 'Credit' : 'Unknown merchant'),
+    isInternational: _internationalKeywords.hasMatch(body),
+    currency: 'INR',
+    last4: _last4Pattern.firstMatch(body)?.group(1),
+    refundHint: type == 'credit' && _refundWords.hasMatch(body),
+    accountKind: _accountKind(body),
+  );
+}
+
 /// The first non-balance amount in [body] in minor units, for prefilling the
 /// form when a message couldn't be fully parsed.
 int? extractAmountMinor(String body) {

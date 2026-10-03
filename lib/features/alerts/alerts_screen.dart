@@ -2,13 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/analytics/analytics_providers.dart';
+import '../../core/analytics/budget_status.dart';
+import '../../core/db/app_database.dart';
+import '../../core/db/budgets_repository.dart';
 import '../../core/db/providers.dart';
+import '../../core/lending/lending_math.dart';
+import '../../core/lending/lending_repository.dart';
 import '../../core/intelligence/intelligence_providers.dart';
 import '../../core/intelligence/recurring_detector.dart';
 import '../../core/notifications/notification_providers.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/placeholder_body.dart';
+import '../budgets/budgets_screen.dart';
+import '../dashboard/widgets/home_budgets_card.dart';
+import '../lending/lending_screen.dart';
 import '../transactions/widgets/transaction_tile.dart';
 
 class AlertsScreen extends ConsumerStatefulWidget {
@@ -36,8 +45,11 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
         id: id,
         merchant: insight.merchant,
         dueDate: insight.nextExpectedDate,
-        amountLabel: NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0)
-            .format(insight.expectedAmountMinor / 100),
+        amountLabel: NumberFormat.currency(
+          locale: 'en_IN',
+          symbol: '₹',
+          decimalDigits: 0,
+        ).format(insight.expectedAmountMinor / 100),
       );
     }
   }
@@ -49,24 +61,97 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
     final unusual = ref.watch(unusualTransactionsProvider);
     final international = ref.watch(internationalTransactionsProvider);
     final categoriesById = {
-      for (final c in ref.watch(categoriesProvider).value ?? [])
-        c.id: c,
+      for (final c in ref.watch(categoriesProvider).value ?? []) c.id: c,
     };
 
-    if (recurring.isEmpty && unusual.isEmpty && international.isEmpty) {
+    final now = DateTime.now();
+    final month = DateTime(now.year, now.month);
+    final budgetAlerts = budgetStatuses(
+      budgets: ref.watch(monthBudgetsProvider(month)),
+      transactions: ref.watch(analyticsTransactionsProvider),
+      month: month,
+    ).where((s) => s.level != BudgetLevel.ok).toList();
+    final categoryNames = {
+      for (final c in ref.watch(categoriesProvider).value ?? const <Category>[])
+        c.id: c,
+    };
+    final lendingDue = dueSoon(ref.watch(lendingBalancesProvider), now);
+
+    if (recurring.isEmpty &&
+        unusual.isEmpty &&
+        international.isEmpty &&
+        budgetAlerts.isEmpty &&
+        lendingDue.isEmpty) {
       return const PlaceholderBody(
         icon: Icons.notifications_outlined,
         title: 'All quiet',
-        subtitle:
-            'Recurring-payment reminders and unusual or international transaction flags will show up here as your transaction history grows.',
+        subtitle: 'Recurring-payment reminders and unusual or international transaction flags will show up here as your transaction history grows.',
       );
     }
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
       children: [
+        if (budgetAlerts.isNotEmpty) ...[
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Budget alerts',
+                  style: theme.textTheme.titleMedium,
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const BudgetsScreen()),
+                ),
+                child: const Text('Manage budgets'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          GlassCard(
+            child: Column(
+              children: [
+                for (final s in budgetAlerts) ...[
+                  BudgetLine(status: s, category: categoryNames[s.categoryId]),
+                  if (s != budgetAlerts.last) const SizedBox(height: 14),
+                ],
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (lendingDue.isNotEmpty) ...[
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Lend & borrow reminders',
+                  style: theme.textTheme.titleMedium,
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const LendingScreen()),
+                ),
+                child: const Text('Open'),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          for (final b in lendingDue)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: LendingCard(balance: b),
+            ),
+          const SizedBox(height: 8),
+        ],
         if (recurring.isNotEmpty) ...[
-          Text('Upcoming recurring payments', style: theme.textTheme.titleMedium),
+          Text(
+            'Upcoming recurring payments',
+            style: theme.textTheme.titleMedium,
+          ),
           const SizedBox(height: 10),
           for (var i = 0; i < recurring.length; i++)
             Padding(
@@ -96,7 +181,10 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
           const SizedBox(height: 12),
         ],
         if (international.isNotEmpty) ...[
-          Text('International transactions', style: theme.textTheme.titleMedium),
+          Text(
+            'International transactions',
+            style: theme.textTheme.titleMedium,
+          ),
           const SizedBox(height: 10),
           for (var i = 0; i < international.length; i++)
             Padding(
@@ -128,17 +216,23 @@ class _RecurringCard extends StatelessWidget {
     final dueLabel = daysUntil < 0
         ? '${-daysUntil}d overdue'
         : daysUntil == 0
-            ? 'Due today'
-            : 'Due in ${daysUntil}d';
-    final amount = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0)
-        .format(insight.expectedAmountMinor / 100);
+        ? 'Due today'
+        : 'Due in ${daysUntil}d';
+    final amount = NumberFormat.currency(
+      locale: 'en_IN',
+      symbol: '₹',
+      decimalDigits: 0,
+    ).format(insight.expectedAmountMinor / 100);
 
     return GlassCard(
       child: Row(
         children: [
           CircleAvatar(
             backgroundColor: theme.colorScheme.secondaryContainer,
-            child: Icon(Icons.autorenew, color: theme.colorScheme.onSecondaryContainer),
+            child: Icon(
+              Icons.autorenew,
+              color: theme.colorScheme.onSecondaryContainer,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -148,8 +242,9 @@ class _RecurringCard extends StatelessWidget {
                 Text(insight.merchant, style: theme.textTheme.titleMedium),
                 Text(
                   '~every ${insight.intervalDays} days · $amount',
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -157,8 +252,11 @@ class _RecurringCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
             decoration: BoxDecoration(
-              color: (daysUntil < 0 ? theme.colorScheme.error : theme.colorScheme.secondary)
-                  .withValues(alpha: 0.15),
+              color:
+                  (daysUntil < 0
+                          ? theme.colorScheme.error
+                          : theme.colorScheme.secondary)
+                      .withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(999),
             ),
             child: Text(
@@ -166,7 +264,9 @@ class _RecurringCard extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: daysUntil < 0 ? theme.colorScheme.error : theme.colorScheme.secondary,
+                color: daysUntil < 0
+                    ? theme.colorScheme.error
+                    : theme.colorScheme.secondary,
               ),
             ),
           ),

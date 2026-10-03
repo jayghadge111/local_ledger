@@ -14,6 +14,8 @@ import '../../core/intelligence/rule_matcher.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/glass_switch_row.dart';
 import '../splits/splits_ui.dart';
+import '../../core/security/encryption_providers.dart';
+import '../../core/sms/parser_templates.dart';
 import 'transactions_repository.dart';
 
 /// Starting values for a new transaction (e.g. from an unreadable SMS).
@@ -23,11 +25,18 @@ class TransactionPrefill {
     this.merchant,
     this.type,
     this.date,
+    this.learnFromBody,
+    this.senderCode,
   });
   final int? amountMinor;
   final String? merchant;
   final String? type;
   final DateTime? date;
+
+  /// The message the values came from. When the user saves, the app learns
+  /// this message's layout so the next one like it is read automatically.
+  final String? learnFromBody;
+  final String? senderCode;
 }
 
 /// Opens the add/edit transaction form as a modal sheet. Pass [existing] to
@@ -138,6 +147,7 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
     final messenger = ScaffoldMessenger.of(context);
     final accountId = _paidInCash ? await repo.cashAccountId() : null;
 
+    final merchantText = _merchantController.text.trim();
     if (widget.existing == null) {
       await repo.addManualTransaction(
         amountMinor: amountMinor,
@@ -149,7 +159,12 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
         accountId: accountId,
         isTransfer: _isTransfer,
       );
+      final body = widget.prefill?.learnFromBody;
+      if (body != null) {
+        await _learn(body: body, amountMinor: amountMinor, merchant: merchantText, senderCode: widget.prefill?.senderCode);
+      }
     } else {
+      await _learnFromCorrection(amountMinor: amountMinor, merchant: merchantText);
       final renamed = await repo.updateTransaction(
         widget.existing!.id,
         amountMinor: amountMinor,
@@ -173,6 +188,56 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
     }
 
     if (mounted) Navigator.of(context).pop(true);
+  }
+
+  /// Teaches the parser this message's layout. Never blocks saving.
+  Future<void> _learn({
+    required String body,
+    required int amountMinor,
+    required String merchant,
+    String? senderCode,
+    bool requireMerchant = false,
+  }) async {
+    try {
+      final learned = await ref.read(parserTemplateStoreProvider).learn(
+        body: body,
+        type: _type,
+        amountMinor: amountMinor,
+        merchant: merchant,
+        senderCode: senderCode,
+        requireMerchant: requireMerchant,
+      );
+      if (learned && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Learned this message layout — similar messages will be read automatically')),
+        );
+      }
+    } catch (_) {
+      // Learning is a bonus; the edit itself must go through.
+    }
+  }
+
+  /// Editing an imported transaction fixes something the parser got wrong:
+  /// the payee, the direction or the amount. If so, learn from the original
+  /// message.
+  Future<void> _learnFromCorrection({required int amountMinor, required String merchant}) async {
+    final existing = widget.existing!;
+    final encrypted = existing.rawTextEncrypted;
+    if (encrypted == null) return;
+    final changedType = _type != existing.type;
+    final changedAmount = amountMinor != existing.amountMinor;
+    final changedMerchant = merchant != existing.merchant;
+    if (!changedType && !changedAmount && !changedMerchant) return;
+    try {
+      final body = await ref.read(encryptionServiceProvider).decryptString(encrypted);
+      await _learn(
+        body: body,
+        amountMinor: amountMinor,
+        merchant: changedMerchant ? merchant : '',
+        // A rename alone only teaches us something if the new name is in the message.
+        requireMerchant: changedMerchant && !changedType && !changedAmount,
+      );
+    } catch (_) {}
   }
 
   Future<void> _delete() async {

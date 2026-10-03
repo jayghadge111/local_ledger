@@ -189,3 +189,69 @@ class AppSettings extends Table {
   @override
   Set<Column> get primaryKey => {settingKey};
 }
+
+/// Money the user lent to, or borrowed from, someone — entered by hand.
+/// [amountMinor] is the original amount; repayments live in [LendingPayments]
+/// and the outstanding balance is the difference.
+class LendingEntries extends Table {
+  TextColumn get id => text()();
+  TextColumn get person => text()();
+
+  /// lent (they owe the user) | borrowed (the user owes them).
+  TextColumn get direction => text()();
+  IntColumn get amountMinor => integer()();
+  DateTimeColumn get date => dateTime()();
+  DateTimeColumn get dueDate => dateTime().nullable()();
+  TextColumn get note => text().nullable()();
+  BoolColumn get isSettled => boolean().withDefault(const Constant(false))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A part- or full repayment against a [LendingEntries] row.
+class LendingPayments extends Table {
+  TextColumn get id => text()();
+  TextColumn get entryId => text().references(LendingEntries, #id)();
+  IntColumn get amountMinor => integer()();
+  DateTimeColumn get date => dateTime()();
+  TextColumn get note => text().nullable()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A message layout the user taught the parser by correcting a transaction.
+/// The pattern is a regex built from the message with the amount and merchant
+/// replaced by capture groups; it is stored encrypted because the fixed words
+/// around them can include names or account details.
+class ParserTemplates extends Table {
+  TextColumn get id => text()();
+  TextColumn get senderCode => text().nullable()();
+  TextColumn get patternEncrypted => text()();
+
+  /// debit | credit
+  TextColumn get type => text()();
+
+  /// How many later messages this template has handled.
+  IntColumn get hits => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// A budget limit that applies to one month only, in place of the category's
+/// standing [Budgets] limit.
+class BudgetOverrides extends Table {
+  TextColumn get id => text()();
+  TextColumn get categoryId => text().references(Categories, #id)();
+
+  /// "2026-10".
+  TextColumn get monthKey => text()();
+  IntColumn get limitMinor => integer()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}

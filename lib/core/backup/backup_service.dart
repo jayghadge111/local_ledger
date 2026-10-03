@@ -38,6 +38,10 @@ class BackupService {
       'merchantAliases':
           (await _db.select(_db.merchantAliases).get()).map((e) => e.toJson()).toList(),
       'splitShares': (await _db.select(_db.splitShares).get()).map((e) => e.toJson()).toList(),
+      'lendingEntries':
+          (await _db.select(_db.lendingEntries).get()).map((e) => e.toJson()).toList(),
+      'lendingPayments':
+          (await _db.select(_db.lendingPayments).get()).map((e) => e.toJson()).toList(),
     };
     final jsonBytes = utf8.encode(jsonEncode(payload));
 
@@ -124,6 +128,16 @@ class BackupService {
       for (final row in (payload['splitShares'] as List? ?? [])) {
         await _db.into(_db.splitShares).insertOnConflictUpdate(
               SplitShare.fromJson(row as Map<String, dynamic>).toCompanion(true),
+            );
+      }
+      for (final row in (payload['lendingEntries'] as List? ?? [])) {
+        await _db.into(_db.lendingEntries).insertOnConflictUpdate(
+              LendingEntry.fromJson(row as Map<String, dynamic>).toCompanion(true),
+            );
+      }
+      for (final row in (payload['lendingPayments'] as List? ?? [])) {
+        await _db.into(_db.lendingPayments).insertOnConflictUpdate(
+              LendingPayment.fromJson(row as Map<String, dynamic>).toCompanion(true),
             );
       }
     });

@@ -13,6 +13,7 @@ void main() {
   final jobs = <(String, String, int)>[
     ('assets/brand/launcher_full_bleed.svg', 'assets/icon/icon_master.png', 1024),
     ('assets/brand/launcher_foreground.svg', 'assets/icon/icon_foreground.png', 1024),
+    ('assets/brand/launcher_monochrome.svg', 'assets/icon/icon_monochrome.png', 1024),
     ('assets/brand/splash_mark.svg', 'assets/icon/splash_mark.png', 512),
     ('assets/brand/nativespend_icon.svg', 'assets/icon/web_icon.png', 1024),
   ];

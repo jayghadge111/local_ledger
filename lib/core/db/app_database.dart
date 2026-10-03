@@ -24,6 +24,10 @@ part 'app_database.g.dart';
     MerchantAliases,
     SplitShares,
     UnparsedMessages,
+    LendingEntries,
+    LendingPayments,
+    ParserTemplates,
+    BudgetOverrides,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -32,7 +36,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -76,6 +80,12 @@ class AppDatabase extends _$AppDatabase {
             }
           }
           if (from < 6) await undoGenericLearning();
+          if (from < 7) {
+            await m.createTable(lendingEntries);
+            await m.createTable(lendingPayments);
+            await m.createTable(parserTemplates);
+            await m.createTable(budgetOverrides);
+          }
         },
       );
 

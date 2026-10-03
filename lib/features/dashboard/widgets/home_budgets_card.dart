@@ -21,7 +21,7 @@ class HomeBudgetsCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final month = ref.watch(dashboardMonthProvider);
-    final budgets = ref.watch(budgetsProvider).value ?? const <Budget>[];
+    final budgets = ref.watch(monthBudgetsProvider(month));
     final categories = {
       for (final c in ref.watch(categoriesProvider).value ?? const <Category>[])
         c.id: c,
@@ -107,7 +107,7 @@ class HomeBudgetsCard extends ConsumerWidget {
           ),
           const SizedBox(height: 14),
           for (final s in shown) ...[
-            _BudgetLine(status: s, category: categories[s.categoryId]),
+            BudgetLine(status: s, category: categories[s.categoryId]),
             if (s != shown.last) const SizedBox(height: 14),
           ],
           if (statuses.length > shown.length) ...[
@@ -125,8 +125,8 @@ class HomeBudgetsCard extends ConsumerWidget {
   }
 }
 
-class _BudgetLine extends StatelessWidget {
-  const _BudgetLine({required this.status, required this.category});
+class BudgetLine extends StatelessWidget {
+  const BudgetLine({super.key, required this.status, required this.category});
 
   final BudgetStatus status;
   final Category? category;

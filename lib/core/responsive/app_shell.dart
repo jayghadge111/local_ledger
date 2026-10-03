@@ -9,6 +9,7 @@ import '../../features/settings/settings_screen.dart';
 import '../../features/transactions/transactions_screen.dart';
 import '../../shared/widgets/glass_background.dart';
 import '../../shared/widgets/sync_banner.dart';
+import '../alerts/alert_watcher.dart';
 import '../sync/sync_controller.dart';
 
 /// The app's single navigational shell.
@@ -102,6 +103,8 @@ class _AppShellState extends ConsumerState<AppShell>
 
   @override
   Widget build(BuildContext context) {
+    // Budget alerts and lending reminders run while the app is open.
+    ref.watch(alertWatcherProvider);
     return GlassBackground(
       child: DisplayFeatureSubScreen(
         child: AdaptiveScaffold(

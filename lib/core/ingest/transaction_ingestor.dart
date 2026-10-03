@@ -11,6 +11,8 @@ import '../intelligence/rule_matcher.dart';
 import '../security/encryption_service.dart';
 import '../sms/bank_names.dart';
 import '../sms/bank_sms_parser.dart';
+import '../sms/parser_templates.dart';
+import '../sms/template_learning.dart';
 import 'reconciler.dart';
 
 enum IngestOutcome { imported, duplicate, queued, skipped }
@@ -28,8 +30,10 @@ class TransactionIngestor {
     final rules = await _db.select(_db.rules).get();
     final aliasRows = await _db.select(_db.merchantAliases).get();
     final accounts = await _db.select(_db.accounts).get();
+    final templates = await ParserTemplateStore(_db, _encryption).loadAll();
     return IngestSession._(
       this,
+      templates,
       rules,
       {for (final a in aliasRows) a.pattern: a.displayName},
       {
@@ -42,9 +46,11 @@ class TransactionIngestor {
 }
 
 class IngestSession {
-  IngestSession._(this._owner, this._rules, this._aliases, this._accounts);
+  IngestSession._(this._owner, this._templates, this._rules, this._aliases, this._accounts);
 
   final TransactionIngestor _owner;
+  final List<CompiledTemplate> _templates;
+  final Map<String, int> _templateHits = {};
   final List<Rule> _rules;
   final Map<String, String> _aliases;
   final Map<String, Account> _accounts;
@@ -78,7 +84,7 @@ class IngestSession {
     required DateTime date,
   }) async {
     final hash = _hash(source, body, date);
-    final parsed = parseBankSms(body);
+    final parsed = _readWithTemplates(sender, body) ?? parseBankSms(body);
 
     if (parsed == null) {
       if (!looksLikeUnparsedTransaction(body)) {
@@ -142,6 +148,27 @@ class IngestSession {
         );
     imported++;
     return IngestOutcome.imported;
+  }
+
+  /// Reads [body] with a layout the user taught the app, if one fits. These
+  /// are the user's own corrections, so they take priority over the built-in
+  /// parser.
+  ParsedSmsTransaction? _readWithTemplates(String sender, String body) {
+    if (_templates.isEmpty) return null;
+    final code = bankCodeOf(sender);
+    for (final t in _templates) {
+      if (t.senderCode != null && t.senderCode != code) continue;
+      final match = matchTemplate(body, t.regex);
+      if (match == null) continue;
+      _templateHits.update(t.id, (v) => v + 1, ifAbsent: () => 1);
+      return parsedFromLearned(
+        body: body,
+        type: t.type,
+        amountMinor: match.amountMinor,
+        merchant: match.merchant,
+      );
+    }
+    return null;
   }
 
   /// How far apart two channels' reports of one transaction may arrive. Bank
@@ -389,5 +416,10 @@ class IngestSession {
   }
 
   /// Call once after the last [add]: links transfers and refunds.
-  Future<ReconcileResult> finish() => Reconciler(_db).run();
+  Future<ReconcileResult> finish() async {
+    if (_templateHits.isNotEmpty) {
+      await ParserTemplateStore(_db, _owner._encryption).recordHits(_templateHits);
+    }
+    return Reconciler(_db).run();
+  }
 }

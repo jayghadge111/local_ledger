@@ -67,6 +67,8 @@ class UnparsedMessagesScreen extends ConsumerWidget {
                                             prefill: TransactionPrefill(
                                               amountMinor: extractAmountMinor(body),
                                               date: m.receivedAt,
+                                              learnFromBody: body,
+                                              senderCode: m.senderCode,
                                             ),
                                           );
                                           if (saved == true) await repo.resolve(m.id);

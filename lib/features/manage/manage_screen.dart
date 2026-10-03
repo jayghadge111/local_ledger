@@ -1,3 +1,7 @@
+import '../../core/lending/lending_repository.dart';
+import '../../core/sms/parser_templates.dart';
+import '../import_review/learned_layouts_screen.dart';
+import '../lending/lending_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -41,6 +45,10 @@ class ManageScreen extends ConsumerWidget {
     final senders =
         ref.watch(customBankEmailDomainsProvider).value ?? const <String>[];
 
+    final learnedLayouts = ref.watch(parserTemplateCountProvider).value ?? 0;
+    final lendingBalancesNow = ref.watch(lendingBalancesProvider);
+    final lendingTotals = ref.watch(lendingTotalsProvider);
+    final lendingOpen = lendingBalancesNow.where((b) => !b.isSettled).length;
     final owed = shares
         .where((s) => !s.settled)
         .fold<int>(0, (sum, s) => sum + s.shareMinor);
@@ -63,6 +71,16 @@ class ManageScreen extends ConsumerWidget {
         screen: const SplitsScreen(),
       ),
       _ManageItem(
+        icon: Icons.handshake_rounded,
+        title: 'Lend & borrow',
+        subtitle: lendingOpen == 0
+            ? 'Note money you lent or borrowed, with reminders'
+            : '${lendingTotals.owedToMeMinor > 0 ? "You'll get ${money.format(lendingTotals.owedToMeMinor / 100)}" : ''}'
+                '${lendingTotals.owedToMeMinor > 0 && lendingTotals.iOweMinor > 0 ? ' · ' : ''}'
+                '${lendingTotals.iOweMinor > 0 ? 'You owe ${money.format(lendingTotals.iOweMinor / 100)}' : ''}',
+        screen: const LendingScreen(),
+      ),
+      _ManageItem(
         icon: Icons.mark_email_unread_rounded,
         title: 'Messages to review',
         subtitle: unparsed.isEmpty
@@ -70,6 +88,14 @@ class ManageScreen extends ConsumerWidget {
             : '${unparsed.length} need${unparsed.length == 1 ? 's' : ''} your attention',
         badge: unparsed.isEmpty ? null : unparsed.length,
         screen: const UnparsedMessagesScreen(),
+      ),
+      _ManageItem(
+        icon: Icons.auto_fix_high_rounded,
+        title: 'Learned message layouts',
+        subtitle: learnedLayouts == 0
+            ? 'Fix a transaction and the app learns to read messages like it'
+            : '$learnedLayouts learned from your corrections',
+        screen: const LearnedLayoutsScreen(),
       ),
       _ManageItem(
         icon: Icons.rule_rounded,

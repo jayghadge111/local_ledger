@@ -1,0 +1,155 @@
+import 'package:drift/drift.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
+
+import '../db/app_database.dart';
+import '../db/providers.dart';
+import 'lending_math.dart';
+
+final lendingEntriesProvider = StreamProvider<List<LendingEntry>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.select(db.lendingEntries).watch();
+});
+
+final lendingPaymentsProvider = StreamProvider<List<LendingPayment>>((ref) {
+  final db = ref.watch(databaseProvider);
+  return db.select(db.lendingPayments).watch();
+});
+
+/// Every entry with its repayments, open ones first.
+final lendingBalancesProvider = Provider<List<LendingBalance>>((ref) {
+  final entries =
+      ref.watch(lendingEntriesProvider).value ?? const <LendingEntry>[];
+  final payments =
+      ref.watch(lendingPaymentsProvider).value ?? const <LendingPayment>[];
+  return lendingBalances(entries, payments);
+});
+
+final lendingTotalsProvider = Provider<LendingTotals>(
+  (ref) => lendingTotals(ref.watch(lendingBalancesProvider)),
+);
+
+final lendingRepositoryProvider = Provider<LendingRepository>(
+  (ref) => LendingRepository(ref.watch(databaseProvider)),
+);
+
+/// Hand-entered lending and borrowing. Nothing here touches transactions or
+/// spending totals — it is a separate record of who owes whom.
+class LendingRepository {
+  LendingRepository(this._db);
+
+  final AppDatabase _db;
+  static const _uuid = Uuid();
+
+  Future<String> addEntry({
+    required String person,
+    required String direction,
+    required int amountMinor,
+    required DateTime date,
+    DateTime? dueDate,
+    String? note,
+  }) async {
+    final id = _uuid.v4();
+    await _db
+        .into(_db.lendingEntries)
+        .insert(
+          LendingEntriesCompanion.insert(
+            id: id,
+            person: person.trim(),
+            direction: direction,
+            amountMinor: amountMinor,
+            date: date,
+            dueDate: Value(dueDate),
+            note: Value(
+              note == null || note.trim().isEmpty ? null : note.trim(),
+            ),
+          ),
+        );
+    return id;
+  }
+
+  Future<void> updateEntry(
+    String id, {
+    required String person,
+    required String direction,
+    required int amountMinor,
+    required DateTime date,
+    DateTime? dueDate,
+    String? note,
+  }) {
+    return (_db.update(
+      _db.lendingEntries,
+    )..where((e) => e.id.equals(id))).write(
+      LendingEntriesCompanion(
+        person: Value(person.trim()),
+        direction: Value(direction),
+        amountMinor: Value(amountMinor),
+        date: Value(date),
+        dueDate: Value(dueDate),
+        note: Value(note == null || note.trim().isEmpty ? null : note.trim()),
+      ),
+    );
+  }
+
+  /// Records a repayment. When it brings the balance to zero the entry is
+  /// marked settled.
+  Future<void> addPayment(
+    String entryId, {
+    required int amountMinor,
+    required DateTime date,
+    String? note,
+  }) async {
+    await _db
+        .into(_db.lendingPayments)
+        .insert(
+          LendingPaymentsCompanion.insert(
+            id: _uuid.v4(),
+            entryId: entryId,
+            amountMinor: amountMinor,
+            date: date,
+            note: Value(
+              note == null || note.trim().isEmpty ? null : note.trim(),
+            ),
+          ),
+        );
+    final entry = await (_db.select(
+      _db.lendingEntries,
+    )..where((e) => e.id.equals(entryId))).getSingle();
+    final payments = await (_db.select(
+      _db.lendingPayments,
+    )..where((p) => p.entryId.equals(entryId))).get();
+    final paid = payments.fold<int>(0, (s, p) => s + p.amountMinor);
+    if (paid >= entry.amountMinor) await setSettled(entryId, true);
+  }
+
+  Future<void> setSettled(String id, bool settled) {
+    return (_db.update(_db.lendingEntries)..where((e) => e.id.equals(id)))
+        .write(LendingEntriesCompanion(isSettled: Value(settled)));
+  }
+
+  /// Removes a repayment; an entry that was settled by it is reopened.
+  Future<void> deletePayment(String id) async {
+    final payment = await (_db.select(
+      _db.lendingPayments,
+    )..where((p) => p.id.equals(id))).getSingleOrNull();
+    if (payment == null) return;
+    await (_db.delete(_db.lendingPayments)..where((p) => p.id.equals(id))).go();
+    final entry = await (_db.select(
+      _db.lendingEntries,
+    )..where((e) => e.id.equals(payment.entryId))).getSingleOrNull();
+    if (entry == null || !entry.isSettled) return;
+    final left = await (_db.select(
+      _db.lendingPayments,
+    )..where((p) => p.entryId.equals(entry.id))).get();
+    if (left.fold<int>(0, (s, p) => s + p.amountMinor) < entry.amountMinor) {
+      await setSettled(entry.id, false);
+    }
+  }
+
+  Future<void> deleteEntry(String id) async {
+    await (_db.delete(
+      _db.lendingPayments,
+    )..where((p) => p.entryId.equals(id))).go();
+    await (_db.delete(_db.lendingEntries)..where((e) => e.id.equals(id))).go();
+  }
+}

@@ -6,17 +6,32 @@ import '../../../shared/widgets/centered_dialog_card.dart';
 import '../../../shared/widgets/glass_surface.dart';
 import '../dashboard_month.dart';
 
-/// "‹  October 2026 ▾  ›" — step month by month, or tap the label to pick any
-/// month and year that has data.
+/// "‹  October 2026 ▾  ›" for Home: steps the dashboard month.
 class MonthSelector extends ConsumerWidget {
   const MonthSelector({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    return MonthNavigator(
+      month: ref.watch(dashboardMonthProvider),
+      earliest: ref.watch(earliestMonthProvider),
+      onChanged: ref.read(dashboardMonthProvider.notifier).select,
+    );
+  }
+}
+
+/// Step month by month, or tap the label to pick any month and year between
+/// [earliest] and the current month.
+class MonthNavigator extends StatelessWidget {
+  const MonthNavigator({super.key, required this.month, required this.earliest, required this.onChanged});
+
+  final DateTime month;
+  final DateTime earliest;
+  final ValueChanged<DateTime> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final month = ref.watch(dashboardMonthProvider);
-    final earliest = ref.watch(earliestMonthProvider);
-    final notifier = ref.read(dashboardMonthProvider.notifier);
     final canGoBack = month.isAfter(earliest);
     final canGoForward = !isCurrentMonth(month);
 
@@ -24,14 +39,17 @@ class MonthSelector extends ConsumerWidget {
       children: [
         _StepButton(
           icon: Icons.chevron_left_rounded,
-          onPressed: canGoBack ? notifier.previous : null,
+          onPressed: canGoBack ? () => onChanged(DateTime(month.year, month.month - 1)) : null,
           tooltip: 'Previous month',
         ),
         const SizedBox(width: 6),
         Expanded(
           child: InkWell(
             borderRadius: BorderRadius.circular(14),
-            onTap: () => showMonthPicker(context, ref),
+            onTap: () async {
+              final picked = await pickMonth(context, selected: month, earliest: earliest);
+              if (picked != null) onChanged(picked);
+            },
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
@@ -41,27 +59,18 @@ class MonthSelector extends ConsumerWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(
-                    Icons.calendar_month_rounded,
-                    size: 18,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                  Icon(Icons.calendar_month_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
                       monthYearLabel(month),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_drop_down_rounded,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                  Icon(Icons.arrow_drop_down_rounded, color: theme.colorScheme.onSurfaceVariant),
                 ],
               ),
             ),
@@ -70,7 +79,7 @@ class MonthSelector extends ConsumerWidget {
         const SizedBox(width: 6),
         _StepButton(
           icon: Icons.chevron_right_rounded,
-          onPressed: canGoForward ? notifier.next : null,
+          onPressed: canGoForward ? () => onChanged(DateTime(month.year, month.month + 1)) : null,
           tooltip: 'Next month',
         ),
       ],
@@ -103,35 +112,37 @@ class _StepButton extends StatelessWidget {
   }
 }
 
-Future<void> showMonthPicker(BuildContext context, WidgetRef ref) {
-  return showDialog<void>(
+/// Asks for a month and year; null if dismissed.
+Future<DateTime?> pickMonth(BuildContext context, {required DateTime selected, required DateTime earliest}) {
+  return showDialog<DateTime>(
     context: context,
-    builder: (_) => const CenteredDialogCard(child: _MonthPickerCard()),
+    builder: (_) => CenteredDialogCard(child: _MonthPickerCard(selected: selected, earliest: earliest)),
   );
 }
 
-class _MonthPickerCard extends ConsumerStatefulWidget {
-  const _MonthPickerCard();
+class _MonthPickerCard extends StatefulWidget {
+  const _MonthPickerCard({required this.selected, required this.earliest});
+
+  final DateTime selected;
+  final DateTime earliest;
 
   @override
-  ConsumerState<_MonthPickerCard> createState() => _MonthPickerCardState();
+  State<_MonthPickerCard> createState() => _MonthPickerCardState();
 }
 
-class _MonthPickerCardState extends ConsumerState<_MonthPickerCard> {
-  late int _year = ref.read(dashboardMonthProvider).year;
+class _MonthPickerCardState extends State<_MonthPickerCard> {
+  late int _year = widget.selected.year;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final selected = ref.watch(dashboardMonthProvider);
-    final earliest = ref.watch(earliestMonthProvider);
     final current = monthOf(DateTime.now());
-    final years = [for (var y = current.year; y >= earliest.year; y--) y];
+    final years = [for (var y = current.year; y >= widget.earliest.year; y--) y];
     if (!years.contains(_year)) _year = years.first;
 
     bool enabled(int month) {
       final m = DateTime(_year, month);
-      return !m.isBefore(earliest) && !m.isAfter(current);
+      return !m.isBefore(widget.earliest) && !m.isAfter(current);
     }
 
     return Padding(
@@ -148,12 +159,7 @@ class _MonthPickerCardState extends ConsumerState<_MonthPickerCard> {
               children: [
                 Row(
                   children: [
-                    Expanded(
-                      child: Text(
-                        'Choose a month',
-                        style: theme.textTheme.titleLarge,
-                      ),
-                    ),
+                    Expanded(child: Text('Choose a month', style: theme.textTheme.titleLarge)),
                     IconButton(
                       icon: const Icon(Icons.close_rounded),
                       tooltip: 'Close',
@@ -164,14 +170,8 @@ class _MonthPickerCardState extends ConsumerState<_MonthPickerCard> {
                 const SizedBox(height: 8),
                 DropdownButtonFormField<int>(
                   initialValue: _year,
-                  decoration: const InputDecoration(
-                    labelText: 'Year',
-                    prefixIcon: Icon(Icons.event_rounded),
-                  ),
-                  items: [
-                    for (final y in years)
-                      DropdownMenuItem(value: y, child: Text('$y')),
-                  ],
+                  decoration: const InputDecoration(labelText: 'Year', prefixIcon: Icon(Icons.event_rounded)),
+                  items: [for (final y in years) DropdownMenuItem(value: y, child: Text('$y'))],
                   onChanged: (y) => setState(() => _year = y ?? _year),
                 ),
                 const SizedBox(height: 14),
@@ -186,23 +186,15 @@ class _MonthPickerCardState extends ConsumerState<_MonthPickerCard> {
                     for (var m = 1; m <= 12; m++)
                       _MonthCell(
                         label: DateFormat.MMM().format(DateTime(2000, m)),
-                        selected: selected.year == _year && selected.month == m,
+                        selected: widget.selected.year == _year && widget.selected.month == m,
                         enabled: enabled(m),
-                        onTap: () {
-                          ref
-                              .read(dashboardMonthProvider.notifier)
-                              .select(DateTime(_year, m));
-                          Navigator.of(context).pop();
-                        },
+                        onTap: () => Navigator.of(context).pop(DateTime(_year, m)),
                       ),
                   ],
                 ),
                 const SizedBox(height: 14),
                 OutlinedButton.icon(
-                  onPressed: () {
-                    ref.read(dashboardMonthProvider.notifier).reset();
-                    Navigator.of(context).pop();
-                  },
+                  onPressed: () => Navigator.of(context).pop(current),
                   icon: const Icon(Icons.today_rounded),
                   label: const Text('This month'),
                 ),

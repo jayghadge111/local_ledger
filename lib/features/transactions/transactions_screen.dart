@@ -9,6 +9,7 @@ import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/placeholder_body.dart';
 import '../../shared/widgets/shimmer.dart';
+import '../calendar/calendar_screen.dart';
 import 'transaction_detail_sheet.dart';
 import 'transaction_filters.dart';
 import 'transaction_form_sheet.dart';
@@ -285,6 +286,13 @@ class _SearchBar extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
+              IconButton(
+                tooltip: 'Calendar',
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const CalendarScreen()),
+                ),
+                icon: const Icon(Icons.calendar_month_outlined),
+              ),
               Badge(
                 isLabelVisible: filters.isActive,
                 label: Text('${filters.activeCount}'),

@@ -68,6 +68,43 @@ class NotificationService {
     );
   }
 
+  static const _alertDetails = NotificationDetails(
+    android: AndroidNotificationDetails(
+      'money_alerts',
+      'Budget and lending alerts',
+      channelDescription: 'Over-budget warnings and reminders about money lent or borrowed',
+      importance: Importance.high,
+      priority: Priority.high,
+    ),
+    iOS: DarwinNotificationDetails(),
+  );
+
+  /// Shows a notification right now (budget alerts).
+  Future<void> showNow({required int id, required String title, required String body}) async {
+    await init();
+    await _plugin.show(id: id, title: title, body: body, notificationDetails: _alertDetails);
+  }
+
+  /// Schedules a notification for [when]; does nothing if that time has passed.
+  /// Re-using an [id] replaces the earlier schedule.
+  Future<void> scheduleAt({
+    required int id,
+    required String title,
+    required String body,
+    required DateTime when,
+  }) async {
+    if (!when.isAfter(DateTime.now())) return;
+    await init();
+    await _plugin.zonedSchedule(
+      id: id,
+      title: title,
+      body: body,
+      scheduledDate: tz.TZDateTime.from(when, tz.local),
+      notificationDetails: _alertDetails,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+    );
+  }
+
   Future<void> cancel(int id) => _plugin.cancel(id: id);
 
   String _formatDate(DateTime date) {
