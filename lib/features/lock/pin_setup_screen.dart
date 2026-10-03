@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/db/settings_repository.dart';
 import '../../core/security/app_lock_providers.dart';
-import '../../shared/widgets/app_logo_mark.dart';
+import '../../shared/widgets/brand_mark.dart';
 import '../../shared/widgets/glass_background.dart';
 import '../../shared/widgets/pin_pad.dart';
 
@@ -119,7 +119,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const AppLogoMark(size: 72),
+                const BrandMark(size: 72),
                 const SizedBox(height: 20),
                 Text(
                   isConfirm ? 'Confirm your PIN' : 'Set a PIN to lock the app',
@@ -127,7 +127,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Used to unlock LocalLedger — never leaves this device',
+                  'Used to unlock NativeSpend — never leaves this device',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),

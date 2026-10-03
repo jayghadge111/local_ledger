@@ -37,7 +37,7 @@ class DashboardScreen extends ConsumerWidget {
               Expanded(
                 child: PlaceholderBody(
                   icon: Icons.grid_view_rounded,
-                  title: 'Welcome to LocalLedger',
+                  title: 'Welcome to NativeSpend',
                   subtitle: 'Add a transaction (or load sample data from Settings) to see your dashboard come alive.',
                 ),
               ),

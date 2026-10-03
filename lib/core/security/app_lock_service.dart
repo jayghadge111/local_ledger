@@ -19,7 +19,7 @@ class AppLockService {
     }
   }
 
-  Future<bool> authenticate({String reason = 'Unlock LocalLedger'}) async {
+  Future<bool> authenticate({String reason = 'Unlock NativeSpend'}) async {
     try {
       return await _localAuth
           .authenticate(

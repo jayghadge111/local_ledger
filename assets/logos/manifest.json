@@ -1,0 +1,522 @@
+{
+ "EatSure": {
+  "asset": "assets/logos/eatsure.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://eatsure.com&size=256",
+  "note": "official site / app icon"
+ },
+ "Pizza Hut": {
+  "asset": "assets/logos/pizza_hut.png",
+  "kind": "icon",
+  "source": "https://www.pizzahut.co.in/order/images/icons/apple-touch-icon.7698722276a72d89cbe8c918716919b3.png",
+  "note": "official site / app icon"
+ },
+ "Cafe Coffee Day": {
+  "asset": "assets/logos/cafe_coffee_day.png",
+  "kind": "icon",
+  "source": "https://www.cafecoffeeday.com/sites/default/files/64x64-CCD_6_0.png",
+  "note": "official site / app icon"
+ },
+ "Haldiram's": {
+  "asset": "assets/logos/haldiram_s.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://haldirams.com&size=256",
+  "note": "official site / app icon"
+ },
+ "Zepto": {
+  "asset": "assets/logos/zepto.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://zeptonow.com&size=128",
+  "note": "official site / app icon"
+ },
+ "Blinkit": {
+  "asset": "assets/logos/blinkit.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://blinkit.com&size=256",
+  "note": "official site / app icon"
+ },
+ "Rapido": {
+  "asset": "assets/logos/rapido.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://rapido.bike&size=256",
+  "note": "official site / app icon"
+ },
+ "MakeMyTrip": {
+  "asset": "assets/logos/makemytrip.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://makemytrip.com&size=256",
+  "note": "official site / app icon"
+ },
+ "Goibibo": {
+  "asset": "assets/logos/goibibo.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://goibibo.com&size=256",
+  "note": "official site / app icon"
+ },
+ "ixigo": {
+  "asset": "assets/logos/ixigo.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://ixigo.com&size=256",
+  "note": "official site / app icon"
+ },
+ "Cleartrip": {
+  "asset": "assets/logos/cleartrip.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://cleartrip.com&size=256",
+  "note": "official site / app icon"
+ },
+ "Vistara": {
+  "asset": "assets/logos/vistara.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://airvistara.com&size=256",
+  "note": "official site / app icon"
+ },
+ "SpiceJet": {
+  "asset": "assets/logos/spicejet.png",
+  "kind": "icon",
+  "source": "https://lh3.googleusercontent.com/PWpbwPJz-QB_d9BSFFXFwIFlPYbLTzbBue5tcQlW9-MImQjy22zamSGejBbvRsfNVQ=w100",
+  "note": "official site / app icon"
+ },
+ "Prime Video": {
+  "asset": "assets/logos/prime_video.png",
+  "kind": "icon",
+  "source": "https://m.media-amazon.com/images/G/01/digital/video/DVUI/favicons/apple-touch-icon-152x152.png",
+  "note": "official site / app icon"
+ },
+ "Nykaa": {
+  "asset": "assets/logos/nykaa.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://nykaa.com&size=256",
+  "note": "official site / app icon"
+ },
+ "Croma": {
+  "asset": "assets/logos/croma.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://croma.com&size=128",
+  "note": "official site / app icon"
+ },
+ "Lenskart": {
+  "asset": "assets/logos/lenskart.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://lenskart.com&size=256",
+  "note": "official site / app icon"
+ },
+ "Decathlon": {
+  "asset": "assets/logos/decathlon.png",
+  "kind": "icon",
+  "source": "https://cdncontent.decathlon.in/svelte/apple-touch-icon.png",
+  "note": "official site / app icon"
+ },
+ "JioHotstar": {
+  "asset": "assets/logos/jiohotstar.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://hotstar.com&size=256",
+  "note": "official site / app icon"
+ },
+ "SonyLIV": {
+  "asset": "assets/logos/sonyliv.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://sonyliv.com&size=256",
+  "note": "official site / app icon"
+ },
+ "PVR INOX": {
+  "asset": "assets/logos/pvr_inox.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://pvrcinemas.com&size=256",
+  "note": "official site / app icon"
+ },
+ "Gaana": {
+  "asset": "assets/logos/gaana.png",
+  "kind": "icon",
+  "source": "https://a10.gaanacdn.com/images/gaanawebsite/Gaana_logo_192.png",
+  "note": "official site / app icon"
+ },
+ "ACT Fibernet": {
+  "asset": "assets/logos/act_fibernet.png",
+  "kind": "icon",
+  "source": "https://www.actcorp.in/sites/default/files/favicon_1.png",
+  "note": "official site / app icon"
+ },
+ "CRED": {
+  "asset": "assets/logos/cred.png",
+  "kind": "icon",
+  "source": "https://web-images.credcdn.in/v2/_next/assets/icons/logo.png",
+  "note": "official site / app icon"
+ },
+ "Freecharge": {
+  "asset": "assets/logos/freecharge.png",
+  "kind": "icon",
+  "source": "https://pa-cdn.freecharge.in/pwa-static/pwa/images/pwaCapability/rebranded/pwa-icon-180.png",
+  "note": "official site / app icon"
+ },
+ "Standard Chartered": {
+  "asset": "assets/logos/standard_chartered.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://sc.com&size=256",
+  "note": "official site / app icon"
+ },
+ "IndusInd": {
+  "asset": "assets/logos/indusind.png",
+  "kind": "icon",
+  "source": "https://www.indusind.bank.in/etc/clientlibs/indusind-platform/assets/img/brand/favicon-180x180.png",
+  "note": "official site / app icon"
+ },
+ "Canara Bank": {
+  "asset": "assets/logos/canara_bank.png",
+  "kind": "icon",
+  "source": "https://www.canarabank.bank.in:443/documents/20126/33915/fevicon.png/666e26af-cafc-b26d-eb4b-a33d3417c5ba",
+  "note": "official site / app icon"
+ },
+ "Federal Bank": {
+  "asset": "assets/logos/federal_bank.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://federalbank.co.in&size=256",
+  "note": "official site / app icon"
+ },
+ "AU Small Finance": {
+  "asset": "assets/logos/au_small_finance.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://aubank.in&size=256",
+  "note": "official site / app icon"
+ },
+ "Tata 1mg": {
+  "asset": "assets/logos/tata_1mg.png",
+  "kind": "icon",
+  "source": "https://assets.1mg.com/pwa-app/production/dweb/2.0.3/static/images/site-icons/apple-touch-icon-192x192.png",
+  "note": "official site / app icon"
+ },
+ "cult.fit": {
+  "asset": "assets/logos/cult_fit.png",
+  "kind": "icon",
+  "source": "https://cdn-images.cure.fit/www-curefit-com/image/upload/image/cf-logo.png",
+  "note": "official site / app icon"
+ },
+ "HealthKart": {
+  "asset": "assets/logos/healthkart.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://healthkart.com&size=256",
+  "note": "official site / app icon"
+ },
+ "Upstox": {
+  "asset": "assets/logos/upstox.png",
+  "kind": "icon",
+  "source": "https://upstox.com/marketing-page-assets/favicon/favicon-196x196.png",
+  "note": "official site / app icon"
+ },
+ "Kuvera": {
+  "asset": "assets/logos/kuvera.png",
+  "kind": "icon",
+  "source": "https://assets-web.kuvera.in/v2/_next/assets/images/wealth/common/fav_icon.png",
+  "note": "official site / app icon"
+ },
+ "INDmoney": {
+  "asset": "assets/logos/indmoney.png",
+  "kind": "icon",
+  "source": "https://t1.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=https://indmoney.com&size=256",
+  "note": "official site / app icon"
+ },
+ "LIC": {
+  "asset": "assets/logos/lic.png",
+  "kind": "wordmark",
+  "source": "https://licindia.in/o/lic-theme/images/lic_logo.png",
+  "note": "official site / app icon"
+ },
+ "Domino's": {
+  "asset": "assets/logos/domino_s.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Dominos_pizza_logo.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "Subway": {
+  "asset": "assets/logos/subway.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Subway-logo-green_2016.png",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "redBus": {
+  "asset": "assets/logos/redbus.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:RedBus_Logo_%282015-present%29.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "Akasa Air": {
+  "asset": "assets/logos/akasa_air.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Akasa_Air_logo_and_motto.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "Amazon": {
+  "asset": "assets/logos/amazon.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Amazon_icon.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "Amazon Pay": {
+  "asset": "assets/logos/amazon_pay.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Amazon_Pay_logo.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "Flipkart": {
+  "asset": "assets/logos/flipkart.png",
+  "kind": "icon",
+  "source": "https://apps.apple.com/in/app/flipkart-online-shopping-app/id742044692",
+  "note": "official app icon: Flipkart - Online Shopping App"
+ },
+ "Myntra": {
+  "asset": "assets/logos/myntra.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Myntra_Logo.png",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "ZEE5": {
+  "asset": "assets/logos/zee5.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:ZEE5_2025.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "BSNL": {
+  "asset": "assets/logos/bsnl.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:BSNL_New_Logo.png",
+  "license": "CC0",
+  "note": "Wikimedia Commons render"
+ },
+ "Tata Play": {
+  "asset": "assets/logos/tata_play.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Tata_Play_2022_logo.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "Dish TV": {
+  "asset": "assets/logos/dish_tv.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:DishTV_logo_%282025%29.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "Hathway": {
+  "asset": "assets/logos/hathway.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Hathway_Cable_%26_Datacom_logo.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "BHIM": {
+  "asset": "assets/logos/bhim.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Bhim_app_logo.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "SBI": {
+  "asset": "assets/logos/sbi.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:State_Bank_of_India.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "Yes Bank": {
+  "asset": "assets/logos/yes_bank.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Yes_Bank_SVG_Logo.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "IDFC FIRST": {
+  "asset": "assets/logos/idfc_first.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Logo_of_IDFC_First_Bank.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "PNB": {
+  "asset": "assets/logos/pnb.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Punjab_National_Bank_new_logo.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "Union Bank": {
+  "asset": "assets/logos/union_bank.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Union_Bank_of_India_Logo.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "Citi": {
+  "asset": "assets/logos/citi.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Citi_logo_March_2023.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "PharmEasy": {
+  "asset": "assets/logos/pharmeasy.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:PharmEasy_logo.png",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "Groww": {
+  "asset": "assets/logos/groww.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Groww_app_logo.png",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "Meesho": {
+  "asset": "assets/logos/meesho.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Meesho_Logo_Full.png",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "Ola": {
+  "asset": "assets/logos/ola.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Ola_Cabs_logo.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "JioMart": {
+  "asset": "assets/logos/jiomart.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:JioMart_logo.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "IRCTC": {
+  "asset": "assets/logos/irctc.png",
+  "kind": "icon",
+  "source": "gstatic faviconV2 (site icon)",
+  "note": "site icon"
+ },
+ "Apollo": {
+  "asset": "assets/logos/apollo.png",
+  "kind": "wordmark",
+  "source": "gstatic faviconV2 (site icon)",
+  "note": "site icon"
+ },
+ "Reliance Fresh": {
+  "asset": "assets/logos/reliance_fresh.png",
+  "kind": "icon",
+  "source": "gstatic faviconV2 (site icon)",
+  "note": "site icon"
+ },
+ "RBL Bank": {
+  "asset": "assets/logos/rbl_bank.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:RBL_Bank_SVG_Logo.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "Tata Power": {
+  "asset": "assets/logos/tata_power.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Tata_Power_Logo.svg",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "FASTag": {
+  "asset": "assets/logos/fastag.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Fastag-logo.png",
+  "license": "CC0",
+  "note": "Wikimedia Commons render"
+ },
+ "JioCinema": {
+  "asset": "assets/logos/jiocinema.png",
+  "kind": "wordmark",
+  "source": "https://commons.wikimedia.org/wiki/File:Jiocinema.png",
+  "license": "Public domain",
+  "note": "Wikimedia Commons render"
+ },
+ "Kotak": {
+  "asset": "assets/logos/kotak.png",
+  "kind": "icon",
+  "source": "https://apps.apple.com/in/app/kotak-bank-811-mobile-app/id6447808696",
+  "note": "official app icon: Kotak Bank: 811 Mobile App"
+ },
+ "Bank of Baroda": {
+  "asset": "assets/logos/bank_of_baroda.png",
+  "kind": "icon",
+  "source": "https://apps.apple.com/in/app/bob-world-new/id6753942579",
+  "note": "official app icon: bob World New"
+ },
+ "Adani Electricity": {
+  "asset": "assets/logos/adani_electricity.png",
+  "kind": "icon",
+  "source": "https://apps.apple.com/in/app/adani-electricity/id1526452496",
+  "note": "official app icon: Adani Electricity"
+ },
+ "Chaayos": {
+  "asset": "assets/logos/chaayos.png",
+  "kind": "icon",
+  "source": "https://apps.apple.com/in/app/chaayos-india/id1521406820",
+  "note": "official app icon: Chaayos India"
+ },
+ "Barista": {
+  "asset": "assets/logos/barista.png",
+  "kind": "icon",
+  "source": "https://apps.apple.com/in/app/barista/id6450898363",
+  "note": "official app icon: Barista"
+ },
+ "DMart": {
+  "asset": "assets/logos/dmart.png",
+  "kind": "icon",
+  "source": "https://apps.apple.com/in/app/dmart-ready-online-grocery-app/id1121933197",
+  "note": "official app icon: DMart Ready Online Grocery App"
+ },
+ "Ajio": {
+  "asset": "assets/logos/ajio.png",
+  "kind": "icon",
+  "source": "https://apps.apple.com/in/app/ajio-online-shopping-app/id1113425372",
+  "note": "official app icon: AJIO Online Shopping App"
+ },
+ "Tata CLiQ": {
+  "asset": "assets/logos/tata_cliq.png",
+  "kind": "icon",
+  "source": "https://apps.apple.com/in/app/tata-cliq-fashion-shopping/id1101619385",
+  "note": "official app icon: Tata CLiQ Fashion Shopping"
+ },
+ "FirstCry": {
+  "asset": "assets/logos/firstcry.png",
+  "kind": "icon",
+  "source": "https://apps.apple.com/in/app/firstcry-india-baby-kids/id952114772",
+  "note": "official app icon: FirstCry India - Baby & Kids"
+ },
+ "BESCOM": {
+  "asset": "assets/logos/bescom.png",
+  "kind": "icon",
+  "source": "https://apps.apple.com/in/app/bescom-mithra/id1335911216",
+  "note": "official app icon: BESCOM Mithra"
+ },
+ "MobiKwik": {
+  "asset": "assets/logos/mobikwik.png",
+  "kind": "icon",
+  "source": "https://apps.apple.com/in/app/mobikwik-loans-upi-wallet/id600002523",
+  "note": "official app icon: MobiKwik: Loans, UPI & Wallet"
+ },
+ "Netmeds": {
+  "asset": "assets/logos/netmeds.png",
+  "kind": "icon",
+  "source": "https://apps.apple.com/in/app/netmeds-india-ki-pharmacy/id1011070011",
+  "note": "official app icon: Netmeds - India Ki Pharmacy"
+ },
+ "Practo": {
+  "asset": "assets/logos/practo.png",
+  "kind": "icon",
+  "source": "https://apps.apple.com/in/app/practo-doctor-appointment-app/id953772015",
+  "note": "official app icon: Practo: Doctor Appointment App"
+ }
+}

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 280" width="720" height="560">
+  <ellipse cx="180" cy="256" rx="116" ry="9" fill="#D3D9DF"/>
+  <!-- bell -->
+  <circle cx="180" cy="46" r="8" fill="#111111"/>
+  <path d="M180 56 C146 56 128 84 128 118 V158 L108 186 H252 L232 158 V118 C232 84 214 56 180 56 Z" fill="#DCE1E6" stroke="#111111" stroke-width="10" stroke-linejoin="round"/>
+  <path d="M162 200 a18 18 0 0 0 36 0" fill="none" stroke="#111111" stroke-width="10" stroke-linecap="round"/>
+  <path d="M152 120 C152 100 164 90 180 90" fill="none" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" opacity="0.8"/>
+  <circle cx="228" cy="68" r="18" fill="#88D1F1" stroke="#111111" stroke-width="7"/>
+  <rect x="225" y="58" width="6" height="12" rx="3" fill="#111111"/><circle cx="228" cy="77" r="3.4" fill="#111111"/>
+  <!-- recurring bill card -->
+  <rect x="14" y="104" width="86" height="64" rx="14" fill="#F8FAFC" stroke="#111111" stroke-width="6"/>
+  <rect x="26" y="118" width="40" height="8" rx="4" fill="#111111"/>
+  <rect x="26" y="134" width="56" height="7" rx="3.5" fill="#C5CCD3"/>
+  <rect x="26" y="150" width="38" height="11" rx="5.5" fill="#88D1F1"/>
+  <!-- unusual / international card -->
+  <rect x="262" y="140" width="86" height="64" rx="14" fill="#F8FAFC" stroke="#111111" stroke-width="6"/>
+  <circle cx="284" cy="164" r="11" fill="none" stroke="#111111" stroke-width="5"/>
+  <path d="M273 164 h22 M284 153 c-6 6 -6 16 0 22 M284 153 c6 6 6 16 0 22" fill="none" stroke="#111111" stroke-width="3.4"/>
+  <rect x="304" y="156" width="30" height="8" rx="4" fill="#111111"/>
+  <rect x="304" y="172" width="22" height="7" rx="3.5" fill="#88D1F1"/>
+  <rect x="274" y="188" width="60" height="6" rx="3" fill="#C5CCD3"/>
+  <circle cx="320" cy="96" r="5" fill="#88D1F1"/><circle cx="46" cy="212" r="5" fill="#111111"/><circle cx="302" cy="52" r="3.5" fill="#111111"/>
+</svg>

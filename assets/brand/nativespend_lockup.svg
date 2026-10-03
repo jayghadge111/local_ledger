@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&amp;display=swap');
+      
+      .brand-title {
+        font-family: 'Nunito', sans-serif;
+        font-weight: 900;
+        font-size: 44px;
+        letter-spacing: -0.5px;
+        fill: #000000;
+      }
+
+      .tagline-text {
+        font-family: 'Nunito', sans-serif;
+        font-weight: 700;
+        font-size: 15.5px;
+        letter-spacing: 0.1px;
+        fill: #4B5563;
+      }
+    </style>
+  </defs>
+
+  <!-- Outer Canvas Squircle -->
+  <rect width="512" height="512" rx="112" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2"/>
+
+  <!-- Group: Safe Icon (Proportionally Scaled & Centered in Upper Half) -->
+  <g transform="translate(68, -4) scale(0.74)">
+    <!-- Safe Feet -->
+    <rect x="156" y="380" width="34" height="28" rx="8" fill="#111111"/>
+    <rect x="322" y="380" width="34" height="28" rx="8" fill="#111111"/>
+
+    <!-- Left Hinges -->
+    <rect x="108" y="162" width="16" height="38" rx="5" fill="#88D1F1"/>
+    <rect x="108" y="300" width="16" height="38" rx="5" fill="#88D1F1"/>
+
+    <!-- Safe Body -->
+    <rect x="120" y="104" width="272" height="282" rx="36" fill="#DCE1E6" stroke="#111111" stroke-width="22"/>
+
+    <!-- Gear Dial -->
+    <circle cx="218" cy="245" r="48" fill="none" stroke="#111111" stroke-width="14" stroke-dasharray="10 27.7" stroke-linecap="round"/>
+    <circle cx="218" cy="245" r="32" fill="#111111"/>
+    <circle cx="218" cy="245" r="12" fill="#FFFFFF"/>
+
+    <!-- Keyhole -->
+    <circle cx="332" cy="235" r="14" fill="#88D1F1"/>
+    <path d="M 324 238 L 340 238 L 338 266 A 6 6 0 0 1 326 266 Z" fill="#88D1F1"/>
+  </g>
+
+  <!-- Name & Tagline in Google Nunito -->
+  <text x="256" y="388" text-anchor="middle" class="brand-title">NativeSpend</text>
+  <text x="256" y="424" text-anchor="middle" class="tagline-text">Your money, your device, zero cloud.</text>
+
+  <!-- Bottom Accent Local Pill -->
+  <g transform="translate(256, 452)">
+    <rect x="-70" y="0" width="140" height="22" rx="11" fill="#E2E8F0"/>
+    <text x="0" y="15" text-anchor="middle" font-family="'Nunito', sans-serif" font-size="10" font-weight="800" fill="#334155" letter-spacing="1">100% OFFLINE</text>
+  </g>
+</svg>

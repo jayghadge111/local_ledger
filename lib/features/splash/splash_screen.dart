@@ -4,7 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/db/settings_repository.dart';
 import '../../core/security/app_lock_providers.dart';
-import '../../shared/widgets/app_logo_mark.dart';
+import '../../core/brand.dart';
+import '../../shared/widgets/brand_mark.dart';
 import '../../shared/widgets/glass_background.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -58,7 +59,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
       return;
     }
 
-    final lockEnabled = (await settings.get(SettingsKeys.appLockEnabled)) == 'true';
+    final lockEnabled =
+        (await settings.get(SettingsKeys.appLockEnabled)) == 'true';
     final hasPin = (await settings.get(SettingsKeys.pinHash)) != null;
 
     if (lockEnabled && hasPin) {
@@ -90,24 +92,46 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                   scale: _logoScale.value,
                   child: Opacity(
                     opacity: _logoFade.value,
-                    child: const AppLogoMark(size: 112),
+                    child: const BrandMark(size: 132),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 Opacity(
                   opacity: _textFade.value,
                   child: Column(
                     children: [
                       Text(
-                        'LocalLedger',
-                        style: theme.textTheme.headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w600),
+                        kAppName,
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.5,
+                        ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
-                        'Your money, tracked locally',
-                        style: theme.textTheme.bodySmall?.copyWith(
+                        kTagline,
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 5,
+                        ),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: Text(
+                          '100% OFFLINE',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1,
+                          ),
                         ),
                       ),
                     ],

@@ -7,7 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import '../db/app_database.dart';
 import '../security/encryption_service.dart';
 
-const _backupFormat = 'local_ledger_backup_v1';
+const _backupFormat = 'nativespend_backup_v1';
 
 /// Exports/imports all local data as a single passphrase-encrypted file.
 ///
@@ -53,7 +53,7 @@ class BackupService {
 
     final dir = await getTemporaryDirectory();
     final timestamp = DateTime.now().toIso8601String().replaceAll(RegExp(r'[:.]'), '-');
-    final file = File('${dir.path}/local_ledger_backup_$timestamp.llbackup');
+    final file = File('${dir.path}/nativespend_backup_$timestamp.llbackup');
     await file.writeAsString(envelope);
     return file;
   }
@@ -63,7 +63,7 @@ class BackupService {
   Future<void> importEncrypted(File file, String passphrase) async {
     final envelope = jsonDecode(await file.readAsString());
     if (envelope is! Map || envelope['format'] != _backupFormat) {
-      throw const FormatException('Not a LocalLedger backup file');
+      throw const FormatException('Not a NativeSpend backup file');
     }
 
     final salt = base64Decode(envelope['salt'] as String);

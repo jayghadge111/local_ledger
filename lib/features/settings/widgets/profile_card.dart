@@ -21,135 +21,154 @@ class ProfileCard extends ConsumerWidget {
     final bg = scheme.onSurface;
     final fg = scheme.surface;
 
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(28),
-        onTap: () => showEditNameDialog(context, ref),
-        child: Ink(
-          decoration: BoxDecoration(
-            color: bg,
+    // While the shell animates in, the body is briefly laid out far narrower
+    // than the screen — leave a quiet gap rather than overflow.
+    return LayoutBuilder(
+      builder: (context, box) {
+        if (box.maxWidth < 230) return const SizedBox(height: 120);
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
             borderRadius: BorderRadius.circular(28),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.18),
-                blurRadius: 24,
-                offset: const Offset(0, 10),
+            onTap: () => showEditNameDialog(context, ref),
+            child: Ink(
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: BorderRadius.circular(28),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.18),
+                    blurRadius: 24,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(28),
-            child: Stack(
-              children: [
-                Positioned(
-                  right: -50,
-                  top: -60,
-                  child: _Ring(size: 190, color: fg),
-                ),
-                Positioned(
-                  right: -10,
-                  top: -20,
-                  child: _Ring(size: 110, color: fg),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(28),
+                child: Stack(
+                  children: [
+                    Positioned(
+                      right: -50,
+                      top: -60,
+                      child: _Ring(size: 190, color: fg),
+                    ),
+                    Positioned(
+                      right: -10,
+                      top: -20,
+                      child: _Ring(size: 110, color: fg),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          NameAvatar(name: name, size: 58, inverse: true),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
+                          Row(
+                            children: [
+                              NameAvatar(name: name, size: 58, inverse: true),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Icon(
-                                      dayPartIcon(dayPartOf(now)),
-                                      size: 15,
-                                      color: fg.withValues(alpha: 0.7),
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          dayPartIcon(dayPartOf(now)),
+                                          size: 15,
+                                          color: fg.withValues(alpha: 0.7),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Flexible(
+                                          child: Text(
+                                            greetingFor(now),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: theme.textTheme.bodyMedium
+                                                ?.copyWith(
+                                                  color: fg.withValues(
+                                                    alpha: 0.7,
+                                                  ),
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
-                                    const SizedBox(width: 6),
+                                    const SizedBox(height: 4),
                                     Text(
-                                      greetingFor(now),
-                                      style: theme.textTheme.bodyMedium
+                                      name ?? 'Add your name',
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.titleLarge
                                           ?.copyWith(
-                                            color: fg.withValues(alpha: 0.7),
-                                            fontWeight: FontWeight.w600,
+                                            color: fg,
+                                            fontWeight: FontWeight.w800,
+                                            letterSpacing: -0.3,
                                           ),
                                     ),
                                   ],
                                 ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  name ?? 'Add your name',
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    color: fg,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.3,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  name == null
+                                      ? 'Add your name so payments to yourself show as Self Transfer, not spending.'
+                                      : 'Used on this device to spot Self Transfers.',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: fg.withValues(alpha: 0.65),
                                   ),
                                 ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(width: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 8,
+                                ),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(999),
+                                  border: Border.all(
+                                    color: fg.withValues(alpha: 0.4),
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.edit_rounded,
+                                      size: 14,
+                                      color: fg,
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      name == null ? 'Add' : 'Edit',
+                                      style: theme.textTheme.labelMedium
+                                          ?.copyWith(
+                                            color: fg,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                      const SizedBox(height: 16),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              name == null
-                                  ? 'Add your name so payments to yourself show as Self Transfer, not spending.'
-                                  : 'Used on this device to spot Self Transfers.',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: fg.withValues(alpha: 0.65),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(999),
-                              border: Border.all(
-                                color: fg.withValues(alpha: 0.4),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.edit_rounded, size: 14, color: fg),
-                                const SizedBox(width: 6),
-                                Text(
-                                  name == null ? 'Add' : 'Edit',
-                                  style: theme.textTheme.labelMedium?.copyWith(
-                                    color: fg,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

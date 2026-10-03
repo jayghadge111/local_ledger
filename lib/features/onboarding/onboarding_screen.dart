@@ -6,30 +6,31 @@ import '../../core/db/settings_repository.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_background.dart';
 import '../../shared/widgets/glass_surface.dart';
+import '../../shared/widgets/onboarding_illustration.dart';
 import '../lock/pin_setup_screen.dart';
 import 'onboarding_connect_screen.dart';
 import 'onboarding_name_screen.dart';
 
 class _Page {
-  const _Page(this.icon, this.title, this.body);
-  final IconData icon;
+  const _Page(this.illustration, this.title, this.body);
+  final String illustration;
   final String title;
   final String body;
 }
 
 const _pages = [
   _Page(
-    Icons.lock_outline,
-    'Your money, tracked locally',
-    'Every transaction stays on this device. No account, no cloud sync, no third party ever sees your data.',
+    'assets/illustrations/onboarding_private.svg',
+    'Your money, your device, zero cloud',
+    'Every transaction stays on this phone. No account, no cloud sync, no third party ever sees your data.',
   ),
   _Page(
-    Icons.bolt_outlined,
+    'assets/illustrations/onboarding_import.svg',
     'Add transactions effortlessly',
     'Import automatically from SMS or Gmail, or add transactions by hand — your choice, and parsing always happens on-device.',
   ),
   _Page(
-    Icons.notifications_active_outlined,
+    'assets/illustrations/onboarding_alerts.svg',
     'Alerts that matter',
     'Reminders for recurring bills, and flags for unusual or international transactions — computed locally, never sent anywhere.',
   ),
@@ -136,16 +137,12 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                       child: FadeSlideIn(
                         key: ValueKey(i),
                         child: GlassCard(
-                          padding: const EdgeInsets.all(28),
+                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 26),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(
-                                page.icon,
-                                size: 42,
-                                color: theme.colorScheme.primary,
-                              ),
-                              const SizedBox(height: 18),
+                              OnboardingIllustration(asset: page.illustration),
+                              const SizedBox(height: 22),
                               Text(
                                 page.title,
                                 textAlign: TextAlign.center,

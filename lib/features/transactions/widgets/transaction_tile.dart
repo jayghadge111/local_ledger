@@ -54,6 +54,7 @@ class TransactionTile extends ConsumerWidget {
             merchant: transaction.merchant,
             categoryIconKey: category?.icon,
             isTransfer: isTransfer,
+            bankName: transaction.rawMerchant == null ? account?.bankName : null,
           ),
           const SizedBox(width: 12),
           Expanded(

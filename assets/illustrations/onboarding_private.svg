@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 280" width="720" height="560">
+  <ellipse cx="180" cy="256" rx="112" ry="9" fill="#D3D9DF"/>
+  <!-- phone -->
+  <rect x="124" y="22" width="120" height="224" rx="28" fill="#DCE1E6" stroke="#111111" stroke-width="10"/>
+  <rect x="160" y="35" width="48" height="8" rx="4" fill="#111111"/>
+  <!-- vault on the screen -->
+  <rect x="148" y="84" width="72" height="80" rx="13" fill="#F8FAFC" stroke="#111111" stroke-width="6"/>
+  <rect x="158" y="164" width="12" height="8" rx="3" fill="#111111"/>
+  <rect x="198" y="164" width="12" height="8" rx="3" fill="#111111"/>
+  <circle cx="171" cy="124" r="12" fill="none" stroke="#111111" stroke-width="5" stroke-dasharray="3.4 5.1" stroke-linecap="round"/>
+  <circle cx="171" cy="124" r="7" fill="#111111"/>
+  <circle cx="171" cy="124" r="2.6" fill="#FFFFFF"/>
+  <circle cx="201" cy="120" r="5" fill="#88D1F1"/>
+  <path d="M198.6 122 L203.4 122 L202.8 131 A2 2 0 0 1 199.2 131 Z" fill="#88D1F1"/>
+  <rect x="148" y="188" width="72" height="9" rx="4.5" fill="#C5CCD3"/>
+  <rect x="148" y="205" width="46" height="9" rx="4.5" fill="#C5CCD3"/>
+  <!-- cloud, crossed out -->
+  <path d="M42 112 H94 A20 20 0 0 0 94 72 A28 28 0 0 0 40 78 A17 17 0 0 0 42 112 Z" fill="#F8FAFC" stroke="#111111" stroke-width="8" stroke-linejoin="round"/>
+  <line x1="24" y1="52" x2="112" y2="128" stroke="#E2E6EA" stroke-width="20" stroke-linecap="round"/>
+  <line x1="24" y1="52" x2="112" y2="128" stroke="#111111" stroke-width="9" stroke-linecap="round"/>
+  <!-- on-device badge -->
+  <circle cx="258" cy="206" r="26" fill="#88D1F1" stroke="#111111" stroke-width="7"/>
+  <path d="M246 206 l9 9 l16 -18" fill="none" stroke="#111111" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="290" cy="82" r="6" fill="#88D1F1"/>
+  <circle cx="306" cy="124" r="4" fill="#111111"/>
+  <circle cx="276" cy="48" r="4" fill="#111111"/>
+</svg>

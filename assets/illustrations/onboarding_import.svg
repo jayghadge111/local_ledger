@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 280" width="720" height="560">
+  <ellipse cx="180" cy="256" rx="124" ry="9" fill="#D3D9DF"/>
+  <!-- SMS bubble -->
+  <path d="M30 52 H98 A16 16 0 0 1 114 68 V102 A16 16 0 0 1 98 118 H62 L44 136 V118 H30 A16 16 0 0 1 14 102 V68 A16 16 0 0 1 30 52 Z" fill="#F8FAFC" stroke="#111111" stroke-width="8" stroke-linejoin="round"/>
+  <circle cx="44" cy="85" r="5" fill="#111111"/><circle cx="64" cy="85" r="5" fill="#111111"/><circle cx="84" cy="85" r="5" fill="#111111"/>
+  <!-- email -->
+  <rect x="14" y="168" width="100" height="70" rx="14" fill="#F8FAFC" stroke="#111111" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M20 178 L64 212 L108 178" fill="none" stroke="#111111" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- flow -->
+  <path d="M122 92 C156 92 150 128 186 128" fill="none" stroke="#88D1F1" stroke-width="7" stroke-linecap="round" stroke-dasharray="1 15"/>
+  <path d="M122 206 C156 206 150 168 186 160" fill="none" stroke="#88D1F1" stroke-width="7" stroke-linecap="round" stroke-dasharray="1 15"/>
+  <!-- phone with the ledger -->
+  <rect x="178" y="20" width="148" height="226" rx="28" fill="#DCE1E6" stroke="#111111" stroke-width="10"/>
+  <rect x="226" y="33" width="52" height="8" rx="4" fill="#111111"/>
+  <g stroke="#111111" stroke-width="5">
+    <rect x="194" y="62" width="116" height="40" rx="11" fill="#F8FAFC"/>
+    <rect x="194" y="112" width="116" height="40" rx="11" fill="#F8FAFC"/>
+    <rect x="194" y="162" width="116" height="40" rx="11" fill="#F8FAFC"/>
+  </g>
+  <circle cx="213" cy="82" r="8" fill="#111111"/><circle cx="213" cy="132" r="8" fill="#111111"/><circle cx="213" cy="182" r="8" fill="#111111"/>
+  <rect x="229" y="76" width="36" height="7" rx="3.5" fill="#111111"/><rect x="229" y="87" width="24" height="6" rx="3" fill="#C5CCD3"/>
+  <rect x="229" y="126" width="40" height="7" rx="3.5" fill="#111111"/><rect x="229" y="137" width="22" height="6" rx="3" fill="#C5CCD3"/>
+  <rect x="229" y="176" width="32" height="7" rx="3.5" fill="#111111"/><rect x="229" y="187" width="26" height="6" rx="3" fill="#C5CCD3"/>
+  <rect x="276" y="77" width="24" height="7" rx="3.5" fill="#88D1F1"/>
+  <rect x="274" y="127" width="26" height="7" rx="3.5" fill="#88D1F1"/>
+  <rect x="278" y="177" width="22" height="7" rx="3.5" fill="#88D1F1"/>
+  <!-- added tick -->
+  <circle cx="318" cy="214" r="24" fill="#88D1F1" stroke="#111111" stroke-width="7"/>
+  <path d="M307 214 l8 8 l14 -16" fill="none" stroke="#111111" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

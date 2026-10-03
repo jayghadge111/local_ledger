@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/brand.dart';
 import 'core/router/app_router.dart';
 import 'core/security/app_lifecycle_lock_gate.dart';
 import 'core/theme/app_theme.dart';
@@ -15,7 +16,7 @@ class LocalLedgerApp extends ConsumerWidget {
     final themeMode = ref.watch(themeModeProvider).value ?? ThemeMode.system;
 
     return MaterialApp.router(
-      title: 'Local Ledger',
+      title: kAppName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),

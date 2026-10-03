@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/security/app_lock_providers.dart';
-import '../../shared/widgets/app_logo_mark.dart';
+import '../../shared/widgets/brand_mark.dart';
 import '../../shared/widgets/glass_background.dart';
 import '../../shared/widgets/pin_pad.dart';
 
@@ -75,7 +75,7 @@ class _LockScreenState extends ConsumerState<LockScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const AppLogoMark(size: 72),
+              const BrandMark(size: 72),
               const SizedBox(height: 20),
               if (showPinPad) ...[
                 Text('Enter your PIN', style: theme.textTheme.titleLarge),

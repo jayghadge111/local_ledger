@@ -345,7 +345,7 @@ class SyncController extends Notifier<SyncState> {
       clearAccount: true,
       gmail: const SyncJob(
         message:
-            'Disconnected. LocalLedger can no longer read this Gmail account.',
+            'Disconnected. NativeSpend can no longer read this Gmail account.',
       ),
     );
   }

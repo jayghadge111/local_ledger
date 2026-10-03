@@ -50,7 +50,7 @@ class BackupCard extends ConsumerWidget {
     try {
       final file = await ref.read(backupServiceProvider).exportEncrypted(passphrase);
       await SharePlus.instance.share(
-        ShareParams(files: [XFile(file.path)], text: 'LocalLedger backup'),
+        ShareParams(files: [XFile(file.path)], text: 'NativeSpend backup'),
       );
     } catch (e) {
       if (context.mounted) {

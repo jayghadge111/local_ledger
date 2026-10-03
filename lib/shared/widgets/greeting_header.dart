@@ -78,56 +78,79 @@ class GreetingHeader extends ConsumerWidget {
       onTap: name == null ? () => showEditNameDialog(context, ref) : null,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Row(
-          children: [
-            NameAvatar(name: name),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+        // While the shell animates in, the body is briefly laid out much
+        // narrower than the screen — the header must degrade, not overflow.
+        child: LayoutBuilder(
+          builder: (context, box) {
+            if (box.maxWidth < 120) return const SizedBox(height: 52);
+            final showDate = box.maxWidth >= 300;
+            return Row(
+              children: [
+                NameAvatar(name: name),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(dayPartIcon(dayPartOf(now)), size: 15, color: muted),
-                      const SizedBox(width: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            dayPartIcon(dayPartOf(now)),
+                            size: 15,
+                            color: muted,
+                          ),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              greetingFor(now),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: muted,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
                       Text(
-                        greetingFor(now),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: muted,
-                          fontWeight: FontWeight.w600,
+                        first ?? 'Add your name',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.4,
+                          color: first == null ? muted : null,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    first ?? 'Add your name',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.4,
-                      color: first == null ? muted : null,
+                ),
+                if (showDate) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 7,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(999),
+                      border: Border.all(
+                        color: theme.colorScheme.outlineVariant,
+                      ),
+                    ),
+                    child: Text(
+                      DateFormat('EEE, d MMM').format(now),
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: theme.colorScheme.outlineVariant),
-              ),
-              child: Text(
-                DateFormat('EEE, d MMM').format(now),
-                style: theme.textTheme.labelMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          ],
+              ],
+            );
+          },
         ),
       ),
     );

@@ -137,6 +137,7 @@ class TransactionDetailSheet extends ConsumerWidget {
                         merchant: t.merchant,
                         categoryIconKey: category?.icon,
                         isTransfer: isTransfer,
+                        bankName: t.rawMerchant == null ? account?.bankName : null,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
