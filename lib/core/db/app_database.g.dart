@@ -1506,6 +1506,17 @@ class $TransactionsTable extends Transactions
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _alsoInSourceMeta = const VerificationMeta(
+    'alsoInSource',
+  );
+  @override
+  late final GeneratedColumn<String> alsoInSource = GeneratedColumn<String>(
+    'also_in_source',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _sourceHashMeta = const VerificationMeta(
     'sourceHash',
   );
@@ -1542,6 +1553,7 @@ class $TransactionsTable extends Transactions
     transferGroupId,
     refundOfId,
     refundHint,
+    alsoInSource,
     sourceHash,
   ];
   @override
@@ -1730,6 +1742,15 @@ class $TransactionsTable extends Transactions
         refundHint.isAcceptableOrUnknown(data['refund_hint']!, _refundHintMeta),
       );
     }
+    if (data.containsKey('also_in_source')) {
+      context.handle(
+        _alsoInSourceMeta,
+        alsoInSource.isAcceptableOrUnknown(
+          data['also_in_source']!,
+          _alsoInSourceMeta,
+        ),
+      );
+    }
     if (data.containsKey('source_hash')) {
       context.handle(
         _sourceHashMeta,
@@ -1837,6 +1858,10 @@ class $TransactionsTable extends Transactions
         DriftSqlType.bool,
         data['${effectivePrefix}refund_hint'],
       )!,
+      alsoInSource: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}also_in_source'],
+      ),
       sourceHash: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}source_hash'],
@@ -1893,6 +1918,11 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   /// isn't in [merchant], so it's kept here for the refund matcher.
   final bool refundHint;
 
+  /// Other channels that reported this same transaction and were merged into
+  /// it (comma-separated, e.g. "email") — each channel can be merged into a
+  /// transaction only once, so two real payments are never collapsed.
+  final String? alsoInSource;
+
   /// SHA-512 of source + original message text + timestamp; identical
   /// re-scans of the same message produce the same hash.
   final String? sourceHash;
@@ -1920,6 +1950,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     this.transferGroupId,
     this.refundOfId,
     required this.refundHint,
+    this.alsoInSource,
     this.sourceHash,
   });
   @override
@@ -1962,6 +1993,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       map['refund_of_id'] = Variable<String>(refundOfId);
     }
     map['refund_hint'] = Variable<bool>(refundHint);
+    if (!nullToAbsent || alsoInSource != null) {
+      map['also_in_source'] = Variable<String>(alsoInSource);
+    }
     if (!nullToAbsent || sourceHash != null) {
       map['source_hash'] = Variable<String>(sourceHash);
     }
@@ -2007,6 +2041,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ? const Value.absent()
           : Value(refundOfId),
       refundHint: Value(refundHint),
+      alsoInSource: alsoInSource == null && nullToAbsent
+          ? const Value.absent()
+          : Value(alsoInSource),
       sourceHash: sourceHash == null && nullToAbsent
           ? const Value.absent()
           : Value(sourceHash),
@@ -2042,6 +2079,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       transferGroupId: serializer.fromJson<String?>(json['transferGroupId']),
       refundOfId: serializer.fromJson<String?>(json['refundOfId']),
       refundHint: serializer.fromJson<bool>(json['refundHint']),
+      alsoInSource: serializer.fromJson<String?>(json['alsoInSource']),
       sourceHash: serializer.fromJson<String?>(json['sourceHash']),
     );
   }
@@ -2072,6 +2110,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       'transferGroupId': serializer.toJson<String?>(transferGroupId),
       'refundOfId': serializer.toJson<String?>(refundOfId),
       'refundHint': serializer.toJson<bool>(refundHint),
+      'alsoInSource': serializer.toJson<String?>(alsoInSource),
       'sourceHash': serializer.toJson<String?>(sourceHash),
     };
   }
@@ -2100,6 +2139,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     Value<String?> transferGroupId = const Value.absent(),
     Value<String?> refundOfId = const Value.absent(),
     bool? refundHint,
+    Value<String?> alsoInSource = const Value.absent(),
     Value<String?> sourceHash = const Value.absent(),
   }) => Transaction(
     id: id ?? this.id,
@@ -2131,6 +2171,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
         : this.transferGroupId,
     refundOfId: refundOfId.present ? refundOfId.value : this.refundOfId,
     refundHint: refundHint ?? this.refundHint,
+    alsoInSource: alsoInSource.present ? alsoInSource.value : this.alsoInSource,
     sourceHash: sourceHash.present ? sourceHash.value : this.sourceHash,
   );
   Transaction copyWithCompanion(TransactionsCompanion data) {
@@ -2184,6 +2225,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
       refundHint: data.refundHint.present
           ? data.refundHint.value
           : this.refundHint,
+      alsoInSource: data.alsoInSource.present
+          ? data.alsoInSource.value
+          : this.alsoInSource,
       sourceHash: data.sourceHash.present
           ? data.sourceHash.value
           : this.sourceHash,
@@ -2216,6 +2260,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           ..write('transferGroupId: $transferGroupId, ')
           ..write('refundOfId: $refundOfId, ')
           ..write('refundHint: $refundHint, ')
+          ..write('alsoInSource: $alsoInSource, ')
           ..write('sourceHash: $sourceHash')
           ..write(')'))
         .toString();
@@ -2246,6 +2291,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
     transferGroupId,
     refundOfId,
     refundHint,
+    alsoInSource,
     sourceHash,
   ]);
   @override
@@ -2275,6 +2321,7 @@ class Transaction extends DataClass implements Insertable<Transaction> {
           other.transferGroupId == this.transferGroupId &&
           other.refundOfId == this.refundOfId &&
           other.refundHint == this.refundHint &&
+          other.alsoInSource == this.alsoInSource &&
           other.sourceHash == this.sourceHash);
 }
 
@@ -2302,6 +2349,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
   final Value<String?> transferGroupId;
   final Value<String?> refundOfId;
   final Value<bool> refundHint;
+  final Value<String?> alsoInSource;
   final Value<String?> sourceHash;
   final Value<int> rowid;
   const TransactionsCompanion({
@@ -2328,6 +2376,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.transferGroupId = const Value.absent(),
     this.refundOfId = const Value.absent(),
     this.refundHint = const Value.absent(),
+    this.alsoInSource = const Value.absent(),
     this.sourceHash = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -2355,6 +2404,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     this.transferGroupId = const Value.absent(),
     this.refundOfId = const Value.absent(),
     this.refundHint = const Value.absent(),
+    this.alsoInSource = const Value.absent(),
     this.sourceHash = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -2387,6 +2437,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Expression<String>? transferGroupId,
     Expression<String>? refundOfId,
     Expression<bool>? refundHint,
+    Expression<String>? alsoInSource,
     Expression<String>? sourceHash,
     Expression<int>? rowid,
   }) {
@@ -2414,6 +2465,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       if (transferGroupId != null) 'transfer_group_id': transferGroupId,
       if (refundOfId != null) 'refund_of_id': refundOfId,
       if (refundHint != null) 'refund_hint': refundHint,
+      if (alsoInSource != null) 'also_in_source': alsoInSource,
       if (sourceHash != null) 'source_hash': sourceHash,
       if (rowid != null) 'rowid': rowid,
     });
@@ -2443,6 +2495,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     Value<String?>? transferGroupId,
     Value<String?>? refundOfId,
     Value<bool>? refundHint,
+    Value<String?>? alsoInSource,
     Value<String?>? sourceHash,
     Value<int>? rowid,
   }) {
@@ -2470,6 +2523,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
       transferGroupId: transferGroupId ?? this.transferGroupId,
       refundOfId: refundOfId ?? this.refundOfId,
       refundHint: refundHint ?? this.refundHint,
+      alsoInSource: alsoInSource ?? this.alsoInSource,
       sourceHash: sourceHash ?? this.sourceHash,
       rowid: rowid ?? this.rowid,
     );
@@ -2547,6 +2601,9 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
     if (refundHint.present) {
       map['refund_hint'] = Variable<bool>(refundHint.value);
     }
+    if (alsoInSource.present) {
+      map['also_in_source'] = Variable<String>(alsoInSource.value);
+    }
     if (sourceHash.present) {
       map['source_hash'] = Variable<String>(sourceHash.value);
     }
@@ -2582,6 +2639,7 @@ class TransactionsCompanion extends UpdateCompanion<Transaction> {
           ..write('transferGroupId: $transferGroupId, ')
           ..write('refundOfId: $refundOfId, ')
           ..write('refundHint: $refundHint, ')
+          ..write('alsoInSource: $alsoInSource, ')
           ..write('sourceHash: $sourceHash, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -6560,6 +6618,7 @@ typedef $$TransactionsTableCreateCompanionBuilder =
       Value<String?> transferGroupId,
       Value<String?> refundOfId,
       Value<bool> refundHint,
+      Value<String?> alsoInSource,
       Value<String?> sourceHash,
       Value<int> rowid,
     });
@@ -6588,6 +6647,7 @@ typedef $$TransactionsTableUpdateCompanionBuilder =
       Value<String?> transferGroupId,
       Value<String?> refundOfId,
       Value<bool> refundHint,
+      Value<String?> alsoInSource,
       Value<String?> sourceHash,
       Value<int> rowid,
     });
@@ -6792,6 +6852,11 @@ class $$TransactionsTableFilterComposer
 
   ColumnFilters<bool> get refundHint => $composableBuilder(
     column: $table.refundHint,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get alsoInSource => $composableBuilder(
+    column: $table.alsoInSource,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -7029,6 +7094,11 @@ class $$TransactionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get alsoInSource => $composableBuilder(
+    column: $table.alsoInSource,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get sourceHash => $composableBuilder(
     column: $table.sourceHash,
     builder: (column) => ColumnOrderings(column),
@@ -7192,6 +7262,11 @@ class $$TransactionsTableAnnotationComposer
 
   GeneratedColumn<bool> get refundHint => $composableBuilder(
     column: $table.refundHint,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get alsoInSource => $composableBuilder(
+    column: $table.alsoInSource,
     builder: (column) => column,
   );
 
@@ -7377,6 +7452,7 @@ class $$TransactionsTableTableManager
                 Value<String?> transferGroupId = const Value.absent(),
                 Value<String?> refundOfId = const Value.absent(),
                 Value<bool> refundHint = const Value.absent(),
+                Value<String?> alsoInSource = const Value.absent(),
                 Value<String?> sourceHash = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TransactionsCompanion(
@@ -7403,6 +7479,7 @@ class $$TransactionsTableTableManager
                 transferGroupId: transferGroupId,
                 refundOfId: refundOfId,
                 refundHint: refundHint,
+                alsoInSource: alsoInSource,
                 sourceHash: sourceHash,
                 rowid: rowid,
               ),
@@ -7431,6 +7508,7 @@ class $$TransactionsTableTableManager
                 Value<String?> transferGroupId = const Value.absent(),
                 Value<String?> refundOfId = const Value.absent(),
                 Value<bool> refundHint = const Value.absent(),
+                Value<String?> alsoInSource = const Value.absent(),
                 Value<String?> sourceHash = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => TransactionsCompanion.insert(
@@ -7457,6 +7535,7 @@ class $$TransactionsTableTableManager
                 transferGroupId: transferGroupId,
                 refundOfId: refundOfId,
                 refundHint: refundHint,
+                alsoInSource: alsoInSource,
                 sourceHash: sourceHash,
                 rowid: rowid,
               ),

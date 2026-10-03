@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 
 import '../../../core/db/app_database.dart';
 import '../../../core/db/small_repositories.dart';
+import '../../splits/split_summary.dart';
+import '../../../shared/widgets/flag_chip.dart';
 import '../../../shared/widgets/glass_surface.dart';
 import '../../../shared/widgets/merchant_avatar.dart';
 
@@ -24,6 +26,9 @@ class TransactionTile extends ConsumerWidget {
     final theme = Theme.of(context);
     final account = ref.watch(accountsByIdProvider)[transaction.accountId];
     final cardLabel = _cardChipLabel(account);
+    final shares =
+        ref.watch(splitsByTxnProvider)[transaction.id] ?? const <SplitShare>[];
+    final hasSplit = shares.isNotEmpty && transaction.type == 'debit';
     final isCredit = transaction.type == 'credit';
     final isTransfer = transaction.kind == 'transfer';
     final isRefund = transaction.kind == 'refund';
@@ -69,6 +74,7 @@ class TransactionTile extends ConsumerWidget {
                   ],
                 ),
                 if (cardLabel != null ||
+                    hasSplit ||
                     transaction.isInternational ||
                     transaction.isFlaggedUnusual ||
                     isTransfer ||
@@ -77,8 +83,14 @@ class TransactionTile extends ConsumerWidget {
                   Wrap(
                     spacing: 6,
                     children: [
+                      if (hasSplit)
+                        FlagChip(
+                          icon: Icons.call_split_rounded,
+                          label: splitChipLabel(shares),
+                          color: theme.colorScheme.onSurface,
+                        ),
                       if (cardLabel != null)
-                        _FlagChip(
+                        FlagChip(
                           icon: account!.accountType == 'forex'
                               ? Icons.currency_exchange_rounded
                               : Icons.credit_card_rounded,
@@ -86,25 +98,25 @@ class TransactionTile extends ConsumerWidget {
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       if (isTransfer)
-                        _FlagChip(
+                        FlagChip(
                           icon: Icons.swap_horiz_rounded,
                           label: 'Transfer',
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       if (isRefund)
-                        _FlagChip(
+                        FlagChip(
                           icon: Icons.undo_rounded,
                           label: 'Refund',
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       if (transaction.isInternational)
-                        _FlagChip(
+                        FlagChip(
                           icon: Icons.public,
                           label: 'International',
                           color: theme.colorScheme.tertiary,
                         ),
                       if (transaction.isFlaggedUnusual)
-                        _FlagChip(
+                        FlagChip(
                           icon: Icons.warning_amber_rounded,
                           label: 'Unusual',
                           color: theme.colorScheme.error,
@@ -135,45 +147,14 @@ class TransactionTile extends ConsumerWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+              if (hasSplit)
+                Text(
+                  'Your share ${NumberFormat.currency(locale: 'en_IN', symbol: isInr ? '₹' : '${transaction.currency} ', decimalDigits: 2).format(myShareMinor(transaction.amountMinor, shares) / 100)}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
             ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _FlagChip extends StatelessWidget {
-  const _FlagChip({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              color: color,
-              fontWeight: FontWeight.w600,
-            ),
           ),
         ],
       ),

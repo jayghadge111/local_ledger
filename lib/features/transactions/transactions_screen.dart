@@ -6,6 +6,7 @@ import '../../core/db/providers.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/placeholder_body.dart';
+import 'transaction_detail_sheet.dart';
 import 'transaction_form_sheet.dart';
 import 'widgets/transaction_tile.dart';
 
@@ -80,7 +81,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                     ? const PlaceholderBody(
                         icon: Icons.search_off,
                         title: 'No matches',
-                        subtitle: 'Try a different search or clear the filters.',
+                        subtitle:
+                            'Try a different search or clear the filters.',
                       )
                     : ListView.separated(
                         padding: const EdgeInsets.fromLTRB(12, 12, 12, 96),
@@ -89,14 +91,14 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                         itemBuilder: (context, index) {
                           final transaction = filtered[index];
                           return FadeSlideIn(
-                            delay: Duration(milliseconds: 35 * index.clamp(0, 12)),
+                            delay: Duration(
+                              milliseconds: 35 * index.clamp(0, 12),
+                            ),
                             child: TransactionTile(
                               transaction: transaction,
                               category: categoriesById[transaction.categoryId],
-                              onTap: () => showTransactionFormSheet(
-                                context,
-                                existing: transaction,
-                              ),
+                              onTap: () =>
+                                  showTransactionDetail(context, transaction),
                             ),
                           );
                         },
@@ -106,7 +108,8 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           );
         },
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text('Could not load transactions: $error')),
+        error: (error, _) =>
+            Center(child: Text('Could not load transactions: $error')),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => showTransactionFormSheet(context),
@@ -158,7 +161,9 @@ class _FilterBar extends StatelessWidget {
                         onQueryChanged('');
                       },
                     ),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           ),
           const SizedBox(height: 10),
@@ -171,7 +176,9 @@ class _FilterBar extends StatelessWidget {
                   decoration: InputDecoration(
                     isDense: true,
                     labelText: 'Category',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   items: [
                     const DropdownMenuItem(value: null, child: Text('All')),
@@ -189,7 +196,9 @@ class _FilterBar extends StatelessWidget {
                   decoration: InputDecoration(
                     isDense: true,
                     labelText: 'Type',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                   items: const [
                     DropdownMenuItem(value: null, child: Text('All')),

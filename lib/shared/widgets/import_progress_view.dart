@@ -50,3 +50,33 @@ class ImportProgressView extends StatelessWidget {
     );
   }
 }
+
+/// The outcome line shown after an import: a green check with what was
+/// done, or a red mark with what went wrong.
+class ImportResultNote extends StatelessWidget {
+  const ImportResultNote({super.key, required this.ok, required this.text});
+
+  final bool ok;
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = ok ? Colors.green : theme.colorScheme.error;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(ok ? Icons.check_circle_rounded : Icons.error_rounded, color: color, size: 20),
+          const SizedBox(width: 10),
+          Expanded(child: Text(text, style: theme.textTheme.bodyMedium)),
+        ],
+      ),
+    );
+  }
+}

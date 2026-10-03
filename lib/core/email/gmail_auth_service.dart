@@ -32,6 +32,25 @@ class GmailAuthService {
     return account;
   }
 
+  /// An explicit "Connect" / "Switch account": signs out first so Google
+  /// always shows its account chooser (and its consent screen, unless this
+  /// account already approved the app) instead of silently reusing the last
+  /// account.
+  Future<GoogleSignInAccount> signInFresh() async {
+    await _ensureInitialized();
+    try {
+      await GoogleSignIn.instance.signOut();
+    } catch (_) {}
+    return signIn();
+  }
+
+  /// Signs out AND revokes the app's access at Google, so the next connect
+  /// asks for consent again.
+  Future<void> disconnect() async {
+    await _ensureInitialized();
+    await GoogleSignIn.instance.disconnect();
+  }
+
   Future<GoogleSignInAccount?> currentAccount() async {
     await _ensureInitialized();
     return GoogleSignIn.instance.attemptLightweightAuthentication();

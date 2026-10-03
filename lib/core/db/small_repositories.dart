@@ -64,6 +64,16 @@ final othersShareByTxnProvider = Provider<Map<String, int>>((ref) {
   return map;
 });
 
+/// All shares grouped by the transaction they belong to.
+final splitsByTxnProvider = Provider<Map<String, List<SplitShare>>>((ref) {
+  final shares = ref.watch(splitSharesProvider).value ?? const <SplitShare>[];
+  final map = <String, List<SplitShare>>{};
+  for (final s in shares) {
+    map.putIfAbsent(s.transactionId, () => []).add(s);
+  }
+  return map;
+});
+
 final splitsRepositoryProvider = Provider<SplitsRepository>(
   (ref) => SplitsRepository(ref.watch(databaseProvider)),
 );

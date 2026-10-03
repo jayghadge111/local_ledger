@@ -1,18 +1,40 @@
 import 'dart:convert';
 
+import 'package:google_sign_in/google_sign_in.dart' show GoogleSignInAccount;
 import 'package:http/http.dart' as http;
 
 import '../import_window.dart';
+import '../db/settings_repository.dart';
 import '../import_progress.dart';
+import '../sms/bank_sms_parser.dart';
+import 'html_text.dart';
 import '../ingest/transaction_ingestor.dart';
 import 'bank_email_matcher.dart';
 import 'gmail_auth_service.dart';
 
 class EmailImportResult {
-  const EmailImportResult({required this.scanned, required this.imported, this.queued = 0});
+  const EmailImportResult({
+    required this.scanned,
+    required this.imported,
+    this.queued = 0,
+    this.notRecognised = 0,
+    this.unreadable = 0,
+    this.duplicates = 0,
+  });
   final int scanned;
   final int imported;
+
+  /// Looked like a transaction but couldn't be read — in the review queue.
   final int queued;
+
+  /// Read fine but isn't a transaction alert (OTP, promo, statement notice).
+  final int notRecognised;
+
+  /// Couldn't be downloaded or had no readable text.
+  final int unreadable;
+
+  /// Already in the app (imported earlier, or also seen by SMS).
+  final int duplicates;
 }
 
 /// Fetches recent bank transaction emails directly from the Gmail REST API
@@ -20,10 +42,11 @@ class EmailImportResult {
 /// of ours — and imports the ones that parse as transactions. Mirrors
 /// [SmsImportService]'s shape closely.
 class GmailImportService {
-  GmailImportService(this._ingestor, this._auth);
+  GmailImportService(this._ingestor, this._auth, this._settings);
 
   final TransactionIngestor _ingestor;
   final GmailAuthService _auth;
+  final SettingsRepository _settings;
 
   static const _fetchBatchSize = 8;
   static const _requestTimeout = Duration(seconds: 30);
@@ -33,33 +56,49 @@ class GmailImportService {
   /// ago) to now. Gmail returns at most 500 ids per page, so this follows
   /// `nextPageToken` until the window is exhausted or [maxMessages] is hit.
   Future<EmailImportResult> importRecent({
+    GoogleSignInAccount? account,
     int maxMessages = 1000,
     ImportProgressCallback? onProgress,
   }) async {
     onProgress?.call(const ImportProgress('Signing in to Google…'));
-    final account = await _auth.currentAccount() ?? await _auth.signIn();
-    var headers = await _auth.authHeaders(account);
+    final signedIn =
+        account ?? await _auth.currentAccount() ?? await _auth.signIn();
+    var headers = await _auth.authHeaders(signedIn);
 
     final cutoff = importCutoff();
     final afterDate =
         '${cutoff.year}/${cutoff.month.toString().padLeft(2, '0')}/${cutoff.day.toString().padLeft(2, '0')}';
-    final query = Uri.encodeQueryComponent(bankEmailSearchQuery(afterDate));
+    final extraDomains =
+        ((await _settings.get(SettingsKeys.customBankEmailDomains)) ?? '')
+            .split(',')
+            .where((d) => d.isNotEmpty)
+            .toList();
+    final query = Uri.encodeQueryComponent(
+      bankEmailSearchQuery(afterDate, extraDomains: extraDomains),
+    );
 
     final messageRefs = <Map<String, dynamic>>[];
     String? pageToken;
     var reauthorized = false;
     do {
       final pageParam = pageToken == null ? '' : '&pageToken=$pageToken';
-      final listUri = Uri.parse('$_apiBase/messages?maxResults=100&q=$query$pageParam');
-      var listResponse = await http.get(listUri, headers: headers).timeout(_requestTimeout);
+      final listUri = Uri.parse(
+        '$_apiBase/messages?maxResults=100&q=$query$pageParam',
+      );
+      var listResponse = await http
+          .get(listUri, headers: headers)
+          .timeout(_requestTimeout);
 
       // A 401/403 right after sign-in usually means the token was issued
       // before the Gmail permission took effect: ask again, once, then retry.
-      if ((listResponse.statusCode == 401 || listResponse.statusCode == 403) && !reauthorized) {
+      if ((listResponse.statusCode == 401 || listResponse.statusCode == 403) &&
+          !reauthorized) {
         reauthorized = true;
-        headers = await _auth.authHeaders(account);
+        headers = await _auth.authHeaders(signedIn);
         await Future<void>.delayed(const Duration(seconds: 2));
-        listResponse = await http.get(listUri, headers: headers).timeout(_requestTimeout);
+        listResponse = await http
+            .get(listUri, headers: headers)
+            .timeout(_requestTimeout);
       }
 
       if (listResponse.statusCode != 200) {
@@ -68,14 +107,21 @@ class GmailImportService {
         );
       }
       final listJson = jsonDecode(listResponse.body) as Map<String, dynamic>;
-      messageRefs.addAll((listJson['messages'] as List? ?? []).cast<Map<String, dynamic>>());
+      messageRefs.addAll(
+        (listJson['messages'] as List? ?? []).cast<Map<String, dynamic>>(),
+      );
       pageToken = listJson['nextPageToken'] as String?;
-      onProgress?.call(ImportProgress('Searching your inbox… ${messageRefs.length} bank emails found'));
+      onProgress?.call(
+        ImportProgress(
+          'Searching your inbox… ${messageRefs.length} bank emails found',
+        ),
+      );
     } while (pageToken != null && messageRefs.length < maxMessages);
 
     final total = messageRefs.length;
     onProgress?.call(ImportProgress('Reading bank emails', total: total));
 
+    var unreadable = 0;
     final session = await _ingestor.begin();
     // Fetch a handful of messages at a time — much faster than one by one —
     // then store them in order.
@@ -85,9 +131,12 @@ class GmailImportService {
         chunk.map((ref) => _fetchMessage(ref['id'] as String, headers)),
       );
       for (final detail in details) {
-        if (detail == null) continue;
+        if (detail == null) {
+          unreadable++;
+          continue;
+        }
         final (from, dateMillis, body) = detail;
-        if (!looksLikeBankEmail(from)) continue;
+        if (!looksLikeBankEmail(from, extraDomains: extraDomains)) continue;
         await session.add(
           source: 'email',
           sender: from,
@@ -95,20 +144,32 @@ class GmailImportService {
           date: DateTime.fromMillisecondsSinceEpoch(dateMillis),
         );
       }
-      onProgress?.call(ImportProgress(
-        'Reading bank emails',
-        done: (i + _fetchBatchSize).clamp(0, total),
+      onProgress?.call(
+        ImportProgress(
+          'Reading bank emails',
+          done: (i + _fetchBatchSize).clamp(0, total),
+          total: total,
+          found: session.imported,
+        ),
+      );
+    }
+    onProgress?.call(
+      ImportProgress(
+        'Finishing up…',
+        done: total,
         total: total,
         found: session.imported,
-      ));
-    }
-    onProgress?.call(ImportProgress('Finishing up…', done: total, total: total, found: session.imported));
+      ),
+    );
     await session.finish();
 
     return EmailImportResult(
       scanned: messageRefs.length,
       imported: session.imported,
       queued: session.queued,
+      notRecognised: session.skipped,
+      unreadable: unreadable,
+      duplicates: session.duplicates,
     );
   }
 
@@ -116,9 +177,13 @@ class GmailImportService {
   /// `insufficientPermissions`, `rateLimitExceeded`). Contains no mail content.
   String _errorReason(http.Response response) {
     try {
-      final error = (jsonDecode(response.body) as Map<String, dynamic>)['error'] as Map<String, dynamic>;
+      final error =
+          (jsonDecode(response.body) as Map<String, dynamic>)['error']
+              as Map<String, dynamic>;
       final errors = (error['errors'] as List?)?.cast<Map<String, dynamic>>();
-      final reason = errors != null && errors.isNotEmpty ? errors.first['reason'] : error['status'];
+      final reason = errors != null && errors.isNotEmpty
+          ? errors.first['reason']
+          : error['status'];
       return '$reason';
     } catch (_) {
       return 'unknown';
@@ -133,14 +198,18 @@ class GmailImportService {
     http.Response? response;
     for (var attempt = 0; attempt < 4; attempt++) {
       try {
-        response = await http.get(uri, headers: headers).timeout(_requestTimeout);
+        response = await http
+            .get(uri, headers: headers)
+            .timeout(_requestTimeout);
       } catch (_) {
         response = null; // timeout / network blip — try again
       }
       if (response != null && response.statusCode == 200) break;
-      final rateLimited = response != null &&
+      final rateLimited =
+          response != null &&
           (response.statusCode == 429 ||
-              (response.statusCode == 403 && _errorReason(response).toLowerCase().contains('rate')));
+              (response.statusCode == 403 &&
+                  _errorReason(response).toLowerCase().contains('rate')));
       if (response != null && !rateLimited && response.statusCode < 500) {
         return null; // a real refusal (e.g. message deleted) — skip it
       }
@@ -152,32 +221,49 @@ class GmailImportService {
     final payload = json['payload'] as Map<String, dynamic>?;
     if (payload == null) return null;
 
-    final messageHeaders = (payload['headers'] as List? ?? []).cast<Map<String, dynamic>>();
-    final from = messageHeaders
-            .firstWhere((h) => h['name'] == 'From', orElse: () => const {})['value']
-        as String? ??
+    final messageHeaders = (payload['headers'] as List? ?? [])
+        .cast<Map<String, dynamic>>();
+    final from =
+        messageHeaders.firstWhere(
+              (h) => h['name'] == 'From',
+              orElse: () => const {},
+            )['value']
+            as String? ??
         '';
-    final internalDate = int.tryParse(json['internalDate'] as String? ?? '') ?? 0;
+    final internalDate =
+        int.tryParse(json['internalDate'] as String? ?? '') ?? 0;
 
-    final body = _extractPlainText(payload) ?? (json['snippet'] as String? ?? '');
+    final plain = _extractPart(payload, 'text/plain');
+    final html = _extractPart(payload, 'text/html');
+    final snippet = json['snippet'] as String? ?? '';
+
+    // Prefer the plain part; many bank alerts are HTML-only, so fall back to
+    // the HTML turned into text. Keep just the sentence that reports the
+    // transaction — the rest is greeting and footer boilerplate.
+    var body = focusTransactionText(
+      plain ?? (html != null ? htmlToText(html) : snippet),
+    );
+    if (parseBankSms(body) == null && html != null) {
+      final fromHtml = focusTransactionText(htmlToText(html));
+      if (parseBankSms(fromHtml) != null) body = fromHtml;
+    }
+    if (body.isEmpty) return null;
     return (from, internalDate, body);
   }
 
-  String? _extractPlainText(Map<String, dynamic> part) {
+  String? _extractPart(Map<String, dynamic> part, String wantedMime) {
     final mimeType = part['mimeType'] as String?;
-    final body = part['body'] as Map<String, dynamic>?;
-    final data = body?['data'] as String?;
-
-    if (mimeType == 'text/plain' && data != null) {
-      return utf8.decode(base64Url.decode(base64Url.normalize(data)));
+    final data = (part['body'] as Map<String, dynamic>?)?['data'] as String?;
+    if (mimeType == wantedMime && data != null) {
+      return utf8.decode(
+        base64Url.decode(base64Url.normalize(data)),
+        allowMalformed: true,
+      );
     }
-
-    final parts = (part['parts'] as List?)?.cast<Map<String, dynamic>>();
-    if (parts != null) {
-      for (final child in parts) {
-        final found = _extractPlainText(child);
-        if (found != null) return found;
-      }
+    for (final child
+        in (part['parts'] as List?)?.cast<Map<String, dynamic>>() ?? const []) {
+      final found = _extractPart(child, wantedMime);
+      if (found != null) return found;
     }
     return null;
   }

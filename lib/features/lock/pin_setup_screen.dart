@@ -44,37 +44,13 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
     }
 
     await ref.read(pinRepositoryProvider).setPin(pin);
-    
-    final appLockService = ref.read(appLockServiceProvider);
-    if (await appLockService.canCheckBiometrics && mounted) {
-      final useBiometric = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Enable Biometric Login?'),
-          content: const Text('Would you like to use your fingerprint or face to unlock the app?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('No'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Yes'),
-            ),
-          ],
-        ),
-      );
-      
-      if (useBiometric == true && mounted) {
-        final ok = await appLockService.authenticate(reason: 'Confirm to enable biometric unlock');
-        if (ok) {
-          await ref.read(settingsRepositoryProvider).set(SettingsKeys.biometricEnabled, 'true');
-        } else if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Biometric check failed — you can enable it later in Settings')),
-          );
-        }
-      }
+
+    // Biometric unlock is optional: whatever happens here, setup must still
+    // finish, so the whole step is guarded.
+    try {
+      await _offerBiometric();
+    } catch (e) {
+      debugPrint('[PinSetup] biometric step skipped: $e');
     }
 
     ref.read(isUnlockedProvider.notifier).setUnlocked(true);
@@ -85,32 +61,86 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
     }
   }
 
+  Future<void> _offerBiometric() async {
+    final appLockService = ref.read(appLockServiceProvider);
+    if (!mounted || !await appLockService.canCheckBiometrics || !mounted) {
+      return;
+    }
+
+    final useBiometric = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Enable Biometric Login?'),
+        content: const Text(
+          'Would you like to use your fingerprint or face to unlock the app?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('No'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Yes'),
+          ),
+        ],
+      ),
+    );
+    if (useBiometric != true || !mounted) return;
+
+    final ok = await appLockService.authenticate(
+      reason: 'Confirm to enable biometric unlock',
+    );
+    if (ok) {
+      await ref
+          .read(settingsRepositoryProvider)
+          .set(SettingsKeys.biometricEnabled, 'true');
+    } else if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Biometric check failed — you can enable it later in Settings',
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isConfirm = _firstEntry != null;
 
-    return GlassBackground(
-      child: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const AppLogoMark(size: 72),
-              const SizedBox(height: 20),
-              Text(
-                isConfirm ? 'Confirm your PIN' : 'Set a PIN to lock the app',
-                style: theme.textTheme.titleLarge,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Used to unlock LocalLedger — never leaves this device',
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 28),
-              PinPad(key: _padKey, length: 4, onSubmitted: _onSubmitted, errorText: _error),
-            ],
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: GlassBackground(
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const AppLogoMark(size: 72),
+                const SizedBox(height: 20),
+                Text(
+                  isConfirm ? 'Confirm your PIN' : 'Set a PIN to lock the app',
+                  style: theme.textTheme.titleLarge,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Used to unlock LocalLedger — never leaves this device',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 28),
+                PinPad(
+                  key: _padKey,
+                  length: 4,
+                  onSubmitted: _onSubmitted,
+                  errorText: _error,
+                ),
+              ],
+            ),
           ),
         ),
       ),

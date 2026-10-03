@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../../shared/widgets/centered_dialog_card.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -8,14 +11,19 @@ import '../../core/db/small_repositories.dart';
 import '../../shared/widgets/glass_background.dart';
 import '../../shared/widgets/glass_surface.dart';
 
-final _money = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 2);
+final _money = NumberFormat.currency(
+  locale: 'en_IN',
+  symbol: '₹',
+  decimalDigits: 2,
+);
 
 /// Dialog for splitting one expense with other people. The user's own
 /// share is whatever's left; budgets and totals count only that.
 Future<void> showSplitSheet(BuildContext context, Transaction transaction) {
   return showDialog(
     context: context,
-    builder: (_) => _CenteredCard(child: _SplitSheet(transaction: transaction)),
+    builder: (_) =>
+        CenteredDialogCard(child: _SplitSheet(transaction: transaction)),
   );
 }
 
@@ -48,7 +56,8 @@ class _SplitSheetState extends ConsumerState<_SplitSheet> {
         .toList();
     if (people.isEmpty) return;
     // Equal shares among the others and the user.
-    final share = (widget.transaction.amountMinor / (people.length + 1)).round();
+    final share = (widget.transaction.amountMinor / (people.length + 1))
+        .round();
     final repo = ref.read(splitsRepositoryProvider);
     for (final name in people) {
       await repo.addShare(
@@ -64,7 +73,9 @@ class _SplitSheetState extends ConsumerState<_SplitSheet> {
     final name = _person.text.trim();
     final amount = double.tryParse(_amount.text.trim());
     if (name.isEmpty || amount == null || amount <= 0) return;
-    await ref.read(splitsRepositoryProvider).addShare(
+    await ref
+        .read(splitsRepositoryProvider)
+        .addShare(
           transactionId: widget.transaction.id,
           personName: name,
           shareMinor: (amount * 100).round(),
@@ -76,9 +87,10 @@ class _SplitSheetState extends ConsumerState<_SplitSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final shares = (ref.watch(splitSharesProvider).value ?? const <SplitShare>[])
-        .where((s) => s.transactionId == widget.transaction.id)
-        .toList();
+    final shares =
+        (ref.watch(splitSharesProvider).value ?? const <SplitShare>[])
+            .where((s) => s.transactionId == widget.transaction.id)
+            .toList();
     final others = shares.fold<int>(0, (sum, s) => sum + s.shareMinor);
     final mine = widget.transaction.amountMinor - others;
 
@@ -96,12 +108,17 @@ class _SplitSheetState extends ConsumerState<_SplitSheet> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text('Split ${widget.transaction.merchant}', style: theme.textTheme.titleLarge),
+                  Text(
+                    'Split ${widget.transaction.merchant}',
+                    style: theme.textTheme.titleLarge,
+                  ),
                   const SizedBox(height: 4),
                   Text(
                     'Total ${_money.format(widget.transaction.amountMinor / 100)} · '
                     'your share ${_money.format(mine / 100)}',
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   for (final s in shares)
@@ -112,7 +129,8 @@ class _SplitSheetState extends ConsumerState<_SplitSheet> {
                       subtitle: Text(_money.format(s.shareMinor / 100)),
                       trailing: IconButton(
                         icon: const Icon(Icons.close_rounded),
-                        onPressed: () => ref.read(splitsRepositoryProvider).delete(s.id),
+                        onPressed: () =>
+                            ref.read(splitsRepositoryProvider).delete(s.id),
                       ),
                     ),
                   const SizedBox(height: 8),
@@ -123,7 +141,10 @@ class _SplitSheetState extends ConsumerState<_SplitSheet> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  OutlinedButton(onPressed: _splitEqually, child: const Text('Split equally')),
+                  OutlinedButton(
+                    onPressed: _splitEqually,
+                    child: const Text('Split equally'),
+                  ),
                   const Divider(height: 28),
                   Row(
                     children: [
@@ -131,7 +152,9 @@ class _SplitSheetState extends ConsumerState<_SplitSheet> {
                         flex: 3,
                         child: TextField(
                           controller: _person,
-                          decoration: const InputDecoration(labelText: 'Person'),
+                          decoration: const InputDecoration(
+                            labelText: 'Person',
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -139,14 +162,21 @@ class _SplitSheetState extends ConsumerState<_SplitSheet> {
                         flex: 2,
                         child: TextField(
                           controller: _amount,
-                          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                          decoration: const InputDecoration(labelText: 'Owes (₹)'),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          decoration: const InputDecoration(
+                            labelText: 'Owes (₹)',
+                          ),
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  OutlinedButton(onPressed: _addOne, child: const Text('Add share')),
+                  OutlinedButton(
+                    onPressed: _addOne,
+                    child: const Text('Add share'),
+                  ),
                   const SizedBox(height: 8),
                   FilledButton(
                     onPressed: () => Navigator.of(context).pop(),
@@ -171,7 +201,9 @@ class SplitsScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final shares = ref.watch(splitSharesProvider).value ?? const <SplitShare>[];
     final transactions = {
-      for (final t in ref.watch(transactionsProvider).value ?? const <Transaction>[]) t.id: t,
+      for (final t
+          in ref.watch(transactionsProvider).value ?? const <Transaction>[])
+        t.id: t,
     };
 
     final byPerson = <String, List<SplitShare>>{};
@@ -203,12 +235,20 @@ class SplitsScreen extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: GlassCard(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
                         child: Theme(
-                          data: theme.copyWith(dividerColor: Colors.transparent),
+                          data: theme.copyWith(
+                            dividerColor: Colors.transparent,
+                          ),
                           child: ExpansionTile(
                             tilePadding: EdgeInsets.zero,
-                            title: Text(person, style: theme.textTheme.titleMedium),
+                            title: Text(
+                              person,
+                              style: theme.textTheme.titleMedium,
+                            ),
                             subtitle: Text(
                               _owed(byPerson[person]!) == 0
                                   ? 'All settled'
@@ -223,7 +263,10 @@ class SplitsScreen extends ConsumerWidget {
                                   onChanged: (v) => ref
                                       .read(splitsRepositoryProvider)
                                       .setSettled(s.id, v ?? false),
-                                  title: Text(transactions[s.transactionId]?.merchant ?? 'Expense'),
+                                  title: Text(
+                                    transactions[s.transactionId]?.merchant ??
+                                        'Expense',
+                                  ),
                                   subtitle: Text(
                                     '${_money.format(s.shareMinor / 100)} · '
                                     '${transactions[s.transactionId] == null ? '' : DateFormat.yMMMd().format(transactions[s.transactionId]!.date)}',
@@ -240,28 +283,7 @@ class SplitsScreen extends ConsumerWidget {
     );
   }
 
-  int _owed(List<SplitShare> shares) =>
-      shares.where((s) => !s.settled).fold<int>(0, (sum, s) => sum + s.shareMinor);
-}
-
-/// Positions a card in the middle of the screen over the dialog barrier,
-/// lifting it above the keyboard. Deliberately not a [Dialog]: that draws
-/// its own full-screen themed surface behind the card.
-class _CenteredCard extends StatelessWidget {
-  const _CenteredCard({required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      type: MaterialType.transparency,
-      child: SafeArea(
-        child: AnimatedPadding(
-          duration: const Duration(milliseconds: 150),
-          padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-          child: child,
-        ),
-      ),
-    );
-  }
+  int _owed(List<SplitShare> shares) => shares
+      .where((s) => !s.settled)
+      .fold<int>(0, (sum, s) => sum + s.shareMinor);
 }

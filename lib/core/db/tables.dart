@@ -72,6 +72,11 @@ class Transactions extends Table {
   /// isn't in [merchant], so it's kept here for the refund matcher.
   BoolColumn get refundHint => boolean().withDefault(const Constant(false))();
 
+  /// Other channels that reported this same transaction and were merged into
+  /// it (comma-separated, e.g. "email") — each channel can be merged into a
+  /// transaction only once, so two real payments are never collapsed.
+  TextColumn get alsoInSource => text().nullable()();
+
   /// SHA-512 of source + original message text + timestamp; identical
   /// re-scans of the same message produce the same hash.
   TextColumn get sourceHash => text().nullable()();

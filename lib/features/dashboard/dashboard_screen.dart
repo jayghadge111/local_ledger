@@ -8,6 +8,7 @@ import '../../shared/widgets/animated_amount.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/placeholder_body.dart';
+import '../transactions/transaction_detail_sheet.dart';
 import '../transactions/widgets/transaction_tile.dart';
 import 'expense_detail_screen.dart';
 import 'widgets/category_donut_chart.dart';
@@ -29,14 +30,12 @@ class DashboardScreen extends ConsumerWidget {
           return const PlaceholderBody(
             icon: Icons.grid_view_rounded,
             title: 'Welcome to LocalLedger',
-            subtitle:
-                'Add a transaction (or load sample data from Settings) to see your dashboard come alive.',
+            subtitle: 'Add a transaction (or load sample data from Settings) to see your dashboard come alive.',
           );
         }
 
         final categoriesById = {
-          for (final c in categoriesAsync.value ?? <Category>[])
-            c.id: c,
+          for (final c in categoriesAsync.value ?? <Category>[]) c.id: c,
         };
 
         final now = DateTime.now();
@@ -71,13 +70,19 @@ class DashboardScreen extends ConsumerWidget {
         ];
 
         final recent = transactions.take(5).toList();
-        final buckets = buildExpenseBuckets(analytics, DateRangeFilter.sixMonths, now);
+        final buckets = buildExpenseBuckets(
+          analytics,
+          DateRangeFilter.sixMonths,
+          now,
+        );
         final hasTrendData = buckets.any((b) => b.amountMinor > 0);
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
           children: [
-            FadeSlideIn(child: _SummaryRow(spentMinor: spent, receivedMinor: received)),
+            FadeSlideIn(
+              child: _SummaryRow(spentMinor: spent, receivedMinor: received),
+            ),
             const SizedBox(height: 16),
             if (hasTrendData)
               FadeSlideIn(
@@ -97,11 +102,17 @@ class DashboardScreen extends ConsumerWidget {
                       Row(
                         children: [
                           Expanded(
-                            child: Text('Spend trend',
-                                style: Theme.of(context).textTheme.titleMedium),
+                            child: Text(
+                              'Spend trend',
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
                           ),
-                          Icon(Icons.chevron_right_rounded,
-                              color: Theme.of(context).colorScheme.onSurfaceVariant),
+                          Icon(
+                            Icons.chevron_right_rounded,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onSurfaceVariant,
+                          ),
                         ],
                       ),
                       const SizedBox(height: 16),
@@ -118,10 +129,15 @@ class DashboardScreen extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('This month by category',
-                          style: Theme.of(context).textTheme.titleMedium),
+                      Text(
+                        'This month by category',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                       const SizedBox(height: 16),
-                      CategoryDonutChart(slices: categorySlices, totalMinor: spent),
+                      CategoryDonutChart(
+                        slices: categorySlices,
+                        totalMinor: spent,
+                      ),
                     ],
                   ),
                 ),
@@ -129,8 +145,10 @@ class DashboardScreen extends ConsumerWidget {
             const SizedBox(height: 16),
             FadeSlideIn(
               delay: const Duration(milliseconds: 120),
-              child: Text('Recent activity',
-                  style: Theme.of(context).textTheme.titleMedium),
+              child: Text(
+                'Recent activity',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
             ),
             const SizedBox(height: 12),
             for (var i = 0; i < recent.length; i++)
@@ -141,7 +159,7 @@ class DashboardScreen extends ConsumerWidget {
                   child: TransactionTile(
                     transaction: recent[i],
                     category: categoriesById[recent[i].categoryId],
-                    onTap: () {},
+                    onTap: () => showTransactionDetail(context, recent[i]),
                   ),
                 ),
               ),
@@ -149,7 +167,8 @@ class DashboardScreen extends ConsumerWidget {
         );
       },
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Center(child: Text('Could not load dashboard: $error')),
+      error: (error, _) =>
+          Center(child: Text('Could not load dashboard: $error')),
     );
   }
 }
@@ -223,14 +242,19 @@ class _SummaryTile extends StatelessWidget {
           child: Icon(icon, size: 15, color: color),
         ),
         const SizedBox(height: 10),
-        Text(label,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+        Text(
+          label,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
         const SizedBox(height: 4),
         AnimatedAmount(
           amountMinor: amountMinor,
-          style: theme.textTheme.headlineSmall
-              ?.copyWith(fontWeight: FontWeight.w700, color: theme.colorScheme.onSurface),
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: theme.colorScheme.onSurface,
+          ),
         ),
       ],
     );

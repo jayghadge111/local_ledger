@@ -5,10 +5,12 @@ import 'package:intl/intl.dart';
 import '../../core/db/app_database.dart';
 import '../../core/db/budgets_repository.dart';
 import '../../core/db/rules_repository.dart';
+import '../../core/db/settings_repository.dart';
 import '../../core/db/small_repositories.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../budgets/budgets_screen.dart';
+import '../import_review/bank_email_domains_screen.dart';
 import '../import_review/own_identifiers_screen.dart';
 import '../import_review/unparsed_messages_screen.dart';
 import '../rules/rules_screen.dart';
@@ -23,15 +25,25 @@ class ManageScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final money = NumberFormat.currency(locale: 'en_IN', symbol: '₹', decimalDigits: 0);
+    final money = NumberFormat.currency(
+      locale: 'en_IN',
+      symbol: '₹',
+      decimalDigits: 0,
+    );
 
     final budgets = ref.watch(budgetsProvider).value ?? const <Budget>[];
     final shares = ref.watch(splitSharesProvider).value ?? const <SplitShare>[];
-    final unparsed = ref.watch(unparsedMessagesProvider).value ?? const <UnparsedMessage>[];
+    final unparsed =
+        ref.watch(unparsedMessagesProvider).value ?? const <UnparsedMessage>[];
     final rules = ref.watch(rulesProvider).value ?? const <Rule>[];
-    final own = ref.watch(ownIdentifiersProvider).value ?? const <OwnIdentifier>[];
+    final own =
+        ref.watch(ownIdentifiersProvider).value ?? const <OwnIdentifier>[];
+    final senders =
+        ref.watch(customBankEmailDomainsProvider).value ?? const <String>[];
 
-    final owed = shares.where((s) => !s.settled).fold<int>(0, (sum, s) => sum + s.shareMinor);
+    final owed = shares
+        .where((s) => !s.settled)
+        .fold<int>(0, (sum, s) => sum + s.shareMinor);
 
     final items = <_ManageItem>[
       _ManageItem(
@@ -74,6 +86,14 @@ class ManageScreen extends ConsumerWidget {
             ? 'Add your name or UPI ID so transfers between your accounts aren\'t counted as spending'
             : '${own.length} saved · used to spot transfers between your accounts',
         screen: const OwnIdentifiersScreen(),
+      ),
+      _ManageItem(
+        icon: Icons.alternate_email_rounded,
+        title: 'Bank email senders',
+        subtitle: senders.isEmpty
+            ? 'Gmail alerts from your bank skipped? Add its sender address'
+            : '${senders.length} extra sender${senders.length == 1 ? '' : 's'} added',
+        screen: const BankEmailDomainsScreen(),
       ),
     ];
 
@@ -123,7 +143,9 @@ class _ManageCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return GlassCard(
-      onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => item.screen)),
+      onTap: () =>
+          Navigator.of(context)
+              .push(MaterialPageRoute(builder: (_) => item.screen)),
       child: Row(
         children: [
           Container(
@@ -144,7 +166,9 @@ class _ManageCard extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   item.subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
@@ -159,10 +183,17 @@ class _ManageCard extends StatelessWidget {
               ),
               child: Text(
                 '${item.badge}',
-                style: TextStyle(color: theme.colorScheme.onError, fontSize: 12, fontWeight: FontWeight.w700),
+                style: TextStyle(
+                  color: theme.colorScheme.onError,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ),
-          Icon(Icons.chevron_right_rounded, color: theme.colorScheme.onSurfaceVariant),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
         ],
       ),
     );

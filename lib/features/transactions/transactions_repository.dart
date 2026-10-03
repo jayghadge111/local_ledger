@@ -26,7 +26,9 @@ class TransactionsRepository {
     String? accountId,
     bool isTransfer = false,
   }) async {
-    await _db.into(_db.transactions).insert(
+    await _db
+        .into(_db.transactions)
+        .insert(
           TransactionsCompanion.insert(
             id: _uuid.v4(),
             accountId: Value(accountId),
@@ -58,8 +60,9 @@ class TransactionsRepository {
     String? accountId,
     bool? isTransfer,
   }) async {
-    final existing =
-        await (_db.select(_db.transactions)..where((t) => t.id.equals(id))).getSingle();
+    final existing = await (_db.select(
+      _db.transactions,
+    )..where((t) => t.id.equals(id))).getSingle();
     final newMerchant = merchant.trim();
 
     await (_db.update(_db.transactions)..where((t) => t.id.equals(id))).write(
@@ -80,7 +83,9 @@ class TransactionsRepository {
     }
 
     var applied = await _learnAlias(existing, newMerchant, categoryId);
-    if (applied == 0) applied = await _learnCategory(existing, newMerchant, categoryId);
+    if (applied == 0) {
+      applied = await _learnCategory(existing, newMerchant, categoryId);
+    }
     await Reconciler(_db).run();
     return applied;
   }
@@ -88,13 +93,23 @@ class TransactionsRepository {
   /// Teaches the app that [existing]'s raw bank text means [newMerchant],
   /// and applies that to every other not-yet-edited transaction with the
   /// same raw text.
-  Future<int> _learnAlias(Transaction existing, String newMerchant, String categoryId) async {
+  Future<int> _learnAlias(
+    Transaction existing,
+    String newMerchant,
+    String categoryId,
+  ) async {
     final raw = existing.rawMerchant?.trim();
-    if (raw == null || raw.isEmpty || newMerchant == existing.merchant) return 0;
+    if (raw == null || raw.isEmpty || newMerchant == existing.merchant) {
+      return 0;
+    }
 
     final pattern = raw.toLowerCase();
-    await (_db.delete(_db.merchantAliases)..where((a) => a.pattern.equals(pattern))).go();
-    await _db.into(_db.merchantAliases).insert(
+    await (_db.delete(
+      _db.merchantAliases,
+    )..where((a) => a.pattern.equals(pattern))).go();
+    await _db
+        .into(_db.merchantAliases)
+        .insert(
           MerchantAliasesCompanion.insert(
             id: _uuid.v4(),
             pattern: pattern,
@@ -102,28 +117,41 @@ class TransactionsRepository {
           ),
         );
 
-    return (_db.update(_db.transactions)
-          ..where((t) =>
+    return (_db.update(_db.transactions)..where(
+          (t) =>
               t.rawMerchant.lower().equals(pattern) &
               t.id.equals(existing.id).not() &
-              t.userEdited.equals(false)))
-        .write(TransactionsCompanion(
-      merchant: Value(newMerchant),
-      categoryId: existing.categoryId != categoryId ? Value(categoryId) : const Value.absent(),
-    ));
+              t.userEdited.equals(false),
+        ))
+        .write(
+          TransactionsCompanion(
+            merchant: Value(newMerchant),
+            categoryId: existing.categoryId != categoryId
+                ? Value(categoryId)
+                : const Value.absent(),
+          ),
+        );
   }
 
   /// The user re-categorized a merchant: remember it as a rule for future
   /// imports and apply it to the other, not-yet-edited transactions of the
   /// same merchant. Returns how many others changed.
-  Future<int> _learnCategory(Transaction existing, String merchant, String categoryId) async {
+  Future<int> _learnCategory(
+    Transaction existing,
+    String merchant,
+    String categoryId,
+  ) async {
     if (existing.categoryId == categoryId) return 0;
     final pattern = merchant.toLowerCase();
     if (pattern.length < 3) return 0;
 
-    final known = await (_db.select(_db.rules)..where((r) => r.pattern.equals(pattern))).get();
+    final known = await (_db.select(
+      _db.rules,
+    )..where((r) => r.pattern.equals(pattern))).get();
     if (known.isEmpty) {
-      await _db.into(_db.rules).insert(
+      await _db
+          .into(_db.rules)
+          .insert(
             RulesCompanion.insert(
               id: _uuid.v4(),
               pattern: pattern,
@@ -136,11 +164,12 @@ class TransactionsRepository {
           .write(RulesCompanion(categoryId: Value(categoryId)));
     }
 
-    return (_db.update(_db.transactions)
-          ..where((t) =>
+    return (_db.update(_db.transactions)..where(
+          (t) =>
               t.merchant.lower().equals(pattern) &
               t.id.equals(existing.id).not() &
-              t.userEdited.equals(false)))
+              t.userEdited.equals(false),
+        ))
         .write(TransactionsCompanion(categoryId: Value(categoryId)));
   }
 
@@ -150,22 +179,31 @@ class TransactionsRepository {
   /// locked as normal too — rejecting the pair shouldn't let that half be
   /// re-read as a refund.
   Future<void> setTransfer(String id, bool isTransfer) async {
-    final tx = await (_db.select(_db.transactions)..where((t) => t.id.equals(id))).getSingle();
+    final tx = await (_db.select(
+      _db.transactions,
+    )..where((t) => t.id.equals(id))).getSingle();
     await _db.transaction(() async {
       if (!isTransfer && tx.transferGroupId != null) {
-        await (_db.update(_db.transactions)
-              ..where((t) => t.transferGroupId.equals(tx.transferGroupId!) & t.id.equals(id).not()))
-            .write(const TransactionsCompanion(
-          kind: Value('normal'),
-          kindLocked: Value(true),
-          transferGroupId: Value(null),
-        ));
+        await (_db.update(_db.transactions)..where(
+              (t) =>
+                  t.transferGroupId.equals(tx.transferGroupId!) &
+                  t.id.equals(id).not(),
+            ))
+            .write(
+              const TransactionsCompanion(
+                kind: Value('normal'),
+                kindLocked: Value(true),
+                transferGroupId: Value(null),
+              ),
+            );
       }
       await (_db.update(_db.transactions)..where((t) => t.id.equals(id))).write(
         TransactionsCompanion(
           kind: Value(isTransfer ? 'transfer' : 'normal'),
           kindLocked: const Value(true),
-          transferGroupId: isTransfer ? const Value.absent() : const Value(null),
+          transferGroupId: isTransfer
+              ? const Value.absent()
+              : const Value(null),
         ),
       );
     });
@@ -173,12 +211,14 @@ class TransactionsRepository {
 
   /// The "Cash" account, created on first use.
   Future<String> cashAccountId() async {
-    final existing = await (_db.select(_db.accounts)
-          ..where((a) => a.accountType.equals('cash')))
-        .getSingleOrNull();
+    final existing = await (_db.select(
+      _db.accounts,
+    )..where((a) => a.accountType.equals('cash'))).getSingleOrNull();
     if (existing != null) return existing.id;
     final id = _uuid.v4();
-    await _db.into(_db.accounts).insert(
+    await _db
+        .into(_db.accounts)
+        .insert(
           AccountsCompanion.insert(id: id, name: 'Cash', accountType: 'cash'),
         );
     return id;

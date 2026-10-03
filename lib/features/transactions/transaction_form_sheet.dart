@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+
+import '../../shared/widgets/centered_dialog_card.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -38,7 +41,9 @@ Future<bool?> showTransactionFormSheet(
   // styling, so the dialog itself is transparent.
   return showDialog<bool>(
     context: context,
-    builder: (_) => _CenteredCard(child: TransactionFormSheet(existing: existing, prefill: prefill)),
+    builder: (_) => CenteredDialogCard(
+      child: TransactionFormSheet(existing: existing, prefill: prefill),
+    ),
   );
 }
 
@@ -316,28 +321,6 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
               ),
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Positions a card in the middle of the screen over the dialog barrier,
-/// lifting it above the keyboard. Deliberately not a [Dialog]: that draws
-/// its own full-screen themed surface behind the card.
-class _CenteredCard extends StatelessWidget {
-  const _CenteredCard({required this.child});
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      type: MaterialType.transparency,
-      child: SafeArea(
-        child: AnimatedPadding(
-          duration: const Duration(milliseconds: 150),
-          padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
-          child: child,
         ),
       ),
     );
