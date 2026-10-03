@@ -15,6 +15,8 @@ abstract class SettingsKeys {
   static const customBankEmailDomains =
       'custom_bank_email_domains'; // comma-separated
   static const userName = 'user_name'; // the user's full name
+  static const gmailCheckpoint = 'gmail_import_checkpoint'; // JSON
+  static const smsCheckpoint = 'sms_import_checkpoint'; // JSON
   static const smsAutoSync = 'sms_auto_sync'; // 'true' | 'false'
 }
 

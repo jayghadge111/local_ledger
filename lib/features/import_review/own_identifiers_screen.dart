@@ -13,7 +13,8 @@ class OwnIdentifiersScreen extends ConsumerStatefulWidget {
   const OwnIdentifiersScreen({super.key});
 
   @override
-  ConsumerState<OwnIdentifiersScreen> createState() => _OwnIdentifiersScreenState();
+  ConsumerState<OwnIdentifiersScreen> createState() =>
+      _OwnIdentifiersScreenState();
 }
 
 class _OwnIdentifiersScreenState extends ConsumerState<OwnIdentifiersScreen> {
@@ -33,13 +34,14 @@ class _OwnIdentifiersScreenState extends ConsumerState<OwnIdentifiersScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final identifiers = ref.watch(ownIdentifiersProvider).value ?? const <OwnIdentifier>[];
+    final identifiers =
+        ref.watch(ownIdentifiersProvider).value ?? const <OwnIdentifier>[];
     final db = ref.watch(databaseProvider);
 
     return GlassBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        appBar: AppBar(title: const Text('My names & accounts')),
+        appBar: AppBar(title: const Text('My other names & UPI IDs')),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
           children: [
@@ -47,13 +49,18 @@ class _OwnIdentifiersScreenState extends ConsumerState<OwnIdentifiersScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Names and UPI IDs that are you', style: theme.textTheme.titleMedium),
+                  Text(
+                    'Other names and UPI IDs that are you',
+                    style: theme.textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 4),
                   Text(
-                    'A payment mentioning one of these is treated as a transfer between your '
-                    'own accounts — not spending or income. Example: your name as on the bank, '
-                    'or yourname@okhdfcbank.',
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                    'Your full name is set in Settings. Add anything else the bank might print '
+                    'for you — a nickname, a spelling variant, or a UPI ID like yourname@okhdfcbank. '
+                    'A payment mentioning one of these is a Self Transfer, not spending or income.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Row(
@@ -62,13 +69,20 @@ class _OwnIdentifiersScreenState extends ConsumerState<OwnIdentifiersScreen> {
                         child: TextField(
                           controller: _controller,
                           onSubmitted: (_) => _add(),
-                          decoration: const InputDecoration(hintText: 'Name or UPI ID'),
+                          decoration: const InputDecoration(
+                            hintText: 'Name or UPI ID',
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
                       FilledButton(
                         onPressed: _add,
-                        style: FilledButton.styleFrom(padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16)),
+                        style: FilledButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 16,
+                          ),
+                        ),
                         child: const Text('Add'),
                       ),
                     ],
@@ -80,7 +94,9 @@ class _OwnIdentifiersScreenState extends ConsumerState<OwnIdentifiersScreen> {
                       title: Text(i.value),
                       trailing: IconButton(
                         icon: const Icon(Icons.close_rounded),
-                        onPressed: () => ref.read(ownIdentifiersRepositoryProvider).delete(i.id),
+                        onPressed: () => ref
+                            .read(ownIdentifiersRepositoryProvider)
+                            .delete(i.id),
                       ),
                     ),
                 ],
@@ -95,12 +111,17 @@ class _OwnIdentifiersScreenState extends ConsumerState<OwnIdentifiersScreen> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Accounts found in your messages', style: theme.textTheme.titleMedium),
+                      Text(
+                        'Accounts found in your messages',
+                        style: theme.textTheme.titleMedium,
+                      ),
                       const SizedBox(height: 8),
                       if (accounts.isEmpty)
                         Text(
                           'None yet — they appear as bank messages are imported.',
-                          style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       for (final a in accounts)
                         ListTile(

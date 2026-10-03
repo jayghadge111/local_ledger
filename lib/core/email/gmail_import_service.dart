@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import '../import_window.dart';
 import '../db/settings_repository.dart';
 import '../import_progress.dart';
+import '../sync/import_checkpoints.dart';
 import '../sms/bank_sms_parser.dart';
 import 'html_text.dart';
 import '../ingest/transaction_ingestor.dart';
@@ -20,6 +21,7 @@ class EmailImportResult {
     this.notRecognised = 0,
     this.unreadable = 0,
     this.duplicates = 0,
+    this.cancelled = false,
   });
   final int scanned;
   final int imported;
@@ -35,6 +37,9 @@ class EmailImportResult {
 
   /// Already in the app (imported earlier, or also seen by SMS).
   final int duplicates;
+
+  /// The user stopped the import before it finished.
+  final bool cancelled;
 }
 
 /// Fetches recent bank transaction emails directly from the Gmail REST API
@@ -59,6 +64,11 @@ class GmailImportService {
     GoogleSignInAccount? account,
     int maxMessages = 1000,
     ImportProgressCallback? onProgress,
+    ImportCancelToken? cancel,
+
+    /// Carry on from where a stopped or interrupted run left off, skipping
+    /// the emails it already handled.
+    bool resume = false,
   }) async {
     onProgress?.call(const ImportProgress('Signing in to Google…'));
     final signedIn =
@@ -119,14 +129,36 @@ class GmailImportService {
     } while (pageToken != null && messageRefs.length < maxMessages);
 
     final total = messageRefs.length;
-    onProgress?.call(ImportProgress('Reading bank emails', total: total));
+    final store = CheckpointStore(_settings);
+    final previous = resume ? await store.gmail() : null;
+    if (!resume) await store.clearGmail();
+    final doneIds = <String>{...?previous?.doneIds};
+    final pending = [
+      for (final r in messageRefs)
+        if (!doneIds.contains(r['id'])) r,
+    ];
+    final alreadyDone = total - pending.length;
+    final foundBefore = previous?.found ?? 0;
+    onProgress?.call(
+      ImportProgress(
+        'Reading bank emails',
+        done: alreadyDone,
+        total: total,
+        found: foundBefore,
+      ),
+    );
 
     var unreadable = 0;
+    var cancelled = false;
     final session = await _ingestor.begin();
     // Fetch a handful of messages at a time — much faster than one by one —
     // then store them in order.
-    for (var i = 0; i < total; i += _fetchBatchSize) {
-      final chunk = messageRefs.skip(i).take(_fetchBatchSize);
+    for (var i = 0; i < pending.length; i += _fetchBatchSize) {
+      if (cancel?.isCancelled == true) {
+        cancelled = true;
+        break;
+      }
+      final chunk = pending.skip(i).take(_fetchBatchSize).toList();
       final details = await Future.wait(
         chunk.map((ref) => _fetchMessage(ref['id'] as String, headers)),
       );
@@ -144,26 +176,39 @@ class GmailImportService {
           date: DateTime.fromMillisecondsSinceEpoch(dateMillis),
         );
       }
+      doneIds.addAll(chunk.map((r) => r['id'] as String));
+      await store.saveGmail(
+        GmailCheckpoint(
+          doneIds: doneIds,
+          total: total,
+          found: foundBefore + session.imported,
+          savedAt: DateTime.now(),
+        ),
+      );
       onProgress?.call(
         ImportProgress(
           'Reading bank emails',
-          done: (i + _fetchBatchSize).clamp(0, total),
+          done: doneIds.length.clamp(0, total),
           total: total,
-          found: session.imported,
+          found: foundBefore + session.imported,
         ),
       );
     }
-    onProgress?.call(
-      ImportProgress(
-        'Finishing up…',
-        done: total,
-        total: total,
-        found: session.imported,
-      ),
-    );
+    if (!cancelled) {
+      onProgress?.call(
+        ImportProgress(
+          'Finishing up…',
+          done: total,
+          total: total,
+          found: foundBefore + session.imported,
+        ),
+      );
+    }
     await session.finish();
+    if (!cancelled) await store.clearGmail();
 
     return EmailImportResult(
+      cancelled: cancelled,
       scanned: messageRefs.length,
       imported: session.imported,
       queued: session.queued,

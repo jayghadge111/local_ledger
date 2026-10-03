@@ -3,25 +3,44 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import '../email/email_providers.dart';
 import '../email/gmail_import_service.dart';
+import '../db/settings_repository.dart';
 import '../import_progress.dart';
+import 'import_checkpoints.dart';
 import '../sms/sms_import_service.dart';
 import '../sms/sms_providers.dart';
 import '../ui/root_messenger.dart';
 
-enum SyncStatus { idle, running, succeeded, failed }
+enum SyncStatus { idle, running, paused, succeeded, failed }
 
 /// One import (Gmail or SMS): what it's doing now, or how the last run ended.
 class SyncJob {
-  const SyncJob({this.status = SyncStatus.idle, this.progress, this.message});
+  const SyncJob({
+    this.status = SyncStatus.idle,
+    this.progress,
+    this.message,
+    this.resumable = false,
+    this.stopping = false,
+  });
 
   final SyncStatus status;
   final ImportProgress? progress;
+
+  /// A checkpoint exists, so [SyncController.resumeGmail] / `resumeSms` can
+  /// carry on instead of starting over.
+  final bool resumable;
+
+  /// The user asked to stop; waiting for the import to reach a safe point.
+  final bool stopping;
 
   /// The outcome of the last run, shown on the settings card.
   final String? message;
 
   bool get running => status == SyncStatus.running;
   bool get failed => status == SyncStatus.failed;
+  bool get paused => status == SyncStatus.paused;
+
+  /// Worth showing a "Resume" on: stopped, interrupted, or failed part-way.
+  bool get canResume => resumable && !running;
 }
 
 class SyncState {
@@ -38,6 +57,7 @@ class SyncState {
   final String? gmailAccount;
 
   bool get anyRunning => gmail.running || sms.running;
+  bool get anyResumable => gmail.canResume || sms.canResume;
 
   SyncState copyWith({
     SyncJob? gmail,
@@ -82,7 +102,12 @@ final syncControllerProvider = NotifierProvider<SyncController, SyncState>(
   SyncController.new,
 );
 
+String _stoppedText(int added) =>
+    'Stopped — ${added == 0 ? 'nothing added yet' : 'added $added so far'}. '
+    'Tap Resume to carry on where it left off.';
+
 String describeGmailResult(EmailImportResult r) {
+  if (r.cancelled) return _stoppedText(r.imported);
   if (r.imported > 0) {
     return 'Done — added ${r.imported} transaction${r.imported == 1 ? '' : 's'} '
         'from ${r.scanned} bank email${r.scanned == 1 ? '' : 's'}.'
@@ -102,6 +127,7 @@ String describeGmailResult(EmailImportResult r) {
 }
 
 String describeSmsResult(SmsImportResult r) {
+  if (r.cancelled) return _stoppedText(r.imported);
   final review = r.queued > 0
       ? ' ${r.queued} need your review (Manage tab).'
       : '';
@@ -117,14 +143,91 @@ String describeSmsResult(SmsImportResult r) {
 /// home screen shows a live banner, the transaction lists fill in as rows
 /// are stored (they watch the database), and a snackbar announces the end
 /// wherever the user happens to be.
+///
+/// An import can be stopped, and one that was stopped — or killed with the
+/// app — leaves a checkpoint, so it can be resumed rather than redone.
 class SyncController extends Notifier<SyncState> {
   bool _smsBusy = false;
+  ImportCancelToken? _gmailCancel;
+  ImportCancelToken? _smsCancel;
 
   @override
   SyncState build() => const SyncState();
 
+  CheckpointStore get _store =>
+      CheckpointStore(ref.read(settingsRepositoryProvider));
+
   void _setGmail(SyncJob job) => state = state.copyWith(gmail: job);
   void _setSms(SyncJob job) => state = state.copyWith(sms: job);
+
+  /// Progress update that keeps the "stopping" flag the user set.
+  void _gmailProgress(ImportProgress p) => _setGmail(
+    SyncJob(
+      status: SyncStatus.running,
+      progress: p,
+      stopping: state.gmail.stopping,
+    ),
+  );
+  void _smsProgress(ImportProgress p) => _setSms(
+    SyncJob(
+      status: SyncStatus.running,
+      progress: p,
+      stopping: state.sms.stopping,
+    ),
+  );
+
+  /// On app start: if an import was cut short (stopped, or the app was
+  /// killed), offer to resume it. Never resumes by itself — Gmail in
+  /// particular only reads mail when the user says so.
+  Future<void> checkInterrupted() async {
+    if (!state.gmail.running && !state.gmail.paused) {
+      final c = await _store.gmail();
+      if (c != null) {
+        _setGmail(
+          SyncJob(
+            status: SyncStatus.paused,
+            resumable: true,
+            progress: ImportProgress(
+              'Paused',
+              done: c.doneIds.length,
+              total: c.total,
+              found: c.found,
+            ),
+            message: 'Gmail sync was interrupted. Resume to carry on where it left off.',
+          ),
+        );
+      }
+    }
+    if (!state.sms.running && !state.sms.paused) {
+      final c = await _store.sms();
+      if (c != null) {
+        _setSms(
+          SyncJob(
+            status: SyncStatus.paused,
+            resumable: true,
+            progress: ImportProgress(
+              'Paused',
+              done: c.done,
+              total: c.total,
+              found: c.found,
+            ),
+            message: 'SMS scan was interrupted. Resume to carry on where it left off.',
+          ),
+        );
+      }
+    }
+  }
+
+  /// Gives up on a paused import: forgets the checkpoint.
+  Future<void> dismissGmail() async {
+    await _store.clearGmail();
+    _setGmail(const SyncJob());
+  }
+
+  Future<void> dismissSms() async {
+    await _store.clearSms();
+    _setSms(const SyncJob());
+  }
 
   // ---- Gmail ----
 
@@ -137,14 +240,32 @@ class SyncController extends Notifier<SyncState> {
     } catch (_) {}
   }
 
+  void stopGmail() {
+    if (!state.gmail.running) return;
+    _gmailCancel?.cancel();
+    _setGmail(
+      SyncJob(
+        status: SyncStatus.running,
+        progress: state.gmail.progress,
+        stopping: true,
+      ),
+    );
+  }
+
+  Future<void> resumeGmail() => startGmail(fresh: false, resume: true);
+
   /// [fresh]: the user asked to connect / switch account, so Google must show
   /// its account chooser instead of silently reusing the last account.
-  Future<void> startGmail({required bool fresh}) async {
+  /// [resume]: carry on from the saved checkpoint instead of starting over.
+  Future<void> startGmail({required bool fresh, bool resume = false}) async {
     if (state.gmail.running) return;
+    final token = _gmailCancel = ImportCancelToken();
     _setGmail(
-      const SyncJob(
+      SyncJob(
         status: SyncStatus.running,
-        progress: ImportProgress('Signing in to Google…'),
+        progress: state.gmail.progress != null && resume
+            ? state.gmail.progress
+            : const ImportProgress('Signing in to Google…'),
       ),
     );
     try {
@@ -158,9 +279,30 @@ class SyncController extends Notifier<SyncState> {
           .read(gmailImportServiceProvider)
           .importRecent(
             account: account,
-            onProgress: (p) =>
-                _setGmail(SyncJob(status: SyncStatus.running, progress: p)),
+            onProgress: _gmailProgress,
+            cancel: token,
+            resume: resume,
           );
+      if (result.cancelled) {
+        final c = await _store.gmail();
+        _setGmail(
+          SyncJob(
+            status: SyncStatus.paused,
+            resumable: c != null,
+            progress: c == null
+                ? null
+                : ImportProgress(
+                    'Paused',
+                    done: c.doneIds.length,
+                    total: c.total,
+                    found: c.found,
+                  ),
+            message: describeGmailResult(result),
+          ),
+        );
+        showRootSnackBar('Gmail sync stopped — you can resume it anytime');
+        return;
+      }
       _setGmail(
         SyncJob(
           status: SyncStatus.succeeded,
@@ -175,11 +317,20 @@ class SyncController extends Notifier<SyncState> {
     } catch (e) {
       if (e is GoogleSignInException &&
           e.code == GoogleSignInExceptionCode.canceled) {
-        _setGmail(const SyncJob(message: 'Sign-in was cancelled.'));
+        _setGmail(
+          SyncJob(
+            message: 'Sign-in was cancelled.',
+            resumable: await _store.gmail() != null,
+          ),
+        );
         return;
       }
       _setGmail(
-        SyncJob(status: SyncStatus.failed, message: 'Gmail import failed: $e'),
+        SyncJob(
+          status: SyncStatus.failed,
+          message: 'Gmail import failed: $e',
+          resumable: await _store.gmail() != null,
+        ),
       );
       showRootSnackBar('Gmail sync failed — open Settings for details');
     }
@@ -189,6 +340,7 @@ class SyncController extends Notifier<SyncState> {
     try {
       await ref.read(gmailAuthServiceProvider).disconnect();
     } catch (_) {}
+    await _store.clearGmail();
     state = state.copyWith(
       clearAccount: true,
       gmail: const SyncJob(
@@ -200,9 +352,23 @@ class SyncController extends Notifier<SyncState> {
 
   // ---- SMS ----
 
+  void stopSms() {
+    if (!state.sms.running) return;
+    _smsCancel?.cancel();
+    _setSms(
+      SyncJob(
+        status: SyncStatus.running,
+        progress: state.sms.progress,
+        stopping: true,
+      ),
+    );
+  }
+
+  Future<void> resumeSms() => startSms(resume: true);
+
   /// The "Scan SMS inbox" button: asks for permission, then reads the whole
-  /// 1-year window.
-  Future<void> startSms() async {
+  /// 1-year window. [resume] continues a stopped or interrupted scan.
+  Future<void> startSms({bool resume = false}) async {
     if (_smsBusy) return;
     final service = ref.read(smsImportServiceProvider);
     if (!await service.requestPermission()) {
@@ -215,17 +381,41 @@ class SyncController extends Notifier<SyncState> {
       return;
     }
     _smsBusy = true;
+    final token = _smsCancel = ImportCancelToken();
     _setSms(
-      const SyncJob(
+      SyncJob(
         status: SyncStatus.running,
-        progress: ImportProgress('Reading your messages…'),
+        progress: resume && state.sms.progress != null
+            ? state.sms.progress
+            : const ImportProgress('Reading your messages…'),
       ),
     );
     try {
       final result = await service.importFromInbox(
-        onProgress: (p) =>
-            _setSms(SyncJob(status: SyncStatus.running, progress: p)),
+        onProgress: _smsProgress,
+        cancel: token,
+        resume: resume,
       );
+      if (result.cancelled) {
+        final c = await _store.sms();
+        _setSms(
+          SyncJob(
+            status: SyncStatus.paused,
+            resumable: c != null,
+            progress: c == null
+                ? null
+                : ImportProgress(
+                    'Paused',
+                    done: c.done,
+                    total: c.total,
+                    found: c.found,
+                  ),
+            message: describeSmsResult(result),
+          ),
+        );
+        showRootSnackBar('SMS scan stopped — you can resume it anytime');
+        return;
+      }
       _setSms(
         SyncJob(
           status: SyncStatus.succeeded,
@@ -240,7 +430,11 @@ class SyncController extends Notifier<SyncState> {
       await service.listenForNewMessages(_onLiveSms);
     } catch (e) {
       _setSms(
-        SyncJob(status: SyncStatus.failed, message: 'SMS scan failed: $e'),
+        SyncJob(
+          status: SyncStatus.failed,
+          message: 'SMS scan failed: $e',
+          resumable: await _store.sms() != null,
+        ),
       );
       showRootSnackBar('SMS sync failed — open Settings for details');
     } finally {
@@ -251,15 +445,16 @@ class SyncController extends Notifier<SyncState> {
   /// Quiet catch-up on app open/resume. Shows the banner only if it actually
   /// runs, and only announces the end if it found something.
   Future<void> syncSmsIfDue() async {
-    if (_smsBusy) return;
+    if (_smsBusy || state.sms.paused) return;
     final service = ref.read(smsImportServiceProvider);
     _smsBusy = true;
+    final token = _smsCancel = ImportCancelToken();
     try {
       final result = await service.syncIfDue(
-        onProgress: (p) =>
-            _setSms(SyncJob(status: SyncStatus.running, progress: p)),
+        onProgress: _smsProgress,
+        cancel: token,
       );
-      if (result == null) {
+      if (result == null || result.cancelled) {
         if (state.sms.running) _setSms(const SyncJob());
       } else {
         _setSms(

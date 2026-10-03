@@ -40,7 +40,12 @@ class _AppShellState extends ConsumerState<AppShell>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _syncSms());
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // First look for an import that was cut short, so the catch-up below
+      // doesn't start over something the user can resume.
+      await ref.read(syncControllerProvider.notifier).checkInterrupted();
+      _syncSms();
+    });
   }
 
   @override

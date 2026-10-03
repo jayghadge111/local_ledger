@@ -112,11 +112,38 @@ class _EmailConnectCardState extends ConsumerState<EmailConnectCard> {
             const SizedBox(height: 14),
             ImportProgressView(progress: job.progress!),
             const SizedBox(height: 8),
-            Text(
-              'You can leave this page — the sync keeps running in the background.',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    job.stopping ? 'Stopping…' : 'You can leave this page — the sync keeps running in the background.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                OutlinedButton(
+                  onPressed: job.stopping ? null : controller.stopGmail,
+                  child: const Text('Stop'),
+                ),
+              ],
+            ),
+          ],
+          if (job.canResume) ...[
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                FilledButton.icon(
+                  onPressed: controller.resumeGmail,
+                  icon: const Icon(Icons.play_arrow_rounded),
+                  label: const Text('Resume'),
+                ),
+                const SizedBox(width: 8),
+                TextButton(
+                  onPressed: controller.dismissGmail,
+                  child: const Text('Discard'),
+                ),
+              ],
             ),
           ],
           if (job.message != null && !working) ...[

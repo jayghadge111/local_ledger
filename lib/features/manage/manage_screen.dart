@@ -81,10 +81,10 @@ class ManageScreen extends ConsumerWidget {
       ),
       _ManageItem(
         icon: Icons.swap_horiz_rounded,
-        title: 'My names & accounts',
+        title: 'My other names & UPI IDs',
         subtitle: own.isEmpty
-            ? 'Add your name or UPI ID so transfers between your accounts aren\'t counted as spending'
-            : '${own.length} saved · used to spot transfers between your accounts',
+            ? 'Extra UPI IDs or spellings of your name, so transfers between your accounts aren\'t counted as spending'
+            : '${own.length} saved · also used to spot Self Transfers',
         screen: const OwnIdentifiersScreen(),
       ),
       _ManageItem(

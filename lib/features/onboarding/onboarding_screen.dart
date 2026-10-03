@@ -52,9 +52,24 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
         .set(SettingsKeys.onboardingComplete, 'true');
   }
 
+  /// Skipping the intro still asks for the name when there isn't one yet —
+  /// it's what lets payments to yourself be told apart from spending.
   Future<void> _skip() async {
     await _completeOnboarding();
-    if (mounted) context.go('/home');
+    if (!mounted) return;
+    final name = await ref
+        .read(settingsRepositoryProvider)
+        .get(SettingsKeys.userName);
+    if (!mounted) return;
+    if (name != null && name.trim().isNotEmpty) {
+      context.go('/home');
+      return;
+    }
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => OnboardingNameScreen(onDone: () => context.go('/home')),
+      ),
+    );
   }
 
   Future<void> _next() async {
