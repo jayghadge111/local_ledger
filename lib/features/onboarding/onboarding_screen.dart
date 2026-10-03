@@ -8,6 +8,7 @@ import '../../shared/widgets/glass_background.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../lock/pin_setup_screen.dart';
 import 'onboarding_connect_screen.dart';
+import 'onboarding_name_screen.dart';
 
 class _Page {
   const _Page(this.icon, this.title, this.body);
@@ -68,12 +69,20 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     if (!mounted) return;
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => PinSetupScreen(
+        builder: (_) => OnboardingNameScreen(
           onDone: () {
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (_) => OnboardingConnectScreen(
-                  onDone: () => context.go('/home'),
+                builder: (_) => PinSetupScreen(
+                  onDone: () {
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(
+                        builder: (_) => OnboardingConnectScreen(
+                          onDone: () => context.go('/home'),
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
             );
@@ -116,7 +125,11 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Icon(page.icon, size: 42, color: theme.colorScheme.primary),
+                              Icon(
+                                page.icon,
+                                size: 42,
+                                color: theme.colorScheme.primary,
+                              ),
                               const SizedBox(height: 18),
                               Text(
                                 page.title,
@@ -152,7 +165,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   decoration: BoxDecoration(
                     color: active
                         ? theme.colorScheme.secondary
-                        : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3),
+                        : theme.colorScheme.onSurfaceVariant.withValues(
+                            alpha: 0.3,
+                          ),
                     borderRadius: BorderRadius.circular(999),
                   ),
                 );
@@ -164,7 +179,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: _next,
-                  child: Text(isLast ? 'Secure with a PIN' : 'Next'),
+                  child: Text(isLast ? 'Get started' : 'Next'),
                 ),
               ),
             ),

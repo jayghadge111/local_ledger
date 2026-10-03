@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 
-import '../../../core/email/email_providers.dart';
-import '../../../core/email/gmail_import_service.dart';
-import '../../../core/import_progress.dart';
+import '../../../core/sync/sync_controller.dart';
 import '../../../shared/widgets/glass_surface.dart';
 import '../../../shared/widgets/import_progress_view.dart';
 
+/// Connect / scan Gmail. The import itself runs in [SyncController], so it
+/// keeps going if the user leaves this page; this card just reflects it.
 class EmailConnectCard extends ConsumerStatefulWidget {
   const EmailConnectCard({super.key});
 
@@ -16,115 +15,32 @@ class EmailConnectCard extends ConsumerStatefulWidget {
 }
 
 class _EmailConnectCardState extends ConsumerState<EmailConnectCard> {
-  bool _working = false;
-  ImportProgress? _progress;
-  String? _email;
-  String? _note;
-  bool _noteOk = true;
-
   @override
   void initState() {
     super.initState();
-    _restoreConnectedAccount();
-  }
-
-  /// Shows "Connected as …" if Google still has a session from before.
-  /// Purely informational — nothing is imported until the user taps a button.
-  Future<void> _restoreConnectedAccount() async {
-    try {
-      final account = await ref.read(gmailAuthServiceProvider).currentAccount();
-      if (mounted && account != null) setState(() => _email = account.email);
-    } catch (_) {}
-  }
-
-  String _summary(EmailImportResult r) {
-    if (r.imported > 0) {
-      return 'Done — added ${r.imported} transaction${r.imported == 1 ? '' : 's'} '
-          'from ${r.scanned} bank email${r.scanned == 1 ? '' : 's'}.'
-          '${r.queued > 0 ? ' ${r.queued} need your review (Manage tab).' : ''}';
-    }
-    if (r.scanned == 0) {
-      return 'Connected. No bank emails found in the last year.';
-    }
-    final reasons = [
-      if (r.duplicates > 0) '${r.duplicates} already in the app',
-      if (r.queued > 0) '${r.queued} need your review (Manage tab)',
-      if (r.notRecognised > 0) '${r.notRecognised} weren\'t transaction alerts',
-      if (r.unreadable > 0) '${r.unreadable} couldn\'t be read',
-    ];
-    return 'Connected. Checked ${r.scanned} emails, added none'
-        '${reasons.isEmpty ? '.' : ': ${reasons.join(', ')}.'}';
-  }
-
-  /// [fresh] = the user asked to connect / switch account, so Google must
-  /// show its account chooser rather than silently reusing the last one.
-  Future<void> _run({required bool fresh}) async {
-    setState(() {
-      _working = true;
-      _note = null;
-      _progress = const ImportProgress('Signing in to Google…');
-    });
-    try {
-      final auth = ref.read(gmailAuthServiceProvider);
-      final account = fresh
-          ? await auth.signInFresh()
-          : (await auth.currentAccount() ?? await auth.signInFresh());
-      if (mounted) setState(() => _email = account.email);
-
-      final result = await ref
-          .read(gmailImportServiceProvider)
-          .importRecent(
-            account: account,
-            onProgress: (p) {
-              if (mounted) setState(() => _progress = p);
-            },
-          );
-      if (mounted) {
-        setState(() {
-          _note = _summary(result);
-          _noteOk = true;
-        });
-      }
-    } catch (e) {
-      final cancelled =
-          e is GoogleSignInException &&
-          e.code == GoogleSignInExceptionCode.canceled;
-      if (mounted) {
-        setState(() {
-          _note = cancelled
-              ? 'Sign-in was cancelled.'
-              : 'Gmail import failed: $e';
-          _noteOk = cancelled;
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _working = false;
-          _progress = null;
-        });
-      }
-    }
-  }
-
-  Future<void> _disconnect() async {
-    try {
-      await ref.read(gmailAuthServiceProvider).disconnect();
-    } catch (_) {}
-    if (mounted) {
-      setState(() {
-        _email = null;
-        _note =
-            'Disconnected. LocalLedger can no longer read this Gmail account.';
-        _noteOk = true;
-      });
-    }
+    // Purely informational ("Connected as …") — nothing is imported.
+    Future.microtask(
+      () => ref.read(syncControllerProvider.notifier).restoreGmailAccount(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final connected = _email != null;
+    final sync = ref.watch(syncControllerProvider);
+    final controller = ref.read(syncControllerProvider.notifier);
+    final job = sync.gmail;
+    final working = job.running;
+    final email = sync.gmailAccount;
+    final connected = email != null;
+
+    Widget spinnerOr(IconData icon) => working
+        ? const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          )
+        : Icon(icon);
 
     return GlassCard(
       child: Column(
@@ -151,7 +67,7 @@ class _EmailConnectCardState extends ConsumerState<EmailConnectCard> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Connected as $_email',
+                    'Connected as $email',
                     style: theme.textTheme.bodyMedium,
                   ),
                 ),
@@ -161,15 +77,11 @@ class _EmailConnectCardState extends ConsumerState<EmailConnectCard> {
           const SizedBox(height: 14),
           if (!connected)
             FilledButton.icon(
-              onPressed: _working ? null : () => _run(fresh: true),
-              icon: _working
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.mail_outline),
-              label: Text(_working ? 'Working…' : 'Connect Gmail'),
+              onPressed: working
+                  ? null
+                  : () => controller.startGmail(fresh: true),
+              icon: spinnerOr(Icons.mail_outline),
+              label: Text(working ? 'Working…' : 'Connect Gmail'),
             )
           else
             Wrap(
@@ -177,34 +89,39 @@ class _EmailConnectCardState extends ConsumerState<EmailConnectCard> {
               runSpacing: 8,
               children: [
                 FilledButton.icon(
-                  onPressed: _working ? null : () => _run(fresh: false),
-                  icon: _working
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.sync_rounded),
-                  label: Text(_working ? 'Working…' : 'Scan now'),
+                  onPressed: working
+                      ? null
+                      : () => controller.startGmail(fresh: false),
+                  icon: spinnerOr(Icons.sync_rounded),
+                  label: Text(working ? 'Working…' : 'Scan now'),
                 ),
                 OutlinedButton.icon(
-                  onPressed: _working ? null : () => _run(fresh: true),
+                  onPressed: working
+                      ? null
+                      : () => controller.startGmail(fresh: true),
                   icon: const Icon(Icons.switch_account_rounded),
                   label: const Text('Switch account'),
                 ),
                 TextButton(
-                  onPressed: _working ? null : _disconnect,
+                  onPressed: working ? null : controller.disconnectGmail,
                   child: const Text('Disconnect'),
                 ),
               ],
             ),
-          if (_working && _progress != null) ...[
+          if (working && job.progress != null) ...[
             const SizedBox(height: 14),
-            ImportProgressView(progress: _progress!),
+            ImportProgressView(progress: job.progress!),
+            const SizedBox(height: 8),
+            Text(
+              'You can leave this page — the sync keeps running in the background.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
-          if (_note != null && !_working) ...[
+          if (job.message != null && !working) ...[
             const SizedBox(height: 14),
-            ImportResultNote(ok: _noteOk, text: _note!),
+            ImportResultNote(ok: !job.failed, text: job.message!),
           ],
         ],
       ),

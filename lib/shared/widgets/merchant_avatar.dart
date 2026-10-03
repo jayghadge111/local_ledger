@@ -10,14 +10,18 @@ class MerchantAvatar extends StatelessWidget {
     super.key,
     required this.merchant,
     required this.categoryIconKey,
+    this.isTransfer = false,
   });
 
   final String merchant;
   final String? categoryIconKey;
 
+  /// A Self Transfer: shown with the swap glyph instead of a merchant initial.
+  final bool isTransfer;
+
   @override
   Widget build(BuildContext context) {
-    final badge = merchantBadgeFor(merchant);
+    final badge = isTransfer ? null : merchantBadgeFor(merchant);
     if (badge != null) {
       return CircleAvatar(
         backgroundColor: badge.color,
@@ -36,7 +40,7 @@ class MerchantAvatar extends StatelessWidget {
     return CircleAvatar(
       backgroundColor: theme.colorScheme.secondaryContainer,
       child: Icon(
-        iconForKey(categoryIconKey),
+        isTransfer ? Icons.sync_alt_rounded : iconForKey(categoryIconKey),
         color: theme.colorScheme.onSecondaryContainer,
       ),
     );

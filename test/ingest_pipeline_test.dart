@@ -105,7 +105,7 @@ void main() {
     );
     final t = (await all()).single;
     expect(t.merchant, 'Home Loan EMI');
-    expect(t.categoryId, 'cat_bills');
+    expect(t.categoryId, 'cat_emi');
     expect(t.amountMinor, 5241400);
   });
 
@@ -138,7 +138,7 @@ void main() {
     expect(again.repaired, 1);
     final t = (await all()).single;
     expect(t.merchant, 'Home Loan EMI');
-    expect(t.categoryId, 'cat_bills');
+    expect(t.categoryId, 'cat_emi');
   });
 
   test('UPI email: clean merchant name and a category', () async {

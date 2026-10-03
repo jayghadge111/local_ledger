@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../core/db/app_database.dart';
 import '../../../core/db/small_repositories.dart';
 import '../../splits/split_summary.dart';
+import '../transaction_title.dart';
 import '../../../shared/widgets/flag_chip.dart';
 import '../../../shared/widgets/glass_surface.dart';
 import '../../../shared/widgets/merchant_avatar.dart';
@@ -52,19 +53,23 @@ class TransactionTile extends ConsumerWidget {
           MerchantAvatar(
             merchant: transaction.merchant,
             categoryIconKey: category?.icon,
+            isTransfer: isTransfer,
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(transaction.merchant, style: theme.textTheme.titleMedium),
+                Text(
+                  transactionTitle(transaction),
+                  style: theme.textTheme.titleMedium,
+                ),
                 const SizedBox(height: 2),
                 Row(
                   children: [
                     Flexible(
                       child: Text(
-                        '${category?.name ?? 'Uncategorized'} · ${DateFormat.yMMMd().format(transaction.date)}',
+                        '${isTransfer ? 'Not counted' : (category?.name ?? 'Uncategorized')} · ${DateFormat.yMMMd().format(transaction.date)}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -77,7 +82,6 @@ class TransactionTile extends ConsumerWidget {
                     hasSplit ||
                     transaction.isInternational ||
                     transaction.isFlaggedUnusual ||
-                    isTransfer ||
                     isRefund) ...[
                   const SizedBox(height: 6),
                   Wrap(
@@ -95,12 +99,6 @@ class TransactionTile extends ConsumerWidget {
                               ? Icons.currency_exchange_rounded
                               : Icons.credit_card_rounded,
                           label: cardLabel,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      if (isTransfer)
-                        FlagChip(
-                          icon: Icons.swap_horiz_rounded,
-                          label: 'Transfer',
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       if (isRefund)

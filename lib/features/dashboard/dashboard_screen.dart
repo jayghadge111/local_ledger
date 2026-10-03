@@ -7,6 +7,7 @@ import '../../core/db/providers.dart';
 import '../../shared/widgets/animated_amount.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_surface.dart';
+import '../../shared/widgets/greeting_header.dart';
 import '../../shared/widgets/placeholder_body.dart';
 import '../transactions/transaction_detail_sheet.dart';
 import '../transactions/widgets/transaction_tile.dart';
@@ -27,10 +28,20 @@ class DashboardScreen extends ConsumerWidget {
     return transactionsAsync.when(
       data: (transactions) {
         if (transactions.isEmpty) {
-          return const PlaceholderBody(
-            icon: Icons.grid_view_rounded,
-            title: 'Welcome to LocalLedger',
-            subtitle: 'Add a transaction (or load sample data from Settings) to see your dashboard come alive.',
+          return const Column(
+            children: [
+              Padding(
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: GreetingHeader(),
+              ),
+              Expanded(
+                child: PlaceholderBody(
+                  icon: Icons.grid_view_rounded,
+                  title: 'Welcome to LocalLedger',
+                  subtitle: 'Add a transaction (or load sample data from Settings) to see your dashboard come alive.',
+                ),
+              ),
+            ],
           );
         }
 
@@ -80,7 +91,10 @@ class DashboardScreen extends ConsumerWidget {
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
           children: [
+            const FadeSlideIn(child: GreetingHeader()),
+            const SizedBox(height: 18),
             FadeSlideIn(
+              delay: const Duration(milliseconds: 20),
               child: _SummaryRow(spentMinor: spent, receivedMinor: received),
             ),
             const SizedBox(height: 16),

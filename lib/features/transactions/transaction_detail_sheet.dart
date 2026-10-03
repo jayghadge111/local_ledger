@@ -13,6 +13,7 @@ import '../../shared/widgets/merchant_avatar.dart';
 import '../splits/split_summary.dart';
 import '../splits/splits_ui.dart';
 import 'transaction_form_sheet.dart';
+import 'transaction_title.dart';
 
 /// Opens the read-only details of [transaction]: everything known about it,
 /// including who a split is shared with. "Edit" leads on to the form.
@@ -97,7 +98,10 @@ class TransactionDetailSheet extends ConsumerWidget {
           _ => 'Added manually',
         },
       ),
-      if (t.rawMerchant != null &&
+      if (isTransfer)
+        (isCredit ? 'Received from' : 'Sent to', t.rawMerchant ?? t.merchant),
+      if (!isTransfer &&
+          t.rawMerchant != null &&
           t.rawMerchant!.toLowerCase() != t.merchant.toLowerCase())
         ('Shown by bank as', t.rawMerchant!),
       if (!isInr) ('Currency', t.currency),
@@ -132,11 +136,12 @@ class TransactionDetailSheet extends ConsumerWidget {
                       MerchantAvatar(
                         merchant: t.merchant,
                         categoryIconKey: category?.icon,
+                        isTransfer: isTransfer,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          t.merchant,
+                          transactionTitle(t),
                           style: theme.textTheme.titleLarge,
                         ),
                       ),
@@ -169,7 +174,7 @@ class TransactionDetailSheet extends ConsumerWidget {
                       if (isTransfer)
                         FlagChip(
                           icon: Icons.swap_horiz_rounded,
-                          label: 'Transfer',
+                          label: 'Not counted in totals',
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       if (t.kind == 'refund')

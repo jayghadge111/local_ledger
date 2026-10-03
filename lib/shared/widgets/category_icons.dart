@@ -21,6 +21,16 @@ IconData iconForKey(String? key) {
       return Icons.local_hospital_rounded;
     case 'swap_horiz':
       return Icons.swap_horiz_rounded;
+    case 'sync_alt':
+      return Icons.sync_alt_rounded;
+    case 'event_repeat':
+      return Icons.event_repeat_rounded;
+    case 'trending_up':
+      return Icons.trending_up_rounded;
+    case 'north_east':
+      return Icons.north_east_rounded;
+    case 'south_west':
+      return Icons.south_west_rounded;
     case 'payments':
       return Icons.payments_rounded;
     default:

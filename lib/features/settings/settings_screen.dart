@@ -13,6 +13,7 @@ import '../../shared/widgets/glass_switch_row.dart';
 import '../lock/pin_setup_screen.dart';
 import 'widgets/backup_card.dart';
 import 'widgets/email_connect_card.dart';
+import 'widgets/profile_card.dart';
 import 'widgets/sms_connect_card.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -26,7 +27,10 @@ class SettingsScreen extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
       children: [
+        const FadeSlideIn(child: ProfileCard()),
+        const SizedBox(height: 16),
         FadeSlideIn(
+          delay: const Duration(milliseconds: 8),
           child: GlassCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

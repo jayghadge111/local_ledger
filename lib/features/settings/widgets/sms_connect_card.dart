@@ -4,80 +4,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/db/settings_repository.dart';
-import '../../../core/import_progress.dart';
+import '../../../core/sync/sync_controller.dart';
 import '../../../shared/widgets/import_progress_view.dart';
 import '../../../core/sms/sms_providers.dart';
 import '../../../shared/widgets/glass_switch_row.dart';
 import '../../../shared/widgets/glass_surface.dart';
 
-class SmsConnectCard extends ConsumerStatefulWidget {
+/// Scan SMS and tune auto-sync. The import itself runs in [SyncController],
+/// so it keeps going if the user leaves this page; this card just reflects it.
+class SmsConnectCard extends ConsumerWidget {
   const SmsConnectCard({super.key});
 
   @override
-  ConsumerState<SmsConnectCard> createState() => _SmsConnectCardState();
-}
-
-class _SmsConnectCardState extends ConsumerState<SmsConnectCard> {
-  bool _scanning = false;
-  ImportProgress? _progress;
-  String? _note;
-  bool _noteOk = true;
-
-  Future<void> _connect() async {
-    final service = ref.read(smsImportServiceProvider);
-    final granted = await service.requestPermission();
-    if (!granted) {
-      if (mounted) {
-        setState(() {
-          _note = 'SMS permission was not granted, so nothing was scanned. You can allow it later in Settings.';
-          _noteOk = false;
-        });
-      }
-      return;
-    }
-
-    setState(() {
-      _scanning = true;
-      _note = null;
-    });
-    try {
-      final result = await service.importFromInbox(
-        onProgress: (p) {
-          if (mounted) setState(() => _progress = p);
-        },
-      );
-      await service.listenForNewMessages((_) {});
-      if (mounted) {
-        setState(() {
-          _note = result.imported > 0
-              ? 'Done — added ${result.imported} transaction${result.imported == 1 ? '' : 's'} '
-                    'from ${result.scanned} messages.'
-                    '${result.queued > 0 ? ' ${result.queued} need your review (Manage tab).' : ''}'
-              : 'Done — scanned ${result.scanned} messages, no new bank transactions found.'
-                    '${result.queued > 0 ? ' ${result.queued} need your review (Manage tab).' : ''}';
-          _noteOk = true;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _note = 'SMS scan failed: $e';
-          _noteOk = false;
-        });
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _scanning = false;
-          _progress = null;
-        });
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final job = ref.watch(syncControllerProvider).sms;
+    final scanning = job.running;
     final service = ref.read(smsImportServiceProvider);
 
     if (!service.isSupported) return const SizedBox.shrink();
@@ -137,23 +79,32 @@ class _SmsConnectCardState extends ConsumerState<SmsConnectCard> {
           ),
           const SizedBox(height: 8),
           FilledButton.icon(
-            onPressed: _scanning ? null : _connect,
-            icon: _scanning
+            onPressed: scanning
+                ? null
+                : ref.read(syncControllerProvider.notifier).startSms,
+            icon: scanning
                 ? const SizedBox(
                     width: 16,
                     height: 16,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.sms_outlined),
-            label: Text(_scanning ? 'Scanning…' : 'Scan SMS inbox'),
+            label: Text(scanning ? 'Scanning…' : 'Scan SMS inbox'),
           ),
-          if (_scanning && _progress != null) ...[
+          if (scanning && job.progress != null) ...[
             const SizedBox(height: 14),
-            ImportProgressView(progress: _progress!),
+            ImportProgressView(progress: job.progress!),
+            const SizedBox(height: 8),
+            Text(
+              'You can leave this page — the scan keeps running in the background.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ],
-          if (_note != null && !_scanning) ...[
+          if (job.message != null && !scanning) ...[
             const SizedBox(height: 14),
-            ImportResultNote(ok: _noteOk, text: _note!),
+            ImportResultNote(ok: !job.failed, text: job.message!),
           ],
         ],
       ),

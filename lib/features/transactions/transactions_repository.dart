@@ -201,6 +201,11 @@ class TransactionsRepository {
         TransactionsCompanion(
           kind: Value(isTransfer ? 'transfer' : 'normal'),
           kindLocked: const Value(true),
+          categoryId: isTransfer &&
+                  !tx.userEdited &&
+                  (tx.categoryId == null || tx.categoryId == 'cat_other')
+              ? const Value('cat_self_transfer')
+              : const Value.absent(),
           transferGroupId: isTransfer
               ? const Value.absent()
               : const Value(null),

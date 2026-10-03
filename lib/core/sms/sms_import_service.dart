@@ -10,7 +10,11 @@ import '../ingest/transaction_ingestor.dart';
 import 'bank_sms_parser.dart';
 
 class SmsImportResult {
-  const SmsImportResult({required this.scanned, required this.imported, this.queued = 0});
+  const SmsImportResult({
+    required this.scanned,
+    required this.imported,
+    this.queued = 0,
+  });
   final int scanned;
   final int imported;
 
@@ -49,7 +53,8 @@ class SmsImportService {
     return granted ?? false;
   }
 
-  Future<bool> get hasPermission async => isSupported && await Permission.sms.isGranted;
+  Future<bool> get hasPermission async =>
+      isSupported && await Permission.sms.isGranted;
 
   Future<DateTime?> lastSyncedAt() async {
     final raw = await _settings.get(SettingsKeys.smsLastSyncedAt);
@@ -57,26 +62,36 @@ class SmsImportService {
   }
 
   /// Full import of the 1-year window — what the "Scan SMS inbox" button runs.
-  Future<SmsImportResult> importFromInbox({ImportProgressCallback? onProgress}) =>
-      _import(since: null, onProgress: onProgress);
+  Future<SmsImportResult> importFromInbox({
+    ImportProgressCallback? onProgress,
+  }) => _import(since: null, onProgress: onProgress);
 
   /// Silent catch-up for app start/resume: does nothing unless SMS access is
   /// already granted, auto-sync isn't switched off, and the last sync wasn't
   /// just now. Returns null when it didn't run.
-  Future<SmsImportResult?> syncIfDue({bool force = false}) async {
+  Future<SmsImportResult?> syncIfDue({
+    bool force = false,
+    ImportProgressCallback? onProgress,
+  }) async {
     if (!isSupported || _syncing) return null;
     if (await _settings.get(SettingsKeys.smsAutoSync) == 'false') return null;
     if (!await hasPermission) return null;
 
     final last = await lastSyncedAt();
-    if (!force && last != null && DateTime.now().difference(last) < _minSyncGap) return null;
+    if (!force &&
+        last != null &&
+        DateTime.now().difference(last) < _minSyncGap) {
+      return null;
+    }
 
-    return _import(since: last);
+    return _import(since: last, onProgress: onProgress);
   }
 
   /// While the app is open, a newly arrived SMS triggers a sync straight
   /// away. (There is deliberately no background receiver — see class docs.)
-  Future<void> listenForNewMessages(void Function(SmsImportResult) onImported) async {
+  Future<void> listenForNewMessages(
+    void Function(SmsImportResult) onImported,
+  ) async {
     if (!isSupported || _listening || !await hasPermission) return;
     _listening = true;
     _telephony.listenIncomingSms(
@@ -96,7 +111,8 @@ class SmsImportService {
     _syncing = true;
     try {
       final windowStart = importCutoff();
-      final from = since == null || since.subtract(_overlap).isBefore(windowStart)
+      final from =
+          since == null || since.subtract(_overlap).isBefore(windowStart)
           ? windowStart
           : since.subtract(_overlap);
 
@@ -116,12 +132,14 @@ class SmsImportService {
         // Most messages aren't from banks and are skipped instantly, so
         // report (and let the UI redraw) every so often rather than per item.
         if (done % 150 == 0) {
-          onProgress?.call(ImportProgress(
-            'Scanning messages',
-            done: done,
-            total: total,
-            found: session.imported,
-          ));
+          onProgress?.call(
+            ImportProgress(
+              'Scanning messages',
+              done: done,
+              total: total,
+              found: session.imported,
+            ),
+          );
           await Future<void>.delayed(Duration.zero);
         }
         final sender = message.address;
@@ -135,10 +153,20 @@ class SmsImportService {
           date: DateTime.fromMillisecondsSinceEpoch(message.date ?? 0),
         );
       }
-      onProgress?.call(ImportProgress('Finishing up…', done: total, total: total, found: session.imported));
+      onProgress?.call(
+        ImportProgress(
+          'Finishing up…',
+          done: total,
+          total: total,
+          found: session.imported,
+        ),
+      );
       await session.finish();
 
-      await _settings.set(SettingsKeys.smsLastSyncedAt, DateTime.now().toIso8601String());
+      await _settings.set(
+        SettingsKeys.smsLastSyncedAt,
+        DateTime.now().toIso8601String(),
+      );
       return SmsImportResult(
         scanned: messages.length,
         imported: session.imported,

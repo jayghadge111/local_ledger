@@ -30,7 +30,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -58,6 +58,20 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 4) {
             await m.addColumn(transactions, transactions.alsoInSource);
+          }
+          if (from < 5) {
+            // Self Transfer, EMI, SIP / Investment, Lending, Borrowing.
+            for (final c in defaultCategories) {
+              await into(categories).insert(
+                CategoriesCompanion.insert(
+                  id: c.id,
+                  name: c.name,
+                  icon: Value(c.iconKey),
+                  isDefault: const Value(true),
+                ),
+                mode: InsertMode.insertOrIgnore,
+              );
+            }
           }
         },
       );

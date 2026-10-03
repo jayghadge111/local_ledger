@@ -14,6 +14,7 @@ abstract class SettingsKeys {
   static const smsLastSyncedAt = 'sms_last_synced_at'; // ISO-8601
   static const customBankEmailDomains =
       'custom_bank_email_domains'; // comma-separated
+  static const userName = 'user_name'; // the user's full name
   static const smsAutoSync = 'sms_auto_sync'; // 'true' | 'false'
 }
 
@@ -60,4 +61,13 @@ final customBankEmailDomainsProvider = StreamProvider<List<String>>((ref) {
       .watch(settingsRepositoryProvider)
       .watch(SettingsKeys.customBankEmailDomains)
       .map((v) => (v ?? '').split(',').where((d) => d.isNotEmpty).toList());
+});
+
+/// The user's full name, or null until they give it. Used to greet them and
+/// to spot payments to/from themselves (Self Transfer).
+final userNameProvider = StreamProvider<String?>((ref) {
+  return ref
+      .watch(settingsRepositoryProvider)
+      .watch(SettingsKeys.userName)
+      .map((v) => (v == null || v.trim().isEmpty) ? null : v.trim());
 });

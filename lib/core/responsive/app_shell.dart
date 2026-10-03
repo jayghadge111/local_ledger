@@ -8,8 +8,8 @@ import '../../features/manage/manage_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/transactions/transactions_screen.dart';
 import '../../shared/widgets/glass_background.dart';
-import '../sms/sms_import_service.dart';
-import '../sms/sms_providers.dart';
+import '../../shared/widgets/sync_banner.dart';
+import '../sync/sync_controller.dart';
 
 /// The app's single navigational shell.
 ///
@@ -32,7 +32,8 @@ class AppShell extends ConsumerStatefulWidget {
   ConsumerState<AppShell> createState() => _AppShellState();
 }
 
-class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver {
+class _AppShellState extends ConsumerState<AppShell>
+    with WidgetsBindingObserver {
   int _selectedIndex = 0;
 
   @override
@@ -54,26 +55,9 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
   }
 
   /// Silent catch-up on open/resume (Android, once SMS access is granted):
-  /// picks up anything that arrived while the app wasn't running.
-  Future<void> _syncSms() async {
-    final service = ref.read(smsImportServiceProvider);
-    try {
-      final result = await service.syncIfDue();
-      await service.listenForNewMessages(_announce);
-      if (result != null) _announce(result);
-    } catch (e) {
-      debugPrint('[AppShell] SMS sync failed: $e');
-    }
-  }
-
-  void _announce(SmsImportResult result) {
-    if (!mounted || (result.imported == 0 && result.queued == 0)) return;
-    final parts = [
-      if (result.imported > 0) '${result.imported} new transaction${result.imported == 1 ? '' : 's'}',
-      if (result.queued > 0) '${result.queued} message${result.queued == 1 ? '' : 's'} to review',
-    ];
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(parts.join(' · '))));
-  }
+  /// picks up anything that arrived while the app wasn't running. The work
+  /// is owned by the sync controller, so it isn't tied to this screen.
+  void _syncSms() => ref.read(syncControllerProvider.notifier).syncSmsIfDue();
 
   static const _destinations = [
     NavigationDestination(
@@ -117,28 +101,36 @@ class _AppShellState extends ConsumerState<AppShell> with WidgetsBindingObserver
       child: DisplayFeatureSubScreen(
         child: AdaptiveScaffold(
           selectedIndex: _selectedIndex,
-          onSelectedIndexChange: (index) => setState(() => _selectedIndex = index),
+          onSelectedIndexChange: (index) =>
+              setState(() => _selectedIndex = index),
           destinations: _destinations,
           body: (_) => SafeArea(
             // Only the top inset: the nav bar/rail already sits flush with
             // the bottom edge and handles its own safe-area padding.
             bottom: false,
-            child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 280),
-              transitionBuilder: (child, animation) => FadeTransition(
-                opacity: animation,
-                child: SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 0.02),
-                    end: Offset.zero,
-                  ).animate(animation),
-                  child: child,
+            child: Column(
+              children: [
+                const SyncBanner(),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 280),
+                    transitionBuilder: (child, animation) => FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.02),
+                          end: Offset.zero,
+                        ).animate(animation),
+                        child: child,
+                      ),
+                    ),
+                    child: KeyedSubtree(
+                      key: ValueKey(_selectedIndex),
+                      child: _screens[_selectedIndex],
+                    ),
+                  ),
                 ),
-              ),
-              child: KeyedSubtree(
-                key: ValueKey(_selectedIndex),
-                child: _screens[_selectedIndex],
-              ),
+              ],
             ),
           ),
         ),

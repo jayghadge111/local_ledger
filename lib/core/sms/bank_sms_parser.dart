@@ -125,6 +125,12 @@ const _nameEnd =
     r'\s+bal\b|\s+utr\b|\s*\(|\.\s|\.$|,|$)';
 
 final _merchantPatterns = <RegExp>[
+  // Credit confirmations that label who paid: "b. Sender: MR JAYESH GHADGE
+  // (VPA: 9970900787@yescred)". Explicit, so tried first.
+  RegExp(
+    r"\b(?:sender|remitter)(?:\s+name)?\s*[:\-]\s*([A-Za-z][A-Za-z .'\-]{1,50}?)(?=\s*\(|\s+(?:vpa|upi|ref|utr|c\.)\b|\s*[,;]|\.\s|\.$|$)",
+    caseSensitive: false,
+  ),
   // "...debited from account 0715 to VPA shop.123@hdfcbank SHOP NAME on 05-04-26"
   // — the payee's name follows the UPI address, which is too long for the
   // general pattern below to reach. Tried first.

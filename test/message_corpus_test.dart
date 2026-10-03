@@ -698,8 +698,9 @@ void main() {
       'Mobile recharge': 'cat_bills',
       'Bill payment': 'cat_bills',
       'Insurance premium': 'cat_bills',
-      'Loan EMI': 'cat_bills',
-      'Home Loan EMI': 'cat_bills',
+      'Loan EMI': 'cat_emi',
+      'Home Loan EMI': 'cat_emi',
+      'Mutual fund SIP': 'cat_investment',
       'FASTag toll': 'cat_transport',
     };
     expected.forEach((label, category) {
