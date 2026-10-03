@@ -5,6 +5,7 @@ import '../../core/import_progress.dart';
 import '../../core/sync/sync_controller.dart';
 import 'glass_surface.dart';
 import 'import_progress_view.dart';
+import 'text_button_styles.dart';
 
 /// A live "syncing" strip shown at the top of the app while a Gmail or SMS
 /// import is running — wherever the user is — with a Stop button. A stopped
@@ -105,6 +106,7 @@ class _JobCard extends StatelessWidget {
                 if (running)
                   TextButton(
                     onPressed: job.stopping ? null : onStop,
+                    style: dangerTextButtonStyle(context),
                     child: const Text('Stop'),
                   )
                 else ...[

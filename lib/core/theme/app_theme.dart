@@ -22,6 +22,12 @@ class AppPalette {
   static const white = Color(0xFFFFFFFF);
   static const neutral = Color(0xFFE8E8E8);
 
+  // Text buttons: blue by default, red for destructive ones (Stop, Delete…).
+  static const linkLight = Color(0xFF1A66D6);
+  static const linkDark = Color(0xFF6CA6FF);
+  static const dangerLight = Color(0xFFD32F2F);
+  static const dangerDark = Color(0xFFFF6B6B);
+
   // Light theme surfaces.
   static const pageLight = Color(0xFFF5F5F7);
   static const cardLight = Color(0xFFFFFFFF);
@@ -156,6 +162,11 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
           side: BorderSide(color: isDark ? AppPalette.borderDark : AppPalette.borderLight),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: isDark ? AppPalette.linkDark : AppPalette.linkLight,
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
