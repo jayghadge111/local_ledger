@@ -4,5 +4,5 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'app.dart';
 
 void main() {
-  runApp(const ProviderScope(child: LocalLedgerApp()));
+  runApp(const ProviderScope(child: NativeSpendApp()));
 }

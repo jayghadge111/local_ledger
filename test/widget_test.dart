@@ -35,7 +35,7 @@ void main() {
   PathProviderPlatform.instance = _FakePathProviderPlatform();
 
   testWidgets('Splash screen shows the NativeSpend brand', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: LocalLedgerApp()));
+    await tester.pumpWidget(const ProviderScope(child: NativeSpendApp()));
 
     expect(find.text('NativeSpend'), findsOneWidget);
     expect(find.text('Your money, your device, zero cloud.'), findsOneWidget);
