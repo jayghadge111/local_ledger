@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/sync/sync_controller.dart';
 import '../../../shared/widgets/glass_surface.dart';
 import '../../../shared/widgets/import_progress_view.dart';
+import '../../../shared/widgets/text_button_styles.dart';
 
 /// Connect / scan Gmail. The import itself runs in [SyncController], so it
 /// keeps going if the user leaves this page; this card just reflects it.
@@ -104,6 +105,7 @@ class _EmailConnectCardState extends ConsumerState<EmailConnectCard> {
                 ),
                 TextButton(
                   onPressed: working ? null : controller.disconnectGmail,
+                  style: dangerTextButtonStyle(context),
                   child: const Text('Disconnect'),
                 ),
               ],

@@ -9,6 +9,7 @@ import '../../core/db/app_database.dart';
 import '../../core/db/providers.dart';
 import '../../core/db/rules_repository.dart';
 import '../../core/intelligence/default_category_rules.dart';
+import '../../shared/widgets/text_button_styles.dart';
 import '../../core/intelligence/rule_matcher.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/glass_switch_row.dart';
@@ -311,9 +312,7 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
                         onPressed: _delete,
                         icon: const Icon(Icons.delete_outline),
                         label: const Text('Delete'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: Theme.of(context).colorScheme.error,
-                        ),
+                        style: dangerTextButtonStyle(context),
                       ),
                     ],
                   ],
