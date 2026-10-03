@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/db/settings_repository.dart';
+import '../../../core/import_progress.dart';
+import '../../../shared/widgets/import_progress_view.dart';
 import '../../../core/sms/sms_providers.dart';
 import '../../../shared/widgets/glass_switch_row.dart';
 import '../../../shared/widgets/glass_surface.dart';
@@ -17,6 +19,7 @@ class SmsConnectCard extends ConsumerStatefulWidget {
 
 class _SmsConnectCardState extends ConsumerState<SmsConnectCard> {
   bool _scanning = false;
+  ImportProgress? _progress;
 
   Future<void> _connect() async {
     final service = ref.read(smsImportServiceProvider);
@@ -32,7 +35,11 @@ class _SmsConnectCardState extends ConsumerState<SmsConnectCard> {
 
     setState(() => _scanning = true);
     try {
-      final result = await service.importFromInbox();
+      final result = await service.importFromInbox(
+        onProgress: (p) {
+          if (mounted) setState(() => _progress = p);
+        },
+      );
       await service.listenForNewMessages((_) {});
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -45,7 +52,12 @@ class _SmsConnectCardState extends ConsumerState<SmsConnectCard> {
         );
       }
     } finally {
-      if (mounted) setState(() => _scanning = false);
+      if (mounted) {
+        setState(() {
+          _scanning = false;
+          _progress = null;
+        });
+      }
     }
   }
 
@@ -111,6 +123,10 @@ class _SmsConnectCardState extends ConsumerState<SmsConnectCard> {
                 : const Icon(Icons.sms_outlined),
             label: Text(_scanning ? 'Scanning…' : 'Scan SMS inbox'),
           ),
+          if (_scanning && _progress != null) ...[
+            const SizedBox(height: 14),
+            ImportProgressView(progress: _progress!),
+          ],
         ],
       ),
     );

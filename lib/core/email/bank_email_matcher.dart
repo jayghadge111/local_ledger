@@ -1,7 +1,7 @@
 /// Known transaction-alert sending domains for major Indian banks. Like
 /// the SMS DLT sender check, this is a starting point — banks sometimes
 /// send from several different subdomains.
-const _knownBankEmailDomains = [
+const knownBankEmailDomains = [
   'hdfcbank.net',
   'hdfcbank.com',
   'icicibank.com',
@@ -16,5 +16,12 @@ const _knownBankEmailDomains = [
 
 bool looksLikeBankEmail(String fromHeader) {
   final lower = fromHeader.toLowerCase();
-  return _knownBankEmailDomains.any(lower.contains);
+  return knownBankEmailDomains.any(lower.contains);
 }
+
+/// The Gmail search that selects bank alerts: only mail *from* a known bank
+/// domain, from [afterDate] (`YYYY/MM/DD`) onwards, containing a
+/// debit/credit word. Filtering by sender in the query means other mail is
+/// never downloaded, not merely discarded afterwards.
+String bankEmailSearchQuery(String afterDate) =>
+    'after:$afterDate from:(${knownBankEmailDomains.join(' OR ')}) (debited OR credited OR spent)';

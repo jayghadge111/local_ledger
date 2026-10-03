@@ -4,6 +4,7 @@ import 'package:another_telephony/telephony.dart' hide Value;
 import 'package:permission_handler/permission_handler.dart';
 
 import '../db/settings_repository.dart';
+import '../import_progress.dart';
 import '../import_window.dart';
 import '../ingest/transaction_ingestor.dart';
 import 'bank_sms_parser.dart';
@@ -56,7 +57,8 @@ class SmsImportService {
   }
 
   /// Full import of the 1-year window — what the "Scan SMS inbox" button runs.
-  Future<SmsImportResult> importFromInbox() => _import(since: null);
+  Future<SmsImportResult> importFromInbox({ImportProgressCallback? onProgress}) =>
+      _import(since: null, onProgress: onProgress);
 
   /// Silent catch-up for app start/resume: does nothing unless SMS access is
   /// already granted, auto-sync isn't switched off, and the last sync wasn't
@@ -86,7 +88,10 @@ class SmsImportService {
     );
   }
 
-  Future<SmsImportResult> _import({required DateTime? since}) async {
+  Future<SmsImportResult> _import({
+    required DateTime? since,
+    ImportProgressCallback? onProgress,
+  }) async {
     if (!isSupported) return const SmsImportResult(scanned: 0, imported: 0);
     _syncing = true;
     try {
@@ -95,6 +100,7 @@ class SmsImportService {
           ? windowStart
           : since.subtract(_overlap);
 
+      onProgress?.call(const ImportProgress('Reading your messages…'));
       final messages = await _telephony.getInboxSms(
         columns: [SmsColumn.ADDRESS, SmsColumn.BODY, SmsColumn.DATE],
         filter: SmsFilter.where(SmsColumn.DATE)
@@ -102,8 +108,22 @@ class SmsImportService {
         sortOrder: [OrderBy(SmsColumn.DATE, sort: Sort.DESC)],
       );
 
+      final total = messages.length;
       final session = await _ingestor.begin();
+      var done = 0;
       for (final message in messages) {
+        done++;
+        // Most messages aren't from banks and are skipped instantly, so
+        // report (and let the UI redraw) every so often rather than per item.
+        if (done % 150 == 0) {
+          onProgress?.call(ImportProgress(
+            'Scanning messages',
+            done: done,
+            total: total,
+            found: session.imported,
+          ));
+          await Future<void>.delayed(Duration.zero);
+        }
         final sender = message.address;
         final body = message.body;
         if (sender == null || body == null) continue;
@@ -115,6 +135,7 @@ class SmsImportService {
           date: DateTime.fromMillisecondsSinceEpoch(message.date ?? 0),
         );
       }
+      onProgress?.call(ImportProgress('Finishing up…', done: total, total: total, found: session.imported));
       await session.finish();
 
       await _settings.set(SettingsKeys.smsLastSyncedAt, DateTime.now().toIso8601String());

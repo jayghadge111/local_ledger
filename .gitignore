@@ -92,3 +92,7 @@ google-services.json
 GoogleService-Info.plist
 *.env
 .env
+
+# Downloaded OAuth client files (contain client details; the IDs live in code)
+client_secret*.json
+client_*.apps.googleusercontent.com.plist

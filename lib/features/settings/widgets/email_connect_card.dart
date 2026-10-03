@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/email/email_providers.dart';
+import '../../../core/import_progress.dart';
+import '../../../shared/widgets/import_progress_view.dart';
 import '../../../shared/widgets/glass_surface.dart';
 
 class EmailConnectCard extends ConsumerStatefulWidget {
@@ -13,11 +15,16 @@ class EmailConnectCard extends ConsumerStatefulWidget {
 
 class _EmailConnectCardState extends ConsumerState<EmailConnectCard> {
   bool _working = false;
+  ImportProgress? _progress;
 
   Future<void> _connect() async {
     setState(() => _working = true);
     try {
-      final result = await ref.read(gmailImportServiceProvider).importRecent();
+      final result = await ref.read(gmailImportServiceProvider).importRecent(
+        onProgress: (p) {
+          if (mounted) setState(() => _progress = p);
+        },
+      );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -32,13 +39,18 @@ class _EmailConnectCardState extends ConsumerState<EmailConnectCard> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'Gmail sign-in isn\'t set up yet for this build — needs an OAuth client configured in Google Cloud Console. ($e)',
+              'Gmail import failed: $e',
             ),
           ),
         );
       }
     } finally {
-      if (mounted) setState(() => _working = false);
+      if (mounted) {
+        setState(() {
+          _working = false;
+          _progress = null;
+        });
+      }
     }
   }
 
@@ -69,6 +81,10 @@ class _EmailConnectCardState extends ConsumerState<EmailConnectCard> {
                 : const Icon(Icons.mail_outline),
             label: Text(_working ? 'Working…' : 'Connect Gmail'),
           ),
+          if (_working && _progress != null) ...[
+            const SizedBox(height: 14),
+            ImportProgressView(progress: _progress!),
+          ],
         ],
       ),
     );
