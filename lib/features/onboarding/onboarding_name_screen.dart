@@ -113,7 +113,7 @@ class _OnboardingNameScreenState extends ConsumerState<OnboardingNameScreen> {
                             hasName && !_saving ? _continue() : null,
                         decoration: const InputDecoration(
                           labelText: 'Full name',
-                          hintText: 'e.g. Jayesh Bhika Ghadge',
+                          hintText: 'e.g. John Sample Doe',
                           prefixIcon: Icon(Icons.person_outline_rounded),
                         ),
                       ),
