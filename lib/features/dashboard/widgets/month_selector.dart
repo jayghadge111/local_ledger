@@ -224,11 +224,11 @@ class _MonthCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return Material(
-      color: selected ? scheme.onSurface : Colors.transparent,
+      color: selected ? scheme.secondary : Colors.transparent,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: selected ? scheme.onSurface : scheme.outlineVariant,
+          color: selected ? scheme.secondary : scheme.outlineVariant,
         ),
       ),
       child: InkWell(
@@ -240,7 +240,7 @@ class _MonthCell extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.w700,
               color: selected
-                  ? scheme.surface
+                  ? scheme.onSecondary
                   : enabled
                   ? scheme.onSurface
                   : scheme.onSurface.withValues(alpha: 0.28),

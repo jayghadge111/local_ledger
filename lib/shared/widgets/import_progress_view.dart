@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/import_progress.dart';
+import '../../core/theme/app_theme.dart';
 
 /// Progress bar plus plain-language status for a running import: the
 /// current step, "done of total · left", and transactions found so far.
@@ -34,8 +35,8 @@ class ImportProgressView extends StatelessWidget {
           child: LinearProgressIndicator(
             value: fraction,
             minHeight: 8,
-            backgroundColor: theme.colorScheme.surfaceContainerHighest,
-            color: theme.colorScheme.onSurface,
+            backgroundColor: theme.colorScheme.outline,
+            color: ChartColors.of(context).accent,
           ),
         ),
         const SizedBox(height: 6),

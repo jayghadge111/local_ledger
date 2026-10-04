@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'color_themes.dart';
-
 /// Placeholder brand font — swap the font passed to `GoogleFonts.x()` here
 /// to change the whole app's typography later. Deliberately not Roboto
 /// (the Flutter/Material default).
@@ -13,16 +11,60 @@ import 'color_themes.dart';
 /// own `ThemeData.textTheme`.
 final _brandFont = GoogleFonts.nunito();
 
-/// "Uber Slate" — a strict black / white / gray palette. Charts, chips,
-/// buttons and nav chrome all stay monochrome; the only color left in the
-/// app is merchant brand badges (see `merchant_badge.dart`), which need
-/// their real brand hues to stay recognizable at a glance.
+/// Colours for charts and progress bars (sky blue tones on navy / ice).
+class ChartColors extends ThemeExtension<ChartColors> {
+  const ChartColors({
+    required this.accent,
+    required this.soft,
+    required this.softText,
+  });
+
+  /// Strong: the current bar, the biggest slice, a filled progress bar.
+  final Color accent;
+
+  /// Soft: other bars, the smallest slices.
+  final Color soft;
+
+  /// Text / icons drawn on [soft].
+  final Color softText;
+
+  /// Falls back to the text / chip colours when a theme doesn't set them.
+  static ChartColors of(BuildContext context) {
+    final theme = Theme.of(context);
+    return theme.extension<ChartColors>() ??
+        ChartColors(
+          accent: theme.colorScheme.onSurface,
+          soft: theme.colorScheme.surfaceContainerHighest,
+          softText: theme.colorScheme.onSurface,
+        );
+  }
+
+  @override
+  ChartColors copyWith({Color? accent, Color? soft, Color? softText}) =>
+      ChartColors(
+        accent: accent ?? this.accent,
+        soft: soft ?? this.soft,
+        softText: softText ?? this.softText,
+      );
+
+  @override
+  ChartColors lerp(ChartColors? other, double t) => other == null
+      ? this
+      : ChartColors(
+          accent: Color.lerp(accent, other.accent, t)!,
+          soft: Color.lerp(soft, other.soft, t)!,
+          softText: Color.lerp(softText, other.softText, t)!,
+        );
+}
+
+/// The app's colours: "Powder Blue & Deep Navy" for light, with a deep-navy
+/// night version for dark. Each is a set of named roles; [AppTheme] maps them
+/// onto widgets, so a palette is data, not code.
 class AppPalette {
   const AppPalette._();
 
   static const black = Color(0xFF000000);
   static const white = Color(0xFFFFFFFF);
-  static const neutral = Color(0xFFE8E8E8);
 
   // Text buttons: blue by default, red for destructive ones (Stop, Delete…).
   static const linkLight = Color(0xFF1A66D6);
@@ -30,18 +72,77 @@ class AppPalette {
   static const dangerLight = Color(0xFFD32F2F);
   static const dangerDark = Color(0xFFFF6B6B);
 
-  // Light theme surfaces.
-  static const pageLight = Color(0xFFF5F5F7);
-  static const cardLight = Color(0xFFFFFFFF);
-  static const borderLight = Color(0xFFE8E8E8);
-  static const mutedTextLight = Color(0xFF6E6E73);
+  /// Light: powder-blue page, deep-navy text, buttons and active chips.
+  static const light = _Tokens(
+    scaffold: Color(0xFFF0F9FF),
+    cardSurface: white,
+    cardBorder: Color(0xFFBAE6FD),
+    activeChip: Color(0xFF0C4A6E),
+    activeChipText: white,
+    inactiveChip: Color(0xFFE0F2FE),
+    primaryText: Color(0xFF0C4A6E),
+    secondaryText: Color(0xFF64748B),
+    ctaBackground: Color(0xFF0C4A6E),
+    ctaText: white,
+    chartAccent: Color(0xFF0C4A6E),
+    chartSoft: Color(0xFFE0F2FE),
+    chartSoftText: Color(0xFF0C4A6E),
+    switchOffTrack: Color(0xFFC7D7E3),
+  );
 
-  // Dark theme surfaces — true-black page (matches Uber's dark mode), slate
-  // (not pure black) cards so content still reads as "elevated."
-  static const pageDark = Color(0xFF000000);
-  static const cardDark = Color(0xFF1C1C1E);
-  static const borderDark = Color(0xFF2C2C2E);
-  static const mutedTextDark = Color(0xFF9A9AA1);
+  /// Dark: the same navy, as night. Deep-navy page, lifted navy cards, ice
+  /// text, and the light theme's sky blue as the button and active chip.
+  static const dark = _Tokens(
+    scaffold: Color(0xFF06131F),
+    cardSurface: Color(0xFF0C2234),
+    cardBorder: Color(0xFF17364D),
+    activeChip: Color(0xFFBAE6FD),
+    activeChipText: Color(0xFF0C4A6E),
+    inactiveChip: Color(0xFF123049),
+    primaryText: Color(0xFFE6F4FB),
+    secondaryText: Color(0xFF8DA8BC),
+    ctaBackground: Color(0xFFBAE6FD),
+    ctaText: Color(0xFF082F49),
+    chartAccent: Color(0xFF7DD3FC),
+    chartSoft: Color(0xFF17364D),
+    chartSoftText: Color(0xFFBAE6FD),
+    switchOffTrack: Color(0xFF2B4A62),
+  );
+}
+
+/// One palette's colours, by role.
+class _Tokens {
+  const _Tokens({
+    required this.scaffold,
+    required this.cardSurface,
+    required this.cardBorder,
+    required this.activeChip,
+    required this.activeChipText,
+    required this.inactiveChip,
+    required this.primaryText,
+    required this.secondaryText,
+    required this.ctaBackground,
+    required this.ctaText,
+    required this.chartAccent,
+    required this.chartSoft,
+    required this.chartSoftText,
+    required this.switchOffTrack,
+  });
+
+  final Color scaffold;
+  final Color cardSurface;
+  final Color cardBorder;
+  final Color activeChip;
+  final Color activeChipText;
+  final Color inactiveChip;
+  final Color primaryText;
+  final Color secondaryText;
+  final Color ctaBackground;
+  final Color ctaText;
+  final Color chartAccent;
+  final Color chartSoft;
+  final Color chartSoftText;
+  final Color switchOffTrack;
 }
 
 OutlineInputBorder _inputBorder(Color color, {double width = 1}) =>
@@ -53,35 +154,25 @@ OutlineInputBorder _inputBorder(Color color, {double width = 1}) =>
 class AppTheme {
   const AppTheme._();
 
-  /// The light appearance in the chosen colour theme.
-  static ThemeData light([ColorTheme theme = defaultColorTheme]) =>
-      _build(Brightness.light, theme.tokens);
+  static ThemeData light() => _build(Brightness.light, AppPalette.light);
 
-  /// Dark mode has one look, whatever colour theme is chosen.
-  static ThemeData dark() => _build(Brightness.dark, null);
+  static ThemeData dark() => _build(Brightness.dark, AppPalette.dark);
 
-  static ThemeData _build(Brightness brightness, ThemeTokens? tokens) {
+  static ThemeData _build(Brightness brightness, _Tokens t) {
     final isDark = brightness == Brightness.dark;
-
-    // Colours by role. Dark mode uses the fixed dark palette; light mode takes
-    // them from the chosen colour theme.
-    final pageColor = isDark ? AppPalette.pageDark : tokens!.scaffold;
-    final cardColor = isDark ? AppPalette.cardDark : tokens!.cardSurface;
-    final borderColor = isDark ? AppPalette.borderDark : tokens!.cardBorder;
-    final textColor = isDark ? AppPalette.white : tokens!.primaryText;
-    final mutedColor = isDark
-        ? AppPalette.mutedTextDark
-        : tokens!.secondaryText;
-    final ctaBg = isDark ? AppPalette.white : tokens!.ctaBackground;
-    final ctaFg = isDark ? AppPalette.black : tokens!.ctaText;
-    final activeChip = isDark ? AppPalette.white : tokens!.activeChip;
-    final activeChipText = isDark ? AppPalette.black : tokens!.activeChipText;
-    final inactiveChip = isDark ? AppPalette.borderDark : tokens!.inactiveChip;
+    final pageColor = t.scaffold;
+    final cardColor = t.cardSurface;
+    final borderColor = t.cardBorder;
+    final textColor = t.primaryText;
+    final mutedColor = t.secondaryText;
+    final activeChip = t.activeChip;
+    final activeChipText = t.activeChipText;
+    final inactiveChip = t.inactiveChip;
 
     final colorScheme = ColorScheme(
       brightness: brightness,
-      primary: ctaBg,
-      onPrimary: ctaFg,
+      primary: t.ctaBackground,
+      onPrimary: t.ctaText,
       secondary: activeChip,
       onSecondary: activeChipText,
       secondaryContainer: inactiveChip,
@@ -95,17 +186,22 @@ class AppTheme {
       outline: borderColor,
       outlineVariant: borderColor,
       tertiary: mutedColor,
-      onTertiary: isDark ? AppPalette.black : AppPalette.white,
+      onTertiary: t.scaffold,
     );
 
     // Field outlines sit a step darker than card borders so inputs read as inputs.
-    final inputBorderColor = isDark
-        ? const Color(0xFF48484A)
-        : Color.lerp(borderColor, mutedColor, 0.5)!;
+    final inputBorderColor = Color.lerp(borderColor, mutedColor, 0.5)!;
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
+      extensions: [
+        ChartColors(
+          accent: t.chartAccent,
+          soft: t.chartSoft,
+          softText: t.chartSoftText,
+        ),
+      ],
       fontFamily: _brandFont.fontFamily,
       fontFamilyFallback: _brandFont.fontFamilyFallback,
       scaffoldBackgroundColor: pageColor,
@@ -236,7 +332,7 @@ class AppTheme {
         trackColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.selected)
               ? colorScheme.primary
-              : (isDark ? const Color(0xFF3A3A3C) : const Color(0xFFC7C7CC)),
+              : t.switchOffTrack,
         ),
         trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
       ),

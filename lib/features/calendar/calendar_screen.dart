@@ -12,6 +12,7 @@ import '../dashboard/widgets/month_selector.dart';
 import '../transactions/transaction_detail_sheet.dart';
 import '../transactions/widgets/transaction_tile.dart';
 import 'calendar_math.dart';
+import '../../core/theme/app_theme.dart';
 
 /// A month at a glance: what was spent and received on each day, and the
 /// month's totals. Tap a day to list its transactions below.
@@ -314,9 +315,10 @@ class _DayCell extends StatelessWidget {
     final spent = totals?.spentMinor ?? 0;
     final received = totals?.receivedMinor ?? 0;
     final bg = isSelected
-        ? scheme.onSurface
-        : Colors.red.withValues(alpha: spent == 0 ? 0 : 0.05 + 0.16 * heat);
-    final fg = isSelected ? scheme.surface : scheme.onSurface;
+        ? scheme.secondary
+        : ChartColors.of(context).accent
+              .withValues(alpha: spent == 0 ? 0 : 0.05 + 0.25 * heat);
+    final fg = isSelected ? scheme.onSecondary : scheme.onSurface;
 
     return Padding(
       padding: const EdgeInsets.all(2),
@@ -325,7 +327,7 @@ class _DayCell extends StatelessWidget {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
           side: isToday && !isSelected
-              ? BorderSide(color: scheme.onSurface, width: 1.4)
+              ? BorderSide(color: ChartColors.of(context).accent, width: 1.4)
               : BorderSide.none,
         ),
         child: InkWell(
@@ -352,9 +354,7 @@ class _DayCell extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 9.5,
                         fontWeight: FontWeight.w700,
-                        color: isSelected
-                            ? Colors.red.shade200
-                            : Colors.red.shade700,
+                        color: Colors.red.shade700,
                       ),
                     ),
                   ),
@@ -366,9 +366,7 @@ class _DayCell extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 9.5,
                         fontWeight: FontWeight.w700,
-                        color: isSelected
-                            ? Colors.green.shade200
-                            : Colors.green.shade700,
+                        color: Colors.green.shade700,
                       ),
                     ),
                   ),

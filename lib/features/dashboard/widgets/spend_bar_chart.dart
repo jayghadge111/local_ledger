@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'chart_buckets.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// A bar chart of [buckets]: the current bucket is filled solid black
 /// (white in dark mode) to draw the eye, the rest sit in flat neutral gray
@@ -118,6 +119,7 @@ class _Bar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final chart = ChartColors.of(context);
     final fraction = maxAmount == 0 ? 0.0 : bucket.amountMinor / maxAmount;
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: fraction.clamp(0.02, 1.0)),
@@ -129,9 +131,7 @@ class _Bar extends StatelessWidget {
           alignment: Alignment.bottomCenter,
           child: Container(
             decoration: BoxDecoration(
-              color: bucket.isCurrent
-                  ? theme.colorScheme.onSurface
-                  : theme.colorScheme.surfaceContainerHighest,
+              color: bucket.isCurrent ? chart.accent : chart.soft,
               borderRadius: const BorderRadius.vertical(
                 top: Radius.circular(6),
               ),

@@ -2,6 +2,7 @@ import '../../core/lending/lending_repository.dart';
 import '../../core/sms/parser_templates.dart';
 import '../import_review/learned_layouts_screen.dart';
 import '../lending/lending_screen.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -19,6 +20,7 @@ import '../import_review/own_identifiers_screen.dart';
 import '../import_review/unparsed_messages_screen.dart';
 import '../rules/rules_screen.dart';
 import '../splits/splits_ui.dart';
+import '../../core/theme/app_theme.dart';
 
 /// The "Manage" tab: everything that organises the data beyond the basic
 /// lists, surfaced here (with a live one-line summary each) so new users
@@ -76,8 +78,8 @@ class ManageScreen extends ConsumerWidget {
         subtitle: lendingOpen == 0
             ? 'Note money you lent or borrowed, with reminders'
             : '${lendingTotals.owedToMeMinor > 0 ? "You'll get ${money.format(lendingTotals.owedToMeMinor / 100)}" : ''}'
-                '${lendingTotals.owedToMeMinor > 0 && lendingTotals.iOweMinor > 0 ? ' · ' : ''}'
-                '${lendingTotals.iOweMinor > 0 ? 'You owe ${money.format(lendingTotals.iOweMinor / 100)}' : ''}',
+                  '${lendingTotals.owedToMeMinor > 0 && lendingTotals.iOweMinor > 0 ? ' · ' : ''}'
+                  '${lendingTotals.iOweMinor > 0 ? 'You owe ${money.format(lendingTotals.iOweMinor / 100)}' : ''}',
         screen: const LendingScreen(),
       ),
       _ManageItem(
@@ -168,6 +170,7 @@ class _ManageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final chart = ChartColors.of(context);
     return GlassCard(
       onTap: () =>
           Navigator.of(context)
@@ -178,10 +181,10 @@ class _ManageCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: theme.colorScheme.surfaceContainerHighest,
+              color: chart.soft,
               shape: BoxShape.circle,
             ),
-            child: Icon(item.icon, color: theme.colorScheme.onSurface),
+            child: Icon(item.icon, color: chart.softText),
           ),
           const SizedBox(width: 14),
           Expanded(

@@ -296,8 +296,8 @@ class _SearchBar extends StatelessWidget {
               Badge(
                 isLabelVisible: filters.isActive,
                 label: Text('${filters.activeCount}'),
-                backgroundColor: scheme.onSurface,
-                textColor: scheme.surface,
+                backgroundColor: scheme.primary,
+                textColor: scheme.onPrimary,
                 child: IconButton(
                   tooltip: 'Filters',
                   onPressed: onOpenFilters,

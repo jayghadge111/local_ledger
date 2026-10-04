@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/update/update_controller.dart';
 import '../../shared/widgets/glass_surface.dart';
+import '../../core/theme/app_theme.dart';
 
 /// "A new version is available" on Home: update, watch it download inside the
 /// app, then restart to install. Hidden when there is nothing to offer.
@@ -149,10 +150,10 @@ class _Card extends ConsumerWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: scheme.onSurface,
+                  color: scheme.primary,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Icon(icon, color: scheme.surface, size: 19),
+                child: Icon(icon, color: scheme.onPrimary, size: 19),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -226,7 +227,7 @@ class _Card extends ConsumerWidget {
                         value: downloading ? state.progress : null,
                         minHeight: 6,
                         backgroundColor: scheme.surfaceContainerHighest,
-                        color: scheme.onSurface,
+                        color: ChartColors.of(context).accent,
                       ),
                     ),
                   ),

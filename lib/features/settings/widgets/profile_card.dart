@@ -6,8 +6,7 @@ import '../../../core/profile/greeting.dart';
 import '../../../shared/widgets/greeting_header.dart';
 import 'edit_name_dialog.dart';
 
-/// The hero card at the top of Settings: an inverted (black on light, white
-/// on dark) panel with the user's monogram, a time-of-day greeting and their
+/// The hero card at the top of Settings: a panel in the theme's button colour with the user's monogram, a time-of-day greeting and their
 /// full name, with quiet concentric rings as texture.
 class ProfileCard extends ConsumerWidget {
   const ProfileCard({super.key});
@@ -18,8 +17,8 @@ class ProfileCard extends ConsumerWidget {
     final scheme = theme.colorScheme;
     final name = ref.watch(userNameProvider).value;
     final now = DateTime.now();
-    final bg = scheme.onSurface;
-    final fg = scheme.surface;
+    final bg = scheme.primary;
+    final fg = scheme.onPrimary;
 
     // While the shell animates in, the body is briefly laid out far narrower
     // than the screen — leave a quiet gap rather than overflow.
@@ -37,7 +36,7 @@ class ProfileCard extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(28),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.18),
+                    color: bg.withValues(alpha: 0.18),
                     blurRadius: 24,
                     offset: const Offset(0, 10),
                   ),

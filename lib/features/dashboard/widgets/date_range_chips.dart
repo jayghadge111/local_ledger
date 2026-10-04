@@ -52,7 +52,7 @@ class _Chip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: selected
-          ? theme.colorScheme.onSurface
+          ? theme.colorScheme.secondary
           : theme.colorScheme.surfaceContainerHighest,
       shape: const StadiumBorder(),
       child: InkWell(
@@ -65,7 +65,7 @@ class _Chip extends StatelessWidget {
             label,
             style: theme.textTheme.labelMedium?.copyWith(
               color: selected
-                  ? theme.colorScheme.surface
+                  ? theme.colorScheme.onSecondary
                   : theme.colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
             ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/app_theme.dart';
 import 'category_icons.dart';
 import 'merchant_badge.dart';
 
@@ -93,13 +94,13 @@ class MerchantAvatar extends StatelessWidget {
       );
     }
 
-    final theme = Theme.of(context);
+    final chart = ChartColors.of(context);
     return CircleAvatar(
       radius: radius,
-      backgroundColor: theme.colorScheme.secondaryContainer,
+      backgroundColor: chart.soft,
       child: Icon(
         isTransfer ? Icons.sync_alt_rounded : iconForKey(categoryIconKey),
-        color: theme.colorScheme.onSecondaryContainer,
+        color: chart.softText,
       ),
     );
   }

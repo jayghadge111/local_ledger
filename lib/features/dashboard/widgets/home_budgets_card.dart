@@ -11,6 +11,7 @@ import '../../../shared/widgets/category_icons.dart';
 import '../../../shared/widgets/glass_surface.dart';
 import '../../budgets/budgets_screen.dart';
 import '../dashboard_month.dart';
+import '../../../core/theme/app_theme.dart';
 
 /// Budgets for the month on screen, right on Home: each budgeted category with
 /// what's been spent against its limit, over-budget ones first and in red.
@@ -144,6 +145,9 @@ class BudgetLine extends StatelessWidget {
       BudgetLevel.warning => const Color(0xFFE08A00),
       BudgetLevel.ok => theme.colorScheme.onSurface,
     };
+    final barColor = status.level == BudgetLevel.ok
+        ? ChartColors.of(context).accent
+        : color;
     final muted = theme.colorScheme.onSurfaceVariant;
 
     return Column(
@@ -178,9 +182,8 @@ class BudgetLine extends StatelessWidget {
           child: LinearProgressIndicator(
             value: status.fraction.clamp(0.0, 1.0),
             minHeight: 7,
-            backgroundColor: theme.colorScheme.surfaceContainerHighest
-                .withValues(alpha: 0.6),
-            color: color,
+            backgroundColor: theme.colorScheme.outline,
+            color: barColor,
           ),
         ),
         const SizedBox(height: 4),

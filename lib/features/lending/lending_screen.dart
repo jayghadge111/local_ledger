@@ -289,8 +289,7 @@ class LendingCard extends ConsumerWidget {
               child: LinearProgressIndicator(
                 value: (balance.paidMinor / e.amountMinor).clamp(0.0, 1.0),
                 minHeight: 6,
-                backgroundColor: theme.colorScheme.surfaceContainerHighest
-                    .withValues(alpha: 0.6),
+                backgroundColor: theme.colorScheme.outline,
                 color: color,
               ),
             ),

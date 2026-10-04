@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../core/db/settings_repository.dart';
 import '../../core/profile/greeting.dart';
 import '../../features/settings/widgets/edit_name_dialog.dart';
+import '../../core/theme/app_theme.dart';
 
 IconData dayPartIcon(DayPart part) => switch (part) {
   DayPart.morning => Icons.wb_twilight_rounded,
@@ -32,8 +33,8 @@ class NameAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final fill = inverse ? scheme.surface : scheme.onSurface;
-    final ink = inverse ? scheme.onSurface : scheme.surface;
+    final fill = inverse ? scheme.surface : scheme.primary;
+    final ink = inverse ? ChartColors.of(context).softText : scheme.onPrimary;
     final initials = initialsOf(name);
     return Container(
       width: size,

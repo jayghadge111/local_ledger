@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../shared/widgets/category_icons.dart';
+import '../../../core/theme/app_theme.dart';
 
 class CategorySlice {
   const CategorySlice({
@@ -33,9 +34,9 @@ class CategoryDonutChart extends StatelessWidget {
   final List<CategorySlice> slices;
   final int totalMinor;
 
-  List<Color> _shadesFor(ThemeData theme) {
-    final dark = theme.colorScheme.onSurface;
-    final light = theme.colorScheme.surfaceContainerHighest;
+  List<Color> _shadesFor(ChartColors chart) {
+    final dark = chart.accent;
+    final light = chart.soft;
     final count = slices.length;
     return List.generate(count, (i) {
       final t = count <= 1 ? 0.0 : (i / (count - 1)) * 0.75;
@@ -46,7 +47,7 @@ class CategoryDonutChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final shades = _shadesFor(theme);
+    final shades = _shadesFor(ChartColors.of(context));
     final amountFormatter = NumberFormat.currency(
       locale: 'en_IN',
       symbol: '₹',
@@ -114,7 +115,10 @@ class CategoryDonutChart extends StatelessWidget {
                   child: Icon(
                     iconForKey(slices[i].iconKey),
                     size: 16,
-                    color: theme.colorScheme.surface,
+                    // Light slices (e.g. soft sky) need a dark glyph.
+                    color: shades[i].computeLuminance() > 0.6
+                        ? theme.colorScheme.onSurface
+                        : theme.colorScheme.surface,
                   ),
                 ),
                 const SizedBox(width: 12),
