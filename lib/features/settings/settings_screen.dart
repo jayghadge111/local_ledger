@@ -285,13 +285,13 @@ class _MadeInIndia extends StatelessWidget {
     final theme = Theme.of(context);
     return Center(
       child: Text(
-        'Made with ❤️ in India',
+        'MADE WITH ❤️ IN INDIA',
         textAlign: TextAlign.center,
         style: theme.textTheme.titleMedium?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
           fontSize: 20,
           fontWeight: FontWeight.w700,
-          letterSpacing: 0.2,
+          letterSpacing: 1.2,
         ),
       ),
     );
