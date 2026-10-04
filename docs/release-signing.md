@@ -33,8 +33,8 @@ can be reset through Play support.
 
 ## CI
 
-Provide the same four values as secrets, write `key.properties` and decode the
-keystore (base64) into `android/app/` before building.
+See `docs/ci.md` - the `Release (Android)` workflow restores the keystore from
+GitHub secrets and builds the signed APK/AAB.
 
 ## Verify
 
