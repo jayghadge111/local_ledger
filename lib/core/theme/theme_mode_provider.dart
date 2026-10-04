@@ -25,8 +25,7 @@ String _encode(ThemeMode mode) {
   }
 }
 
-final themeModeProvider =
-    StreamProvider<ThemeMode>((ref) {
+final themeModeProvider = StreamProvider<ThemeMode>((ref) {
   final repo = ref.watch(settingsRepositoryProvider);
   return repo.watch(SettingsKeys.themeMode).map(_parse);
 });

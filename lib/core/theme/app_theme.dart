@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'color_themes.dart';
+
 /// Placeholder brand font — swap the font passed to `GoogleFonts.x()` here
 /// to change the whole app's typography later. Deliberately not Roboto
 /// (the Flutter/Material default).
@@ -42,7 +44,8 @@ class AppPalette {
   static const mutedTextDark = Color(0xFF9A9AA1);
 }
 
-OutlineInputBorder _inputBorder(Color color, {double width = 1}) => OutlineInputBorder(
+OutlineInputBorder _inputBorder(Color color, {double width = 1}) =>
+    OutlineInputBorder(
       borderRadius: BorderRadius.circular(14),
       borderSide: BorderSide(color: color, width: width),
     );
@@ -50,38 +53,62 @@ OutlineInputBorder _inputBorder(Color color, {double width = 1}) => OutlineInput
 class AppTheme {
   const AppTheme._();
 
-  static ThemeData light() => _build(Brightness.light);
-  static ThemeData dark() => _build(Brightness.dark);
+  /// The light appearance in the chosen colour theme.
+  static ThemeData light([ColorTheme theme = defaultColorTheme]) =>
+      _build(Brightness.light, theme.tokens);
 
-  static ThemeData _build(Brightness brightness) {
+  /// Dark mode has one look, whatever colour theme is chosen.
+  static ThemeData dark() => _build(Brightness.dark, null);
+
+  static ThemeData _build(Brightness brightness, ThemeTokens? tokens) {
     final isDark = brightness == Brightness.dark;
+
+    // Colours by role. Dark mode uses the fixed dark palette; light mode takes
+    // them from the chosen colour theme.
+    final pageColor = isDark ? AppPalette.pageDark : tokens!.scaffold;
+    final cardColor = isDark ? AppPalette.cardDark : tokens!.cardSurface;
+    final borderColor = isDark ? AppPalette.borderDark : tokens!.cardBorder;
+    final textColor = isDark ? AppPalette.white : tokens!.primaryText;
+    final mutedColor = isDark
+        ? AppPalette.mutedTextDark
+        : tokens!.secondaryText;
+    final ctaBg = isDark ? AppPalette.white : tokens!.ctaBackground;
+    final ctaFg = isDark ? AppPalette.black : tokens!.ctaText;
+    final activeChip = isDark ? AppPalette.white : tokens!.activeChip;
+    final activeChipText = isDark ? AppPalette.black : tokens!.activeChipText;
+    final inactiveChip = isDark ? AppPalette.borderDark : tokens!.inactiveChip;
 
     final colorScheme = ColorScheme(
       brightness: brightness,
-      primary: isDark ? AppPalette.white : AppPalette.black,
-      onPrimary: isDark ? AppPalette.black : AppPalette.white,
-      secondary: isDark ? AppPalette.white : AppPalette.black,
-      onSecondary: isDark ? AppPalette.black : AppPalette.white,
+      primary: ctaBg,
+      onPrimary: ctaFg,
+      secondary: activeChip,
+      onSecondary: activeChipText,
+      secondaryContainer: inactiveChip,
+      onSecondaryContainer: textColor,
       error: const Color(0xFFD32F2F),
       onError: AppPalette.white,
-      surface: isDark ? AppPalette.cardDark : AppPalette.cardLight,
-      onSurface: isDark ? AppPalette.white : AppPalette.black,
-      surfaceContainerHighest: isDark ? AppPalette.borderDark : AppPalette.neutral,
-      onSurfaceVariant: isDark ? AppPalette.mutedTextDark : AppPalette.mutedTextLight,
-      outline: isDark ? AppPalette.borderDark : AppPalette.borderLight,
-      outlineVariant: isDark ? AppPalette.borderDark : AppPalette.borderLight,
-      tertiary: isDark ? AppPalette.mutedTextDark : AppPalette.mutedTextLight,
+      surface: cardColor,
+      onSurface: textColor,
+      surfaceContainerHighest: inactiveChip,
+      onSurfaceVariant: mutedColor,
+      outline: borderColor,
+      outlineVariant: borderColor,
+      tertiary: mutedColor,
       onTertiary: isDark ? AppPalette.black : AppPalette.white,
     );
 
-    final inputBorderColor = isDark ? const Color(0xFF48484A) : const Color(0xFFC7C7CC);
+    // Field outlines sit a step darker than card borders so inputs read as inputs.
+    final inputBorderColor = isDark
+        ? const Color(0xFF48484A)
+        : Color.lerp(borderColor, mutedColor, 0.5)!;
 
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
       fontFamily: _brandFont.fontFamily,
       fontFamilyFallback: _brandFont.fontFamilyFallback,
-      scaffoldBackgroundColor: isDark ? AppPalette.pageDark : AppPalette.pageLight,
+      scaffoldBackgroundColor: pageColor,
       splashFactory: InkSparkle.splashFactory,
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
@@ -93,21 +120,23 @@ class AppTheme {
         },
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: isDark ? AppPalette.cardDark : AppPalette.cardLight,
+        backgroundColor: cardColor,
         elevation: 0,
-        indicatorColor: colorScheme.primary,
+        indicatorColor: activeChip,
         surfaceTintColor: Colors.transparent,
         iconTheme: WidgetStateProperty.resolveWith(
           (states) => IconThemeData(
             color: states.contains(WidgetState.selected)
-                ? colorScheme.onPrimary
+                ? activeChipText
                 : colorScheme.onSurfaceVariant,
           ),
         ),
         labelTextStyle: WidgetStateProperty.resolveWith(
           (states) => TextStyle(
             fontSize: 12,
-            fontWeight: states.contains(WidgetState.selected) ? FontWeight.w600 : FontWeight.w500,
+            fontWeight: states.contains(WidgetState.selected)
+                ? FontWeight.w600
+                : FontWeight.w500,
             color: states.contains(WidgetState.selected)
                 ? colorScheme.onSurface
                 : colorScheme.onSurfaceVariant,
@@ -115,16 +144,13 @@ class AppTheme {
         ),
       ),
       navigationRailTheme: NavigationRailThemeData(
-        backgroundColor: isDark ? AppPalette.cardDark : AppPalette.cardLight,
+        backgroundColor: cardColor,
         elevation: 0,
-        indicatorColor: colorScheme.primary,
-        selectedIconTheme: IconThemeData(color: colorScheme.onPrimary),
+        indicatorColor: activeChip,
+        selectedIconTheme: IconThemeData(color: activeChipText),
         unselectedIconTheme: IconThemeData(color: colorScheme.onSurfaceVariant),
       ),
-      drawerTheme: DrawerThemeData(
-        backgroundColor: isDark ? AppPalette.cardDark : AppPalette.cardLight,
-        elevation: 0,
-      ),
+      drawerTheme: DrawerThemeData(backgroundColor: cardColor, elevation: 0),
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -132,11 +158,11 @@ class AppTheme {
         centerTitle: false,
       ),
       cardTheme: CardThemeData(
-        color: isDark ? AppPalette.cardDark : AppPalette.cardLight,
+        color: cardColor,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: isDark ? AppPalette.borderDark : AppPalette.borderLight),
+          side: BorderSide(color: borderColor),
         ),
       ),
       // Outlined, unfilled fields — the same hairline-border look as the
@@ -144,7 +170,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: false,
         isDense: false,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
         labelStyle: TextStyle(color: colorScheme.onSurfaceVariant),
         floatingLabelStyle: TextStyle(color: colorScheme.onSurface),
@@ -156,12 +185,12 @@ class AppTheme {
         focusedErrorBorder: _inputBorder(colorScheme.error, width: 1.5),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: isDark ? AppPalette.cardDark : AppPalette.cardLight,
+        backgroundColor: cardColor,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
-          side: BorderSide(color: isDark ? AppPalette.borderDark : AppPalette.borderLight),
+          side: BorderSide(color: borderColor),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -174,16 +203,20 @@ class AppTheme {
           backgroundColor: colorScheme.primary,
           foregroundColor: colorScheme.onPrimary,
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: colorScheme.onSurface,
-          side: BorderSide(color: isDark ? AppPalette.borderDark : AppPalette.borderLight),
+          side: BorderSide(color: borderColor),
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
@@ -208,13 +241,32 @@ class AppTheme {
         trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: isDark ? AppPalette.borderDark : AppPalette.neutral,
-        selectedColor: colorScheme.primary,
-        labelStyle: TextStyle(color: colorScheme.onSurface, fontWeight: FontWeight.w600),
-        secondaryLabelStyle: TextStyle(color: colorScheme.onPrimary, fontWeight: FontWeight.w600),
+        backgroundColor: inactiveChip,
+        selectedColor: activeChip,
+        labelStyle: TextStyle(color: textColor, fontWeight: FontWeight.w600),
+        secondaryLabelStyle: TextStyle(
+          color: activeChipText,
+          fontWeight: FontWeight.w600,
+        ),
+        checkmarkColor: activeChipText,
         side: BorderSide.none,
         shape: const StadiumBorder(),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? activeChip
+                : Colors.transparent,
+          ),
+          foregroundColor: WidgetStateProperty.resolveWith(
+            (states) => states.contains(WidgetState.selected)
+                ? activeChipText
+                : textColor,
+          ),
+          side: WidgetStatePropertyAll(BorderSide(color: borderColor)),
+        ),
       ),
     );
   }

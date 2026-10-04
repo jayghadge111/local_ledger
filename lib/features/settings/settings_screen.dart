@@ -13,6 +13,7 @@ import '../../shared/widgets/glass_switch_row.dart';
 import '../lock/pin_setup_screen.dart';
 import '../update/update_test_card.dart';
 import 'widgets/backup_card.dart';
+import 'widgets/color_theme_picker.dart';
 import 'widgets/email_connect_card.dart';
 import 'widgets/profile_card.dart';
 import 'widgets/sms_connect_card.dart';
@@ -61,6 +62,8 @@ class SettingsScreen extends ConsumerWidget {
                       .read(themeModeControllerProvider)
                       .setThemeMode(s.first),
                 ),
+                const SizedBox(height: 20),
+                const ColorThemePicker(),
               ],
             ),
           ),

@@ -6,6 +6,7 @@ import 'providers.dart';
 /// Keys used in the AppSettings key-value table.
 abstract class SettingsKeys {
   static const themeMode = 'theme_mode'; // 'system' | 'light' | 'dark'
+  static const colorTheme = 'color_theme'; // ColorTheme.name
   static const onboardingComplete = 'onboarding_complete'; // 'true' | 'false'
   static const appLockEnabled = 'app_lock_enabled'; // 'true' | 'false'
   static const biometricEnabled = 'biometric_enabled'; // 'true' | 'false'
