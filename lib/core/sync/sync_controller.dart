@@ -319,7 +319,7 @@ class SyncController extends Notifier<SyncState> {
           e.code == GoogleSignInExceptionCode.canceled) {
         _setGmail(
           SyncJob(
-            message: 'Sign-in was cancelled.',
+            message: _signInCancelledText(e),
             resumable: await _store.gmail() != null,
           ),
         );
@@ -487,4 +487,16 @@ class SyncController extends Notifier<SyncState> {
     ];
     showRootSnackBar(parts.join(' · '));
   }
+}
+
+/// Android reports a misconfigured sign-in (e.g. this build's signing
+/// certificate isn't registered in Google Cloud) as "cancelled" too, usually
+/// a second after an account is picked — so say so, and show Google's own
+/// description when it gave one.
+String _signInCancelledText(GoogleSignInException e) {
+  final detail = e.description?.trim();
+  return 'Sign-in was cancelled'
+      '${detail == null || detail.isEmpty ? '' : ' ($detail)'}. '
+      "If you didn't cancel it, this build's signing key may not be "
+      'registered for Google sign-in.';
 }
