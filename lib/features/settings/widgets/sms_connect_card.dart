@@ -31,9 +31,8 @@ class SmsConnectCard extends ConsumerWidget {
           Text('SMS import (Android)', style: theme.textTheme.titleMedium),
           const SizedBox(height: 4),
           Text(
-            'Scans your SMS inbox for bank transaction alerts and adds any new ones. '
-            'Parsing happens entirely on this device — the original message is stored '
-            'encrypted, never sent anywhere.',
+            'Finds bank alert messages on your phone and adds them as transactions. '
+            'Everything stays on this phone.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

@@ -10,10 +10,9 @@ import '../../../shared/widgets/glass_surface.dart';
 
 /// Why we ask for the name — shown wherever it's collected.
 const nameExplanation =
-    'Used only on this device to tell payments you make to or receive from '
-    'yourself (moving money between your own accounts, UPI to yourself) from '
-    'real spending and income. They appear as Self Transfer and are left out '
-    'of your totals.';
+    'Helps us spot money you move between your own accounts. Those show up as '
+    "Self Transfer and aren't counted as spending or income. Your name stays "
+    'on this phone.';
 
 /// Saves [name] and re-checks existing transactions against it, so Self
 /// Transfers already imported are recognised straight away.

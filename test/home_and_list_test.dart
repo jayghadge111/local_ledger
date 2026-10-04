@@ -30,8 +30,12 @@ Future<void> unmount(WidgetTester tester) async {
 
 void main() {
   group('budget status', () {
-    Budget budget(String cat, int limit) =>
-        Budget(id: 'b$cat', categoryId: cat, monthlyLimitMinor: limit);
+    Budget budget(String cat, int limit) => Budget(
+      id: 'b$cat',
+      categoryId: cat,
+      monthlyLimitMinor: limit,
+      fromMonthKey: '0000-00',
+    );
     final oct = DateTime(2026, 10);
 
     test('over, warning and ok, worst first; only the chosen month counts', () {

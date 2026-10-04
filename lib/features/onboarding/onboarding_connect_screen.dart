@@ -41,8 +41,8 @@ class OnboardingConnectScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Optional, and you can change this anytime in Settings. Everything is '
-                      'parsed on this device — nothing is ever sent to a server of ours.',
+                      'Optional. Change it anytime in Settings. '
+                      'Your data stays on this phone and is never sent anywhere.',
                       style: theme.textTheme.bodyMedium?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),

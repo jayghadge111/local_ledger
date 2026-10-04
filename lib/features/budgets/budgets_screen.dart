@@ -14,8 +14,10 @@ import '../../shared/widgets/glass_surface.dart';
 import '../dashboard/dashboard_month.dart';
 import '../dashboard/widgets/month_selector.dart';
 
-/// Monthly limits per category. A limit can be set for every month, or for
-/// just one month (say, a tighter October) without touching the others.
+/// Monthly limits per category. A limit can start in a month and carry on
+/// from there, or apply to just one month (say, a tighter October). Months
+/// that are over are locked: they keep the budget they had, and changing one
+/// takes a deliberate "Edit anyway" and affects only that month.
 class BudgetsScreen extends ConsumerWidget {
   const BudgetsScreen({super.key});
 
@@ -27,6 +29,7 @@ class BudgetsScreen extends ConsumerWidget {
     final overrides =
         ref.watch(budgetOverridesProvider).value ?? const <BudgetOverride>[];
     final transactions = ref.watch(analyticsTransactionsProvider);
+    final past = isPastMonth(month, DateTime.now());
 
     final budgetByCategory = {for (final b in budgets) b.categoryId: b};
     final key = monthKeyOf(month);
@@ -58,7 +61,9 @@ class BudgetsScreen extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
               child: Text(
-                'Tap a category to set its limit — for every month, or only for ${monthYearLabel(month)}.',
+                past
+                    ? '${monthYearLabel(month)} is over, so its budgets are locked. Tap a category to change one for this month only.'
+                    : 'Tap a category to set its limit — from ${monthYearLabel(month)} on, or only for ${monthYearLabel(month)}.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -73,19 +78,25 @@ class BudgetsScreen extends ConsumerWidget {
                   spentMinor: spendByCategory[categories[i].id] ?? 0,
                   customForMonth: customThisMonth.contains(categories[i].id),
                   month: month,
-                  onTap: () => showDialog<void>(
-                    context: context,
-                    builder: (_) => CenteredDialogCard(
-                      child: _BudgetDialog(
-                        category: categories[i],
-                        month: month,
-                        current: budgetByCategory[categories[i].id],
-                        customForMonth: customThisMonth.contains(
-                          categories[i].id,
+                  locked: past,
+                  onTap: () async {
+                    if (past && !await _confirmEditPast(context, month)) return;
+                    if (!context.mounted) return;
+                    await showDialog<void>(
+                      context: context,
+                      builder: (_) => CenteredDialogCard(
+                        child: _BudgetDialog(
+                          category: categories[i],
+                          month: month,
+                          pastMonth: past,
+                          current: budgetByCategory[categories[i].id],
+                          customForMonth: customThisMonth.contains(
+                            categories[i].id,
+                          ),
                         ),
                       ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 10),
@@ -97,18 +108,48 @@ class BudgetsScreen extends ConsumerWidget {
   }
 }
 
-enum _Scope { thisMonth, allMonths }
+/// Asks before touching a month that is over.
+Future<bool> _confirmEditPast(BuildContext context, DateTime month) async {
+  final name = DateFormat('MMMM yyyy').format(month);
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('$name is over'),
+      content: Text(
+        'Its budgets are locked so past results stay accurate. You can still '
+        'change one for $name only — other months are not affected.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          child: const Text('Edit anyway'),
+        ),
+      ],
+    ),
+  );
+  return ok ?? false;
+}
+
+enum _Scope { thisMonth, fromHere }
 
 class _BudgetDialog extends ConsumerStatefulWidget {
   const _BudgetDialog({
     required this.category,
     required this.month,
+    required this.pastMonth,
     required this.current,
     required this.customForMonth,
   });
 
   final Category category;
   final DateTime month;
+
+  /// The month is over: only "this month" is offered.
+  final bool pastMonth;
   final Budget? current;
   final bool customForMonth;
 
@@ -123,11 +164,12 @@ class _BudgetDialogState extends ConsumerState<_BudgetDialog> {
         : (widget.current!.monthlyLimitMinor / 100).toStringAsFixed(0),
   );
 
-  // Changing an existing limit defaults to "just this month" so the other
-  // months aren't altered by accident; a first budget applies to every month.
-  late _Scope _scope = widget.current == null
-      ? _Scope.allMonths
-      : _Scope.thisMonth;
+  // Changing an existing limit defaults to "just this month" so later months
+  // aren't altered by accident; a first budget carries on from this month.
+  // A month that is over can only be changed for itself.
+  late _Scope _scope = widget.pastMonth || widget.current != null
+      ? _Scope.thisMonth
+      : _Scope.fromHere;
   String? _error;
 
   @override
@@ -150,14 +192,10 @@ class _BudgetDialogState extends ConsumerState<_BudgetDialog> {
         limitMinor: value * 100,
       );
     } else {
-      await repo.setBudget(
+      await repo.setBudgetFrom(
         categoryId: widget.category.id,
-        monthlyLimitMinor: value * 100,
-      );
-      // Setting it for every month replaces this month's custom limit too.
-      await repo.clearMonthBudget(
-        categoryId: widget.category.id,
-        month: widget.month,
+        fromMonth: widget.month,
+        limitMinor: value * 100,
       );
     }
     if (mounted) Navigator.of(context).pop();
@@ -213,32 +251,44 @@ class _BudgetDialogState extends ConsumerState<_BudgetDialog> {
                   const SizedBox(height: 14),
                   Text('Apply to', style: theme.textTheme.labelLarge),
                   const SizedBox(height: 8),
-                  SegmentedButton<_Scope>(
-                    showSelectedIcon: false,
-                    segments: [
-                      ButtonSegment(
-                        value: _Scope.thisMonth,
-                        label: Text(
-                          DateFormat('MMM yyyy').format(widget.month),
+                  if (widget.pastMonth)
+                    Text(
+                      'Only $monthName. It is over, so other months keep their limits.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    )
+                  else ...[
+                    SegmentedButton<_Scope>(
+                      showSelectedIcon: false,
+                      segments: [
+                        ButtonSegment(
+                          value: _Scope.thisMonth,
+                          label: Text(
+                            'Only ${DateFormat('MMM').format(widget.month)}',
+                          ),
                         ),
-                      ),
-                      const ButtonSegment(
-                        value: _Scope.allMonths,
-                        label: Text('All months'),
-                      ),
-                    ],
-                    selected: {_scope},
-                    onSelectionChanged: (s) => setState(() => _scope = s.first),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    _scope == _Scope.thisMonth
-                        ? 'Only $monthName changes; every other month keeps its own limit.'
-                        : 'Every month uses this limit, except months where you set a different one.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
+                        ButtonSegment(
+                          value: _Scope.fromHere,
+                          label: Text(
+                            'From ${DateFormat('MMM').format(widget.month)} on',
+                          ),
+                        ),
+                      ],
+                      selected: {_scope},
+                      onSelectionChanged: (s) =>
+                          setState(() => _scope = s.first),
                     ),
-                  ),
+                    const SizedBox(height: 6),
+                    Text(
+                      _scope == _Scope.thisMonth
+                          ? 'Only $monthName changes; every other month keeps its own limit.'
+                          : '$monthName and every month after it, until you change it again. Earlier months are not touched.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 18),
                   Row(
                     children: [
@@ -286,6 +336,7 @@ class _BudgetRow extends StatelessWidget {
     required this.spentMinor,
     required this.customForMonth,
     required this.month,
+    required this.locked,
     required this.onTap,
   });
 
@@ -294,6 +345,9 @@ class _BudgetRow extends StatelessWidget {
   final int spentMinor;
   final bool customForMonth;
   final DateTime month;
+
+  /// The month is over, so the budget is locked.
+  final bool locked;
   final VoidCallback onTap;
 
   @override
@@ -382,7 +436,7 @@ class _BudgetRow extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right),
+          Icon(locked ? Icons.lock_outline_rounded : Icons.chevron_right),
         ],
       ),
     );

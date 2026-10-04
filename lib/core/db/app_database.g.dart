@@ -3467,8 +3467,25 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _fromMonthKeyMeta = const VerificationMeta(
+    'fromMonthKey',
+  );
   @override
-  List<GeneratedColumn> get $columns => [id, categoryId, monthlyLimitMinor];
+  late final GeneratedColumn<String> fromMonthKey = GeneratedColumn<String>(
+    'from_month_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('0000-00'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    categoryId,
+    monthlyLimitMinor,
+    fromMonthKey,
+  ];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -3505,6 +3522,15 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
     } else if (isInserting) {
       context.missing(_monthlyLimitMinorMeta);
     }
+    if (data.containsKey('from_month_key')) {
+      context.handle(
+        _fromMonthKeyMeta,
+        fromMonthKey.isAcceptableOrUnknown(
+          data['from_month_key']!,
+          _fromMonthKeyMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -3526,6 +3552,10 @@ class $BudgetsTable extends Budgets with TableInfo<$BudgetsTable, Budget> {
         DriftSqlType.int,
         data['${effectivePrefix}monthly_limit_minor'],
       )!,
+      fromMonthKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}from_month_key'],
+      )!,
     );
   }
 
@@ -3539,10 +3569,17 @@ class Budget extends DataClass implements Insertable<Budget> {
   final String id;
   final String categoryId;
   final int monthlyLimitMinor;
+
+  /// The first month ("2026-10") this limit applies to. A category can have
+  /// several rows; a month uses the latest one that has started, so changing
+  /// a budget "from October on" never rewrites September. Budgets that
+  /// existed before this column keep "0000-00": they apply to every month.
+  final String fromMonthKey;
   const Budget({
     required this.id,
     required this.categoryId,
     required this.monthlyLimitMinor,
+    required this.fromMonthKey,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -3550,6 +3587,7 @@ class Budget extends DataClass implements Insertable<Budget> {
     map['id'] = Variable<String>(id);
     map['category_id'] = Variable<String>(categoryId);
     map['monthly_limit_minor'] = Variable<int>(monthlyLimitMinor);
+    map['from_month_key'] = Variable<String>(fromMonthKey);
     return map;
   }
 
@@ -3558,6 +3596,7 @@ class Budget extends DataClass implements Insertable<Budget> {
       id: Value(id),
       categoryId: Value(categoryId),
       monthlyLimitMinor: Value(monthlyLimitMinor),
+      fromMonthKey: Value(fromMonthKey),
     );
   }
 
@@ -3570,6 +3609,7 @@ class Budget extends DataClass implements Insertable<Budget> {
       id: serializer.fromJson<String>(json['id']),
       categoryId: serializer.fromJson<String>(json['categoryId']),
       monthlyLimitMinor: serializer.fromJson<int>(json['monthlyLimitMinor']),
+      fromMonthKey: serializer.fromJson<String>(json['fromMonthKey']),
     );
   }
   @override
@@ -3579,15 +3619,21 @@ class Budget extends DataClass implements Insertable<Budget> {
       'id': serializer.toJson<String>(id),
       'categoryId': serializer.toJson<String>(categoryId),
       'monthlyLimitMinor': serializer.toJson<int>(monthlyLimitMinor),
+      'fromMonthKey': serializer.toJson<String>(fromMonthKey),
     };
   }
 
-  Budget copyWith({String? id, String? categoryId, int? monthlyLimitMinor}) =>
-      Budget(
-        id: id ?? this.id,
-        categoryId: categoryId ?? this.categoryId,
-        monthlyLimitMinor: monthlyLimitMinor ?? this.monthlyLimitMinor,
-      );
+  Budget copyWith({
+    String? id,
+    String? categoryId,
+    int? monthlyLimitMinor,
+    String? fromMonthKey,
+  }) => Budget(
+    id: id ?? this.id,
+    categoryId: categoryId ?? this.categoryId,
+    monthlyLimitMinor: monthlyLimitMinor ?? this.monthlyLimitMinor,
+    fromMonthKey: fromMonthKey ?? this.fromMonthKey,
+  );
   Budget copyWithCompanion(BudgetsCompanion data) {
     return Budget(
       id: data.id.present ? data.id.value : this.id,
@@ -3597,6 +3643,9 @@ class Budget extends DataClass implements Insertable<Budget> {
       monthlyLimitMinor: data.monthlyLimitMinor.present
           ? data.monthlyLimitMinor.value
           : this.monthlyLimitMinor,
+      fromMonthKey: data.fromMonthKey.present
+          ? data.fromMonthKey.value
+          : this.fromMonthKey,
     );
   }
 
@@ -3605,37 +3654,43 @@ class Budget extends DataClass implements Insertable<Budget> {
     return (StringBuffer('Budget(')
           ..write('id: $id, ')
           ..write('categoryId: $categoryId, ')
-          ..write('monthlyLimitMinor: $monthlyLimitMinor')
+          ..write('monthlyLimitMinor: $monthlyLimitMinor, ')
+          ..write('fromMonthKey: $fromMonthKey')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, categoryId, monthlyLimitMinor);
+  int get hashCode =>
+      Object.hash(id, categoryId, monthlyLimitMinor, fromMonthKey);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Budget &&
           other.id == this.id &&
           other.categoryId == this.categoryId &&
-          other.monthlyLimitMinor == this.monthlyLimitMinor);
+          other.monthlyLimitMinor == this.monthlyLimitMinor &&
+          other.fromMonthKey == this.fromMonthKey);
 }
 
 class BudgetsCompanion extends UpdateCompanion<Budget> {
   final Value<String> id;
   final Value<String> categoryId;
   final Value<int> monthlyLimitMinor;
+  final Value<String> fromMonthKey;
   final Value<int> rowid;
   const BudgetsCompanion({
     this.id = const Value.absent(),
     this.categoryId = const Value.absent(),
     this.monthlyLimitMinor = const Value.absent(),
+    this.fromMonthKey = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   BudgetsCompanion.insert({
     required String id,
     required String categoryId,
     required int monthlyLimitMinor,
+    this.fromMonthKey = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        categoryId = Value(categoryId),
@@ -3644,12 +3699,14 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     Expression<String>? id,
     Expression<String>? categoryId,
     Expression<int>? monthlyLimitMinor,
+    Expression<String>? fromMonthKey,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (categoryId != null) 'category_id': categoryId,
       if (monthlyLimitMinor != null) 'monthly_limit_minor': monthlyLimitMinor,
+      if (fromMonthKey != null) 'from_month_key': fromMonthKey,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -3658,12 +3715,14 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     Value<String>? id,
     Value<String>? categoryId,
     Value<int>? monthlyLimitMinor,
+    Value<String>? fromMonthKey,
     Value<int>? rowid,
   }) {
     return BudgetsCompanion(
       id: id ?? this.id,
       categoryId: categoryId ?? this.categoryId,
       monthlyLimitMinor: monthlyLimitMinor ?? this.monthlyLimitMinor,
+      fromMonthKey: fromMonthKey ?? this.fromMonthKey,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -3680,6 +3739,9 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
     if (monthlyLimitMinor.present) {
       map['monthly_limit_minor'] = Variable<int>(monthlyLimitMinor.value);
     }
+    if (fromMonthKey.present) {
+      map['from_month_key'] = Variable<String>(fromMonthKey.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -3692,6 +3754,7 @@ class BudgetsCompanion extends UpdateCompanion<Budget> {
           ..write('id: $id, ')
           ..write('categoryId: $categoryId, ')
           ..write('monthlyLimitMinor: $monthlyLimitMinor, ')
+          ..write('fromMonthKey: $fromMonthKey, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -10094,12 +10157,14 @@ typedef $$BudgetsTableCreateCompanionBuilder = BudgetsCompanion Function({
   required String id,
   required String categoryId,
   required int monthlyLimitMinor,
+  Value<String> fromMonthKey,
   Value<int> rowid,
 });
 typedef $$BudgetsTableUpdateCompanionBuilder = BudgetsCompanion Function({
   Value<String> id,
   Value<String> categoryId,
   Value<int> monthlyLimitMinor,
+  Value<String> fromMonthKey,
   Value<int> rowid,
 });
 
@@ -10141,6 +10206,11 @@ class $$BudgetsTableFilterComposer
 
   ColumnFilters<int> get monthlyLimitMinor => $composableBuilder(
     column: $table.monthlyLimitMinor,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get fromMonthKey => $composableBuilder(
+    column: $table.fromMonthKey,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -10187,6 +10257,11 @@ class $$BudgetsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get fromMonthKey => $composableBuilder(
+    column: $table.fromMonthKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$CategoriesTableOrderingComposer get categoryId {
     final $$CategoriesTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -10225,6 +10300,11 @@ class $$BudgetsTableAnnotationComposer
 
   GeneratedColumn<int> get monthlyLimitMinor => $composableBuilder(
     column: $table.monthlyLimitMinor,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get fromMonthKey => $composableBuilder(
+    column: $table.fromMonthKey,
     builder: (column) => column,
   );
 
@@ -10283,11 +10363,13 @@ class $$BudgetsTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> categoryId = const Value.absent(),
                 Value<int> monthlyLimitMinor = const Value.absent(),
+                Value<String> fromMonthKey = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BudgetsCompanion(
                 id: id,
                 categoryId: categoryId,
                 monthlyLimitMinor: monthlyLimitMinor,
+                fromMonthKey: fromMonthKey,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -10295,11 +10377,13 @@ class $$BudgetsTableTableManager
                 required String id,
                 required String categoryId,
                 required int monthlyLimitMinor,
+                Value<String> fromMonthKey = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => BudgetsCompanion.insert(
                 id: id,
                 categoryId: categoryId,
                 monthlyLimitMinor: monthlyLimitMinor,
+                fromMonthKey: fromMonthKey,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

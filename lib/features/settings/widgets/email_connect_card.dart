@@ -50,8 +50,8 @@ class _EmailConnectCardState extends ConsumerState<EmailConnectCard> {
           Text('Gmail import', style: theme.textTheme.titleMedium),
           const SizedBox(height: 4),
           Text(
-            'Reads recent bank alert emails directly from your Gmail account — nothing '
-            'passes through a server of ours. Read-only: your mail is never changed.',
+            'Finds bank alert emails in your Gmail and adds them as transactions. '
+            'Read-only: your emails are never changed.',
             style: theme.textTheme.bodySmall?.copyWith(
               color: theme.colorScheme.onSurfaceVariant,
             ),

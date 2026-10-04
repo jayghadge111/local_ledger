@@ -331,8 +331,12 @@ void main() {
   });
 
   group('per-month budgets', () {
-    Budget standing(String cat, int limit) =>
-        Budget(id: 'b$cat', categoryId: cat, monthlyLimitMinor: limit);
+    Budget standing(String cat, int limit, [String from = '0000-00']) => Budget(
+      id: 'b$cat$from',
+      categoryId: cat,
+      monthlyLimitMinor: limit,
+      fromMonthKey: from,
+    );
     BudgetOverride override(String cat, String key, int limit) =>
         BudgetOverride(
           id: 'o$cat$key',
@@ -389,9 +393,10 @@ void main() {
         final db = AppDatabase.forTesting(NativeDatabase.memory());
         addTearDown(db.close);
         final repo = BudgetsRepository(db);
-        await repo.setBudget(
+        await repo.setBudgetFrom(
           categoryId: 'cat_shopping',
-          monthlyLimitMinor: 500000,
+          fromMonth: DateTime(2026, 1),
+          limitMinor: 500000,
         );
         await repo.setMonthBudget(
           categoryId: 'cat_shopping',
@@ -436,6 +441,124 @@ void main() {
             DateTime(2026, 10),
           ).single.monthlyLimitMinor,
           500000,
+        );
+      },
+    );
+
+    group('a change takes effect from its month, not before', () {
+      final food = [
+        standing('cat_food', 500000), // always
+        standing('cat_food', 700000, '2026-10'), // raised from October
+      ];
+      int limitIn(List<Budget> b, int year, int month) => budgetsForMonth(
+        b,
+        const [],
+        DateTime(year, month),
+      ).single.monthlyLimitMinor;
+
+      test('earlier months keep the old limit, later ones carry the new', () {
+        expect(limitIn(food, 2026, 9), 500000);
+        expect(limitIn(food, 2026, 10), 700000);
+        expect(limitIn(food, 2026, 11), 700000); // carried forward
+        expect(limitIn(food, 2027, 3), 700000);
+      });
+
+      test('a budget that starts later does not exist before it', () {
+        final later = [standing('cat_food', 400000, '2026-10')];
+        expect(budgetsForMonth(later, const [], DateTime(2026, 9)), isEmpty);
+        expect(limitIn(later, 2026, 10), 400000);
+      });
+
+      test('a newer change from a later month stacks on top', () {
+        final stacked = [...food, standing('cat_food', 900000, '2027-01')];
+        expect(limitIn(stacked, 2026, 12), 700000);
+        expect(limitIn(stacked, 2027, 1), 900000);
+        expect(limitIn(stacked, 2026, 9), 500000);
+      });
+
+      test('a one-month limit still wins over the version in force', () {
+        final one = budgetsForMonth(food, [
+          override('cat_food', '2026-11', 100000),
+        ], DateTime(2026, 11));
+        expect(one.single.monthlyLimitMinor, 100000);
+        expect(limitIn(food, 2026, 12), 700000); // back to normal after
+      });
+
+      test('each category is resolved on its own', () {
+        final both = [...food, standing('cat_fuel', 200000)];
+        final sep = budgetsForMonth(both, const [], DateTime(2026, 9));
+        expect(
+          {for (final b in sep) b.categoryId: b.monthlyLimitMinor},
+          {'cat_food': 500000, 'cat_fuel': 200000},
+        );
+      });
+    });
+
+    test('isPastMonth: only months before this one are locked', () {
+      final now = DateTime(2026, 10, 15);
+      expect(isPastMonth(DateTime(2026, 9), now), isTrue);
+      expect(isPastMonth(DateTime(2025, 12), now), isTrue);
+      expect(isPastMonth(DateTime(2026, 10), now), isFalse);
+      expect(isPastMonth(DateTime(2026, 11), now), isFalse);
+    });
+
+    test('repository: "from October on" leaves September alone', () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final repo = BudgetsRepository(db);
+      await repo.setBudgetFrom(
+        categoryId: 'cat_food',
+        fromMonth: DateTime(2026, 1),
+        limitMinor: 500000,
+      );
+      await repo.setBudgetFrom(
+        categoryId: 'cat_food',
+        fromMonth: DateTime(2026, 10),
+        limitMinor: 700000,
+      );
+      // Setting October again replaces it rather than adding a third row.
+      await repo.setBudgetFrom(
+        categoryId: 'cat_food',
+        fromMonth: DateTime(2026, 10),
+        limitMinor: 750000,
+      );
+      final rows = await db.select(db.budgets).get();
+      expect(rows, hasLength(2));
+      int limitIn(int y, int m) => budgetsForMonth(
+        rows,
+        const [],
+        DateTime(y, m),
+      ).single.monthlyLimitMinor;
+      expect(limitIn(2026, 9), 500000);
+      expect(limitIn(2026, 10), 750000);
+      expect(limitIn(2026, 12), 750000);
+    });
+
+    test(
+      'repository: "from October on" replaces a one-off October limit',
+      () async {
+        final db = AppDatabase.forTesting(NativeDatabase.memory());
+        addTearDown(db.close);
+        final repo = BudgetsRepository(db);
+        await repo.setMonthBudget(
+          categoryId: 'cat_food',
+          month: DateTime(2026, 10),
+          limitMinor: 100000,
+        );
+        await repo.setBudgetFrom(
+          categoryId: 'cat_food',
+          fromMonth: DateTime(2026, 10),
+          limitMinor: 600000,
+        );
+        expect(await db.select(db.budgetOverrides).get(), isEmpty);
+        final rows = await db.select(db.budgets).get();
+        expect(
+          budgetsForMonth(
+            rows,
+            const [],
+            DateTime(2026, 10),
+          ).single.monthlyLimitMinor,
+          600000,
         );
       },
     );

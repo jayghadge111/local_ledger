@@ -20,6 +20,10 @@ abstract class SettingsKeys {
   static const gmailCheckpoint = 'gmail_import_checkpoint'; // JSON
   static const smsCheckpoint = 'sms_import_checkpoint'; // JSON
   static const smsAutoSync = 'sms_auto_sync'; // 'true' | 'false'
+  static const budgetReviewDismissed =
+      'budget_review_dismissed'; // month key the review card was put away for
+  static const monthSummaryShown =
+      'month_summary_shown'; // month key of the last month-end notification
 }
 
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {

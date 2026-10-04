@@ -176,6 +176,13 @@ class Budgets extends Table {
   TextColumn get categoryId => text().references(Categories, #id)();
   IntColumn get monthlyLimitMinor => integer()();
 
+  /// The first month ("2026-10") this limit applies to. A category can have
+  /// several rows; a month uses the latest one that has started, so changing
+  /// a budget "from October on" never rewrites September. Budgets that
+  /// existed before this column keep "0000-00": they apply to every month.
+  TextColumn get fromMonthKey =>
+      text().withDefault(const Constant('0000-00'))();
+
   @override
   Set<Column> get primaryKey => {id};
 }

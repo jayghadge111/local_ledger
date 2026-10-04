@@ -37,7 +37,10 @@ class ManageScreen extends ConsumerWidget {
       decimalDigits: 0,
     );
 
-    final budgets = ref.watch(budgetsProvider).value ?? const <Budget>[];
+    final now = DateTime.now();
+    final budgets = ref.watch(
+      monthBudgetsProvider(DateTime(now.year, now.month)),
+    );
     final shares = ref.watch(splitSharesProvider).value ?? const <SplitShare>[];
     final unparsed =
         ref.watch(unparsedMessagesProvider).value ?? const <UnparsedMessage>[];

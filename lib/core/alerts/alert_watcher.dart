@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../analytics/analytics_providers.dart';
+import '../analytics/budget_review.dart';
 import '../analytics/budget_status.dart';
 import '../db/budgets_repository.dart';
 import '../db/providers.dart';
@@ -60,11 +61,50 @@ class _AlertWatcher {
     try {
       do {
         _again = false;
+        await _checkMonthSummaryOnce();
         await _checkBudgetsOnce();
       } while (_again);
     } finally {
       _checking = false;
     }
+  }
+
+  /// Once per month, the first time the app opens in it: how last month went
+  /// against its budgets ("3 of 12 went over: Food, Shopping, Fuel.").
+  Future<void> _checkMonthSummaryOnce() async {
+    final categories = _ref.read(categoriesProvider).value;
+    // Wait until everything has loaded, or an empty list would read as
+    // "all within budget" and use up this month's notification.
+    if (categories == null ||
+        !_ref.read(transactionsProvider).hasValue ||
+        !_ref.read(budgetsProvider).hasValue ||
+        !_ref.read(budgetOverridesProvider).hasValue) {
+      return;
+    }
+    final now = DateTime.now();
+    final last = DateTime(now.year, now.month - 1);
+    final key = monthKeyOf(last);
+    final settings = _ref.read(settingsRepositoryProvider);
+    if (await settings.get(SettingsKeys.monthSummaryShown) == key) return;
+    await settings.set(SettingsKeys.monthSummaryShown, key);
+
+    final review = buildBudgetReview(
+      budgetsLastMonth: _ref.read(monthBudgetsProvider(last)),
+      transactions: _ref.read(analyticsTransactionsProvider),
+      month: last,
+    );
+    if (review == null) return;
+    final names = {for (final c in categories) c.id: c.name};
+    final text = monthSummaryText(
+      review,
+      (id) => names[id] ?? 'Other',
+      DateFormat('MMMM').format(last),
+    );
+    await _notifications.showNow(
+      id: 0x50000000 | (key.hashCode & 0x0fffffff),
+      title: text.title,
+      body: text.body,
+    );
   }
 
   Future<void> _checkBudgetsOnce() async {

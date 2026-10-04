@@ -32,6 +32,8 @@ class BackupService {
       'transactions':
           (await _db.select(_db.transactions).get()).map((e) => e.toJson()).toList(),
       'budgets': (await _db.select(_db.budgets).get()).map((e) => e.toJson()).toList(),
+      'budgetOverrides':
+          (await _db.select(_db.budgetOverrides).get()).map((e) => e.toJson()).toList(),
       'rules': (await _db.select(_db.rules).get()).map((e) => e.toJson()).toList(),
       'ownIdentifiers':
           (await _db.select(_db.ownIdentifiers).get()).map((e) => e.toJson()).toList(),
@@ -107,7 +109,16 @@ class BackupService {
       }
       for (final row in (payload['budgets'] as List? ?? [])) {
         await _db.into(_db.budgets).insertOnConflictUpdate(
-              Budget.fromJson(row as Map<String, dynamic>).toCompanion(true),
+              // Backups from before budgets had a start month: every month.
+              Budget.fromJson({
+                'fromMonthKey': '0000-00',
+                ...(row as Map<String, dynamic>),
+              }).toCompanion(true),
+            );
+      }
+      for (final row in (payload['budgetOverrides'] as List? ?? [])) {
+        await _db.into(_db.budgetOverrides).insertOnConflictUpdate(
+              BudgetOverride.fromJson(row as Map<String, dynamic>).toCompanion(true),
             );
       }
       for (final row in (payload['rules'] as List? ?? [])) {

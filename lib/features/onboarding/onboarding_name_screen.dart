@@ -127,41 +127,45 @@ class _OnboardingNameScreenState extends ConsumerState<OnboardingNameScreen> {
                         ),
                       ),
                     ],
-                    const SizedBox(height: 20),
-                    FadeSlideIn(
-                      delay: const Duration(milliseconds: 100),
-                      child: GlassCard(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(
-                              Icons.sync_alt_rounded,
-                              color: theme.colorScheme.onSurface,
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Why we ask',
-                                    style: theme.textTheme.titleSmall,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    nameExplanation,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: muted,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                   ],
+                ),
+              ),
+              // Pinned just above Continue so it stays in view with the
+              // keyboard open.
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+                child: FadeSlideIn(
+                  delay: const Duration(milliseconds: 100),
+                  child: GlassCard(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.sync_alt_rounded,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Why we ask',
+                                style: theme.textTheme.titleSmall,
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                nameExplanation,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: muted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
               Padding(

@@ -17,6 +17,7 @@ import 'widgets/month_selector.dart';
 import 'widgets/category_donut_chart.dart';
 import 'widgets/chart_buckets.dart';
 import 'widgets/spend_bar_chart.dart';
+import 'widgets/budget_review_card.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -116,6 +117,7 @@ class DashboardScreen extends ConsumerWidget {
               ),
             ),
             const SizedBox(height: 16),
+            const BudgetReviewCard(),
             if (hasTrendData)
               FadeSlideIn(
                 delay: const Duration(milliseconds: 45),

@@ -113,8 +113,8 @@ class ProfileCard extends ConsumerWidget {
                               Expanded(
                                 child: Text(
                                   name == null
-                                      ? 'Add your name so payments to yourself show as Self Transfer, not spending.'
-                                      : 'Used on this device to spot Self Transfers.',
+                                      ? 'Add your name so we can spot money you move between your own accounts.'
+                                      : 'Helps spot money you move between your own accounts. Stays on this phone.',
                                   style: theme.textTheme.bodySmall?.copyWith(
                                     color: fg.withValues(alpha: 0.65),
                                   ),

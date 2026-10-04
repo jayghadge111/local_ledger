@@ -36,7 +36,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -85,6 +85,11 @@ class AppDatabase extends _$AppDatabase {
             await m.createTable(lendingPayments);
             await m.createTable(parserTemplates);
             await m.createTable(budgetOverrides);
+          }
+          if (from < 8) {
+            // Existing rows get the default "0000-00": in force for every
+            // month, exactly as before.
+            await m.addColumn(budgets, budgets.fromMonthKey);
           }
         },
       );
