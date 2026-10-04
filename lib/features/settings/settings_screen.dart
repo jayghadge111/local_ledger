@@ -140,6 +140,9 @@ class SettingsScreen extends ConsumerWidget {
           delay: const Duration(milliseconds: 55),
           child: const EmailConnectCard(),
         ),
+        const SizedBox(height: 28),
+        const _MadeInIndia(),
+        const SizedBox(height: 12),
       ],
     );
   }
@@ -268,6 +271,27 @@ class _SecurityCard extends ConsumerWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// The sign-off at the very bottom of Settings.
+class _MadeInIndia extends StatelessWidget {
+  const _MadeInIndia();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Text(
+        'Made with ❤️ in India',
+        textAlign: TextAlign.center,
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.2,
+        ),
       ),
     );
   }
