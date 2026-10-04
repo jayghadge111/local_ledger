@@ -140,9 +140,9 @@ class SettingsScreen extends ConsumerWidget {
           delay: const Duration(milliseconds: 55),
           child: const EmailConnectCard(),
         ),
-        const SizedBox(height: 28),
+        const SizedBox(height: 32),
         const _MadeInIndia(),
-        const SizedBox(height: 12),
+        const SizedBox(height: 20),
       ],
     );
   }
@@ -287,9 +287,10 @@ class _MadeInIndia extends StatelessWidget {
       child: Text(
         'Made with ❤️ in India',
         textAlign: TextAlign.center,
-        style: theme.textTheme.bodySmall?.copyWith(
+        style: theme.textTheme.titleMedium?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.w600,
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
           letterSpacing: 0.2,
         ),
       ),
