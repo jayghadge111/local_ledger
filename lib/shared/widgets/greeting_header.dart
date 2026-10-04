@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
@@ -7,12 +8,28 @@ import '../../core/profile/greeting.dart';
 import '../../features/settings/widgets/edit_name_dialog.dart';
 import '../../core/theme/app_theme.dart';
 
-IconData dayPartIcon(DayPart part) => switch (part) {
-  DayPart.morning => Icons.wb_twilight_rounded,
-  DayPart.afternoon => Icons.wb_sunny_rounded,
-  DayPart.evening => Icons.wb_twilight_rounded,
-  DayPart.night => Icons.nightlight_round,
+/// The artwork for each part of the day (full-colour SVGs in
+/// `assets/icons/daypart/`): sunrise for morning and evening, sun for the
+/// afternoon, moon at night.
+String dayPartAsset(DayPart part) => switch (part) {
+  DayPart.morning => 'assets/icons/daypart/sunrise.svg',
+  DayPart.afternoon => 'assets/icons/daypart/sun.svg',
+  DayPart.evening => 'assets/icons/daypart/sunrise.svg',
+  DayPart.night => 'assets/icons/daypart/moon.svg',
 };
+
+/// The greeting's sun / moon, drawn in its own colours.
+class DayPartIcon extends StatelessWidget {
+  const DayPartIcon(this.part, {super.key, this.size = 22});
+
+  final DayPart part;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return SvgPicture.asset(dayPartAsset(part), width: size, height: size);
+  }
+}
 
 /// A round monogram of the user's initials — black on the light theme, white
 /// on dark — with a soft ring.
@@ -95,11 +112,7 @@ class GreetingHeader extends ConsumerWidget {
                     children: [
                       Row(
                         children: [
-                          Icon(
-                            dayPartIcon(dayPartOf(now)),
-                            size: 15,
-                            color: muted,
-                          ),
+                          DayPartIcon(dayPartOf(now)),
                           const SizedBox(width: 6),
                           Flexible(
                             child: Text(

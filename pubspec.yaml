@@ -84,6 +84,8 @@ flutter:
 
   assets:
     - assets/icon/
+    - assets/icons/nav/
+    - assets/icons/daypart/
     - assets/brand/
     - assets/logos/
     - assets/illustrations/

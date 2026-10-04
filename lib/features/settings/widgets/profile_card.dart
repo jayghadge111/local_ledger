@@ -71,11 +71,7 @@ class ProfileCard extends ConsumerWidget {
                                   children: [
                                     Row(
                                       children: [
-                                        Icon(
-                                          dayPartIcon(dayPartOf(now)),
-                                          size: 15,
-                                          color: fg.withValues(alpha: 0.7),
-                                        ),
+                                        DayPartIcon(dayPartOf(now)),
                                         const SizedBox(width: 6),
                                         Flexible(
                                           child: Text(

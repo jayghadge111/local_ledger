@@ -8,6 +8,7 @@ import '../../features/manage/manage_screen.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/transactions/transactions_screen.dart';
 import '../../shared/widgets/glass_background.dart';
+import '../../shared/widgets/nav_svg_icon.dart';
 import '../../shared/widgets/sync_banner.dart';
 import '../alerts/alert_watcher.dart';
 import '../update/update_controller.dart';
@@ -71,29 +72,21 @@ class _AppShellState extends ConsumerState<AppShell>
   void _syncSms() => ref.read(syncControllerProvider.notifier).syncSmsIfDue();
 
   static const _destinations = [
+    NavigationDestination(icon: NavSvgIcon('home'), label: 'Home'),
     NavigationDestination(
-      icon: Icon(Icons.grid_view_rounded),
-      selectedIcon: Icon(Icons.grid_view_rounded),
-      label: 'Home',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.receipt_long_rounded),
-      selectedIcon: Icon(Icons.receipt_long_rounded),
+      icon: NavSvgIcon('transaction', scale: 1.05),
       label: 'Transactions',
     ),
     NavigationDestination(
-      icon: Icon(Icons.tune_rounded),
-      selectedIcon: Icon(Icons.tune_rounded),
+      icon: NavSvgIcon('filter', scale: 1.15),
       label: 'Manage',
     ),
     NavigationDestination(
-      icon: Icon(Icons.notifications_rounded),
-      selectedIcon: Icon(Icons.notifications_rounded),
+      icon: NavSvgIcon('bell-ringing', scale: 1.15),
       label: 'Alerts',
     ),
     NavigationDestination(
-      icon: Icon(Icons.settings_rounded),
-      selectedIcon: Icon(Icons.settings_rounded),
+      icon: NavSvgIcon('settings', scale: 0.98),
       label: 'Settings',
     ),
   ];
