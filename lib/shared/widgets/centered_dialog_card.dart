@@ -14,7 +14,9 @@ class CenteredDialogCard extends StatelessWidget {
       child: SafeArea(
         child: AnimatedPadding(
           duration: const Duration(milliseconds: 150),
-          padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.viewInsetsOf(context).bottom,
+          ),
           child: child,
         ),
       ),

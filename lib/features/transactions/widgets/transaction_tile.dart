@@ -33,6 +33,7 @@ class TransactionTile extends ConsumerWidget {
     final isCredit = transaction.type == 'credit';
     final isTransfer = transaction.kind == 'transfer';
     final isRefund = transaction.kind == 'refund';
+    final isCardPayment = transaction.kind == 'card_payment';
     final isInr = transaction.currency == 'INR';
     final amount = NumberFormat.currency(
       locale: 'en_IN',
@@ -40,7 +41,7 @@ class TransactionTile extends ConsumerWidget {
       decimalDigits: 2,
     ).format(transaction.amountMinor / 100);
     // Transfers aren't income or spending, so they stay neutral.
-    final amountColor = isTransfer
+    final amountColor = (isTransfer || isCardPayment)
         ? theme.colorScheme.onSurfaceVariant
         : (isCredit ? Colors.green : Colors.red);
 
@@ -54,7 +55,9 @@ class TransactionTile extends ConsumerWidget {
             merchant: transaction.merchant,
             categoryIconKey: category?.icon,
             isTransfer: isTransfer,
-            bankName: transaction.rawMerchant == null ? account?.bankName : null,
+            bankName: transaction.rawMerchant == null
+                ? account?.bankName
+                : null,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -70,7 +73,7 @@ class TransactionTile extends ConsumerWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        '${isTransfer ? 'Not counted' : (category?.name ?? 'Uncategorized')} · ${DateFormat.yMMMd().format(transaction.date)}',
+                        '${isTransfer || isCardPayment ? 'Not counted' : (category?.name ?? 'Uncategorized')} · ${DateFormat.yMMMd().format(transaction.date)}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -83,7 +86,8 @@ class TransactionTile extends ConsumerWidget {
                     hasSplit ||
                     transaction.isInternational ||
                     transaction.isFlaggedUnusual ||
-                    isRefund) ...[
+                    isRefund ||
+                    isCardPayment) ...[
                   const SizedBox(height: 6),
                   Wrap(
                     spacing: 6,
@@ -100,6 +104,12 @@ class TransactionTile extends ConsumerWidget {
                               ? Icons.currency_exchange_rounded
                               : Icons.credit_card_rounded,
                           label: cardLabel,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      if (isCardPayment)
+                        FlagChip(
+                          icon: Icons.credit_score_rounded,
+                          label: 'Card bill · not counted',
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       if (isRefund)

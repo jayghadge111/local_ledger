@@ -5,5 +5,8 @@ import '../ingest/ingest_providers.dart';
 import 'sms_import_service.dart';
 
 final smsImportServiceProvider = Provider<SmsImportService>((ref) {
-  return SmsImportService(ref.watch(ingestorProvider), ref.watch(settingsRepositoryProvider));
+  return SmsImportService(
+    ref.watch(ingestorProvider),
+    ref.watch(settingsRepositoryProvider),
+  );
 });

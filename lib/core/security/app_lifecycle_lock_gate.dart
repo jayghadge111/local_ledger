@@ -13,7 +13,8 @@ class AppLifecycleLockGate extends ConsumerStatefulWidget {
   final Widget child;
 
   @override
-  ConsumerState<AppLifecycleLockGate> createState() => _AppLifecycleLockGateState();
+  ConsumerState<AppLifecycleLockGate> createState() =>
+      _AppLifecycleLockGateState();
 }
 
 class _AppLifecycleLockGateState extends ConsumerState<AppLifecycleLockGate>
@@ -57,12 +58,14 @@ class _AppLifecycleLockGateState extends ConsumerState<AppLifecycleLockGate>
       _wasBackgrounded = false;
       final pausedAt = _pausedAt;
       _pausedAt = null;
-      if (pausedAt != null && DateTime.now().difference(pausedAt) < _gracePeriod) {
+      if (pausedAt != null &&
+          DateTime.now().difference(pausedAt) < _gracePeriod) {
         return;
       }
 
       final settings = ref.read(settingsRepositoryProvider);
-      final lockEnabled = (await settings.get(SettingsKeys.appLockEnabled)) == 'true';
+      final lockEnabled =
+          (await settings.get(SettingsKeys.appLockEnabled)) == 'true';
       final hasPin = (await settings.get(SettingsKeys.pinHash)) != null;
       if (!mounted) return;
       if (lockEnabled && hasPin) {

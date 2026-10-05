@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 
 /// A small rounded label with an icon — "Transfer", "Split · Rahul", etc.
 class FlagChip extends StatelessWidget {
-  const FlagChip({super.key, required this.icon, required this.label, required this.color});
+  const FlagChip({
+    super.key,
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
 
   final IconData icon;
   final String label;
@@ -25,7 +30,11 @@ class FlagChip extends StatelessWidget {
             child: Text(
               label,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
+              style: TextStyle(
+                fontSize: 11,
+                color: color,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],

@@ -11,7 +11,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 /// WebCrypto-backed storage on web). Nothing here ever leaves the device.
 class EncryptionService {
   EncryptionService({FlutterSecureStorage? secureStorage})
-      : _secureStorage = secureStorage ?? const FlutterSecureStorage();
+    : _secureStorage = secureStorage ?? const FlutterSecureStorage();
 
   static const _keyStorageKey = 'local_ledger.aes_master_key';
 
@@ -32,10 +32,7 @@ class EncryptionService {
 
     final newKey = await _algorithm.newSecretKey();
     final bytes = await newKey.extractBytes();
-    await _secureStorage.write(
-      key: _keyStorageKey,
-      value: base64Encode(bytes),
-    );
+    await _secureStorage.write(key: _keyStorageKey, value: base64Encode(bytes));
     _cachedKey = newKey;
     return newKey;
   }
@@ -69,14 +66,24 @@ class EncryptionService {
   /// device-bound one — used for exporting a backup with a user passphrase,
   /// since the device key never leaves this install and would be useless
   /// for decrypting a backup after a reinstall or on another device.
-  Future<Uint8List> encryptBytesWithKey(List<int> bytes, List<int> keyBytes) async {
+  Future<Uint8List> encryptBytesWithKey(
+    List<int> bytes,
+    List<int> keyBytes,
+  ) async {
     final key = SecretKey(keyBytes);
     final nonce = _algorithm.newNonce();
-    final secretBox = await _algorithm.encrypt(bytes, secretKey: key, nonce: nonce);
+    final secretBox = await _algorithm.encrypt(
+      bytes,
+      secretKey: key,
+      nonce: nonce,
+    );
     return Uint8List.fromList(secretBox.concatenation());
   }
 
-  Future<Uint8List> decryptBytesWithKey(List<int> bytes, List<int> keyBytes) async {
+  Future<Uint8List> decryptBytesWithKey(
+    List<int> bytes,
+    List<int> keyBytes,
+  ) async {
     final key = SecretKey(keyBytes);
     final secretBox = SecretBox.fromConcatenation(
       bytes,

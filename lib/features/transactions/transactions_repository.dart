@@ -27,6 +27,7 @@ class TransactionsRepository {
     bool isInternational = false,
     String? accountId,
     bool isTransfer = false,
+    bool isCardPayment = false,
   }) async {
     final id = _uuid.v4();
     await _db
@@ -43,8 +44,14 @@ class TransactionsRepository {
             source: 'manual',
             userEdited: const Value(true),
             isInternational: Value(isInternational),
-            kind: Value(isTransfer ? 'transfer' : 'normal'),
-            kindLocked: Value(isTransfer),
+            kind: Value(
+              isTransfer
+                  ? 'transfer'
+                  : (isCardPayment && type == 'debit'
+                        ? 'card_payment'
+                        : 'normal'),
+            ),
+            kindLocked: Value(isTransfer || isCardPayment),
           ),
         );
     await Reconciler(_db).run();
@@ -63,6 +70,7 @@ class TransactionsRepository {
     bool isInternational = false,
     String? accountId,
     bool? isTransfer,
+    bool? isCardPayment,
   }) async {
     final existing = await (_db.select(
       _db.transactions,
@@ -84,6 +92,11 @@ class TransactionsRepository {
 
     if (isTransfer != null && isTransfer != (existing.kind == 'transfer')) {
       await setTransfer(id, isTransfer);
+    }
+    if (isTransfer != true &&
+        isCardPayment != null &&
+        isCardPayment != (existing.kind == 'card_payment')) {
+      await setCardPayment(id, isCardPayment && type == 'debit');
     }
 
     var applied = await _learnAlias(existing, newMerchant, categoryId);
@@ -181,6 +194,19 @@ class TransactionsRepository {
               t.userEdited.equals(false),
         ))
         .write(TransactionsCompanion(categoryId: Value(categoryId)));
+  }
+
+  /// Marks a debit as a credit-card bill payment (shown, but not counted as
+  /// spending) or back to a normal expense. Locked so re-reading the message
+  /// can't undo the user's choice.
+  Future<void> setCardPayment(String id, bool isCardPayment) async {
+    await (_db.update(_db.transactions)..where((t) => t.id.equals(id))).write(
+      TransactionsCompanion(
+        kind: Value(isCardPayment ? 'card_payment' : 'normal'),
+        kindLocked: const Value(true),
+        transferGroupId: const Value(null),
+      ),
+    );
   }
 
   /// Marks a transaction as a transfer between the user's own accounts (or

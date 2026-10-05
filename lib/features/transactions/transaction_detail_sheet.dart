@@ -65,13 +65,14 @@ class TransactionDetailSheet extends ConsumerWidget {
 
     final isCredit = t.type == 'credit';
     final isTransfer = t.kind == 'transfer';
+    final isCardPayment = t.kind == 'card_payment';
     final isInr = t.currency == 'INR';
     final money = NumberFormat.currency(
       locale: 'en_IN',
       symbol: isInr ? '₹' : '${t.currency} ',
       decimalDigits: 2,
     );
-    final amountColor = isTransfer
+    final amountColor = (isTransfer || isCardPayment)
         ? theme.colorScheme.onSurfaceVariant
         : (isCredit ? Colors.green : Colors.red);
 
@@ -137,7 +138,9 @@ class TransactionDetailSheet extends ConsumerWidget {
                         merchant: t.merchant,
                         categoryIconKey: category?.icon,
                         isTransfer: isTransfer,
-                        bankName: t.rawMerchant == null ? account?.bankName : null,
+                        bankName: t.rawMerchant == null
+                            ? account?.bankName
+                            : null,
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -178,6 +181,12 @@ class TransactionDetailSheet extends ConsumerWidget {
                           label: 'Not counted in totals',
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
+                      if (isCardPayment)
+                        FlagChip(
+                          icon: Icons.credit_score_rounded,
+                          label: 'Not counted in totals',
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
                       if (t.kind == 'refund')
                         FlagChip(
                           icon: Icons.undo_rounded,
@@ -198,6 +207,15 @@ class TransactionDetailSheet extends ConsumerWidget {
                         ),
                     ],
                   ),
+                  if (isCardPayment) ...[
+                    const SizedBox(height: 10),
+                    Text(
+                      cardPaymentNote,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 14),
                   for (final (label, value) in rows)
                     Padding(

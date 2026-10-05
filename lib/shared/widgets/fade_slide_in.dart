@@ -31,7 +31,10 @@ class _FadeSlideInState extends State<FadeSlideIn>
   void initState() {
     super.initState();
     _controller = AnimationController(vsync: this, duration: widget.duration);
-    final curved = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+    final curved = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    );
     _fade = curved;
     _slide = Tween<Offset>(
       begin: Offset(0, widget.offset / 100),

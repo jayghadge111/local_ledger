@@ -21,6 +21,7 @@ class Reconciler {
   static const _uuid = Uuid();
 
   Future<ReconcileResult> run() async {
+    await _markCardBillPayments();
     final all = await (_db.select(
       _db.transactions,
     )..where((t) => t.isDeleted.equals(false))).get();
@@ -104,5 +105,20 @@ class Reconciler {
       transfers: transferIds.length,
       refunds: refunds.length,
     );
+  }
+
+  /// Bill payments imported before the app knew about them are still plain
+  /// debits named "Credit card bill". Mark them so they stop counting as
+  /// spending. Only untouched rows: a choice the user made is never undone.
+  Future<void> _markCardBillPayments() async {
+    await (_db.update(_db.transactions)..where(
+          (t) =>
+              t.kind.equals('normal') &
+              t.kindLocked.equals(false) &
+              t.type.equals('debit') &
+              t.isDeleted.equals(false) &
+              t.merchant.lower().equals('credit card bill'),
+        ))
+        .write(const TransactionsCompanion(kind: Value('card_payment')));
   }
 }

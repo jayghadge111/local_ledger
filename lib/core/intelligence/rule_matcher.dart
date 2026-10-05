@@ -11,7 +11,8 @@ String? matchCategoryForMerchant(String merchant, List<Rule> rules) {
     if (!lower.contains(rule.pattern)) continue;
     if (best == null ||
         rule.priority > best.priority ||
-        (rule.priority == best.priority && rule.pattern.length > best.pattern.length)) {
+        (rule.priority == best.priority &&
+            rule.pattern.length > best.pattern.length)) {
       best = rule;
     }
   }

@@ -27,31 +27,51 @@ class BackupService {
     final payload = {
       'version': 1,
       'exportedAt': DateTime.now().toIso8601String(),
-      'accounts': (await _db.select(_db.accounts).get()).map((e) => e.toJson()).toList(),
-      'categories': (await _db.select(_db.categories).get()).map((e) => e.toJson()).toList(),
-      'transactions':
-          (await _db.select(_db.transactions).get()).map((e) => e.toJson()).toList(),
-      'budgets': (await _db.select(_db.budgets).get()).map((e) => e.toJson()).toList(),
-      'obligations':
-          (await _db.select(_db.obligations).get()).map((e) => e.toJson()).toList(),
-      'budgetOverrides':
-          (await _db.select(_db.budgetOverrides).get()).map((e) => e.toJson()).toList(),
-      'rules': (await _db.select(_db.rules).get()).map((e) => e.toJson()).toList(),
-      'ownIdentifiers':
-          (await _db.select(_db.ownIdentifiers).get()).map((e) => e.toJson()).toList(),
-      'merchantAliases':
-          (await _db.select(_db.merchantAliases).get()).map((e) => e.toJson()).toList(),
-      'splitShares': (await _db.select(_db.splitShares).get()).map((e) => e.toJson()).toList(),
-      'lendingEntries':
-          (await _db.select(_db.lendingEntries).get()).map((e) => e.toJson()).toList(),
-      'lendingPayments':
-          (await _db.select(_db.lendingPayments).get()).map((e) => e.toJson()).toList(),
+      'accounts': (await _db.select(_db.accounts).get())
+          .map((e) => e.toJson())
+          .toList(),
+      'categories': (await _db.select(_db.categories).get())
+          .map((e) => e.toJson())
+          .toList(),
+      'transactions': (await _db.select(_db.transactions).get())
+          .map((e) => e.toJson())
+          .toList(),
+      'budgets': (await _db.select(_db.budgets).get())
+          .map((e) => e.toJson())
+          .toList(),
+      'obligations': (await _db.select(_db.obligations).get())
+          .map((e) => e.toJson())
+          .toList(),
+      'budgetOverrides': (await _db.select(_db.budgetOverrides).get())
+          .map((e) => e.toJson())
+          .toList(),
+      'rules': (await _db.select(_db.rules).get())
+          .map((e) => e.toJson())
+          .toList(),
+      'ownIdentifiers': (await _db.select(_db.ownIdentifiers).get())
+          .map((e) => e.toJson())
+          .toList(),
+      'merchantAliases': (await _db.select(_db.merchantAliases).get())
+          .map((e) => e.toJson())
+          .toList(),
+      'splitShares': (await _db.select(_db.splitShares).get())
+          .map((e) => e.toJson())
+          .toList(),
+      'lendingEntries': (await _db.select(_db.lendingEntries).get())
+          .map((e) => e.toJson())
+          .toList(),
+      'lendingPayments': (await _db.select(_db.lendingPayments).get())
+          .map((e) => e.toJson())
+          .toList(),
     };
     final jsonBytes = utf8.encode(jsonEncode(payload));
 
     final salt = _randomBytes(16);
     final key = await _encryption.deriveKeyFromPassphrase(passphrase, salt);
-    final encryptedBytes = await _encryption.encryptBytesWithKey(jsonBytes, key);
+    final encryptedBytes = await _encryption.encryptBytesWithKey(
+      jsonBytes,
+      key,
+    );
 
     final envelope = jsonEncode({
       'format': _backupFormat,
@@ -60,7 +80,10 @@ class BackupService {
     });
 
     final dir = await getTemporaryDirectory();
-    final timestamp = DateTime.now().toIso8601String().replaceAll(RegExp(r'[:.]'), '-');
+    final timestamp = DateTime.now().toIso8601String().replaceAll(
+      RegExp(r'[:.]'),
+      '-',
+    );
     final file = File('${dir.path}/nativespend_backup_$timestamp.llbackup');
     await file.writeAsString(envelope);
     return file;
@@ -89,17 +112,23 @@ class BackupService {
 
     await _db.transaction(() async {
       for (final row in (payload['accounts'] as List? ?? [])) {
-        await _db.into(_db.accounts).insertOnConflictUpdate(
+        await _db
+            .into(_db.accounts)
+            .insertOnConflictUpdate(
               Account.fromJson(row as Map<String, dynamic>).toCompanion(true),
             );
       }
       for (final row in (payload['categories'] as List? ?? [])) {
-        await _db.into(_db.categories).insertOnConflictUpdate(
+        await _db
+            .into(_db.categories)
+            .insertOnConflictUpdate(
               Category.fromJson(row as Map<String, dynamic>).toCompanion(true),
             );
       }
       for (final row in (payload['transactions'] as List? ?? [])) {
-        await _db.into(_db.transactions).insertOnConflictUpdate(
+        await _db
+            .into(_db.transactions)
+            .insertOnConflictUpdate(
               // Backups from before schema v3 lack the newer columns.
               Transaction.fromJson({
                 'kind': 'normal',
@@ -110,7 +139,9 @@ class BackupService {
             );
       }
       for (final row in (payload['budgets'] as List? ?? [])) {
-        await _db.into(_db.budgets).insertOnConflictUpdate(
+        await _db
+            .into(_db.budgets)
+            .insertOnConflictUpdate(
               // Backups from before budgets had a start month: every month.
               Budget.fromJson({
                 'fromMonthKey': '0000-00',
@@ -119,43 +150,66 @@ class BackupService {
             );
       }
       for (final row in (payload['obligations'] as List? ?? [])) {
-        await _db.into(_db.obligations).insertOnConflictUpdate(
-              Obligation.fromJson(row as Map<String, dynamic>).toCompanion(true),
+        await _db
+            .into(_db.obligations)
+            .insertOnConflictUpdate(
+              Obligation.fromJson(row as Map<String, dynamic>)
+                  .toCompanion(true),
             );
       }
       for (final row in (payload['budgetOverrides'] as List? ?? [])) {
-        await _db.into(_db.budgetOverrides).insertOnConflictUpdate(
-              BudgetOverride.fromJson(row as Map<String, dynamic>).toCompanion(true),
+        await _db
+            .into(_db.budgetOverrides)
+            .insertOnConflictUpdate(
+              BudgetOverride.fromJson(row as Map<String, dynamic>)
+                  .toCompanion(true),
             );
       }
       for (final row in (payload['rules'] as List? ?? [])) {
-        await _db.into(_db.rules).insertOnConflictUpdate(
+        await _db
+            .into(_db.rules)
+            .insertOnConflictUpdate(
               Rule.fromJson(row as Map<String, dynamic>).toCompanion(true),
             );
       }
       for (final row in (payload['ownIdentifiers'] as List? ?? [])) {
-        await _db.into(_db.ownIdentifiers).insertOnConflictUpdate(
-              OwnIdentifier.fromJson(row as Map<String, dynamic>).toCompanion(true),
+        await _db
+            .into(_db.ownIdentifiers)
+            .insertOnConflictUpdate(
+              OwnIdentifier.fromJson(row as Map<String, dynamic>)
+                  .toCompanion(true),
             );
       }
       for (final row in (payload['merchantAliases'] as List? ?? [])) {
-        await _db.into(_db.merchantAliases).insertOnConflictUpdate(
-              MerchantAliase.fromJson(row as Map<String, dynamic>).toCompanion(true),
+        await _db
+            .into(_db.merchantAliases)
+            .insertOnConflictUpdate(
+              MerchantAliase.fromJson(row as Map<String, dynamic>)
+                  .toCompanion(true),
             );
       }
       for (final row in (payload['splitShares'] as List? ?? [])) {
-        await _db.into(_db.splitShares).insertOnConflictUpdate(
-              SplitShare.fromJson(row as Map<String, dynamic>).toCompanion(true),
+        await _db
+            .into(_db.splitShares)
+            .insertOnConflictUpdate(
+              SplitShare.fromJson(row as Map<String, dynamic>)
+                  .toCompanion(true),
             );
       }
       for (final row in (payload['lendingEntries'] as List? ?? [])) {
-        await _db.into(_db.lendingEntries).insertOnConflictUpdate(
-              LendingEntry.fromJson(row as Map<String, dynamic>).toCompanion(true),
+        await _db
+            .into(_db.lendingEntries)
+            .insertOnConflictUpdate(
+              LendingEntry.fromJson(row as Map<String, dynamic>)
+                  .toCompanion(true),
             );
       }
       for (final row in (payload['lendingPayments'] as List? ?? [])) {
-        await _db.into(_db.lendingPayments).insertOnConflictUpdate(
-              LendingPayment.fromJson(row as Map<String, dynamic>).toCompanion(true),
+        await _db
+            .into(_db.lendingPayments)
+            .insertOnConflictUpdate(
+              LendingPayment.fromJson(row as Map<String, dynamic>)
+                  .toCompanion(true),
             );
       }
     });

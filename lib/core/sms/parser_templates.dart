@@ -8,6 +8,10 @@ import '../security/encryption_providers.dart';
 import '../security/encryption_service.dart';
 import 'template_learning.dart';
 
+/// The template type meaning "messages laid out like this are not
+/// transactions" — taught by deleting one and choosing to ignore similar ones.
+const ignoreTemplateType = 'ignore';
+
 /// A stored template, decrypted and compiled, ready to try on a message.
 class CompiledTemplate {
   const CompiledTemplate({

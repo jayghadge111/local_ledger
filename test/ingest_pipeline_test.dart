@@ -264,10 +264,19 @@ void main() {
       expect(rows, hasLength(2));
     });
 
-    test('far apart in time is never merged', () async {
+    test('hours apart is still one when both name the same account', () async {
+      // An HDFC debit texted at 8 am was emailed at 2 pm.
       final rows = await run([
         ('sms', 'VM-HDFCBK-S', smsA, Duration.zero),
         ('email', 'alerts@hdfcbank.net', emailA, const Duration(hours: 5)),
+      ]);
+      expect(rows, hasLength(1));
+    });
+
+    test('more than a day apart is never merged', () async {
+      final rows = await run([
+        ('sms', 'VM-HDFCBK-S', smsA, Duration.zero),
+        ('email', 'alerts@hdfcbank.net', emailA, const Duration(hours: 30)),
       ]);
       expect(rows, hasLength(2));
     });

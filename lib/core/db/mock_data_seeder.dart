@@ -42,8 +42,22 @@ const _mockTransactions = [
     'debit',
     isRecurring: true,
   ),
-  _MockTxn('Airtel Postpaid', 'cat_bills', 59900, 16, 'debit', isRecurring: true),
-  _MockTxn('Netflix', 'cat_entertainment', 64900, 2, 'debit', isRecurring: true),
+  _MockTxn(
+    'Airtel Postpaid',
+    'cat_bills',
+    59900,
+    16,
+    'debit',
+    isRecurring: true,
+  ),
+  _MockTxn(
+    'Netflix',
+    'cat_entertainment',
+    64900,
+    2,
+    'debit',
+    isRecurring: true,
+  ),
   _MockTxn(
     'Netflix',
     'cat_entertainment',
@@ -85,29 +99,28 @@ Future<void> seedMockTransactions(AppDatabase db) async {
   final now = DateTime.now();
 
   await db.batch((b) {
-    b.insertAll(
-      db.transactions,
-      [
-        for (final m in _mockTransactions)
-          TransactionsCompanion.insert(
-            id: uuid.v4(),
-            amountMinor: m.amountMinor,
-            merchant: m.merchant,
-            categoryId: Value(m.categoryId),
-            type: m.type,
-            date: now.subtract(Duration(days: m.daysAgo)),
-            source: 'manual',
-            isInternational: Value(m.isInternational),
-            isFlaggedUnusual: Value(m.isFlaggedUnusual),
-            isRecurring: Value(m.isRecurring),
-          ),
-      ],
-    );
+    b.insertAll(db.transactions, [
+      for (final m in _mockTransactions)
+        TransactionsCompanion.insert(
+          id: uuid.v4(),
+          amountMinor: m.amountMinor,
+          merchant: m.merchant,
+          categoryId: Value(m.categoryId),
+          type: m.type,
+          date: now.subtract(Duration(days: m.daysAgo)),
+          source: 'manual',
+          isInternational: Value(m.isInternational),
+          isFlaggedUnusual: Value(m.isFlaggedUnusual),
+          isRecurring: Value(m.isRecurring),
+        ),
+    ]);
   });
 }
 
 /// Soft-deletes every transaction so the app can be tested again from a
 /// clean slate without losing categories/rules.
 Future<void> clearAllTransactions(AppDatabase db) async {
-  await db.update(db.transactions).write(const TransactionsCompanion(isDeleted: Value(true)));
+  await db
+      .update(db.transactions)
+      .write(const TransactionsCompanion(isDeleted: Value(true)));
 }

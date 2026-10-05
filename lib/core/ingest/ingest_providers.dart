@@ -6,7 +6,12 @@ import 'reconciler.dart';
 import 'transaction_ingestor.dart';
 
 final ingestorProvider = Provider<TransactionIngestor>((ref) {
-  return TransactionIngestor(ref.watch(databaseProvider), ref.watch(encryptionServiceProvider));
+  return TransactionIngestor(
+    ref.watch(databaseProvider),
+    ref.watch(encryptionServiceProvider),
+  );
 });
 
-final reconcilerProvider = Provider<Reconciler>((ref) => Reconciler(ref.watch(databaseProvider)));
+final reconcilerProvider = Provider<Reconciler>(
+  (ref) => Reconciler(ref.watch(databaseProvider)),
+);

@@ -255,19 +255,17 @@ const corpus = <Msg>[
     amount: 79900,
     last4: '1234',
   ),
+  // The card issuer confirming a bill payment the user already made from a
+  // bank account: a receipt for money that left as a debit, not income.
   Msg(
     'ICICI card payment received',
     'Dear Customer, payment of INR 15,000.00 towards your ICICI Bank Credit Card XX1234 has been received through Click to Pay on 26-SEP-22.',
-    'credit',
-    amount: 1500000,
-    last4: '1234',
+    null,
   ),
   Msg(
     'ICICI card payment via UPI',
     'Dear Customer, Payment of INR 5,000.00 has been received towards your ICICI Bank Credit Card XX1234 on 29-AUG-22 through UPI.',
-    'credit',
-    amount: 500000,
-    last4: '1234',
+    null,
   ),
   Msg(
     'HDFC card Spent..At..On',

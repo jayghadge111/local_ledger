@@ -7,21 +7,12 @@ import '../responsive/app_shell.dart';
 
 final appRouter = GoRouter(
   routes: [
-    GoRoute(
-      path: '/',
-      builder: (context, state) => const SplashScreen(),
-    ),
+    GoRoute(path: '/', builder: (context, state) => const SplashScreen()),
     GoRoute(
       path: '/onboarding',
       builder: (context, state) => const OnboardingScreen(),
     ),
-    GoRoute(
-      path: '/lock',
-      builder: (context, state) => const LockScreen(),
-    ),
-    GoRoute(
-      path: '/home',
-      builder: (context, state) => const AppShell(),
-    ),
+    GoRoute(path: '/lock', builder: (context, state) => const LockScreen()),
+    GoRoute(path: '/home', builder: (context, state) => const AppShell()),
   ],
 );

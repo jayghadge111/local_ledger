@@ -7,8 +7,9 @@ import 'providers.dart';
 
 final rulesProvider = StreamProvider<List<Rule>>((ref) {
   final db = ref.watch(databaseProvider);
-  return (db.select(db.rules)..orderBy([(r) => OrderingTerm.desc(r.priority)]))
-      .watch();
+  return (db.select(
+    db.rules,
+  )..orderBy([(r) => OrderingTerm.desc(r.priority)])).watch();
 });
 
 final rulesRepositoryProvider = Provider<RulesRepository>((ref) {
@@ -21,7 +22,9 @@ class RulesRepository {
   static const _uuid = Uuid();
 
   Future<void> addRule({required String pattern, required String categoryId}) {
-    return _db.into(_db.rules).insert(
+    return _db
+        .into(_db.rules)
+        .insert(
           RulesCompanion.insert(
             id: _uuid.v4(),
             pattern: pattern.toLowerCase().trim(),

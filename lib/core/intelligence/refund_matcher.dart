@@ -6,13 +6,32 @@ class RefundMatch {
   final String debitId;
 }
 
-final _refundWordsInText =
-    RegExp(r'refund|revers|cancel|return|chargeback', caseSensitive: false);
+final _refundWordsInText = RegExp(
+  r'refund|revers|cancel|return|chargeback',
+  caseSensitive: false,
+);
 
 // Words that appear in lots of unrelated merchant strings.
 const _stopTokens = {
-  'upi', 'imps', 'neft', 'rtgs', 'payment', 'refund', 'credit', 'txn', 'reversal', 'reversed',
-  'bank', 'from', 'your', 'unknown', 'merchant', 'transfer', 'pay', 'the', 'and',
+  'upi',
+  'imps',
+  'neft',
+  'rtgs',
+  'payment',
+  'refund',
+  'credit',
+  'txn',
+  'reversal',
+  'reversed',
+  'bank',
+  'from',
+  'your',
+  'unknown',
+  'merchant',
+  'transfer',
+  'pay',
+  'the',
+  'and',
 };
 
 Set<String> _tokens(Transaction t) {
@@ -24,9 +43,14 @@ Set<String> _tokens(Transaction t) {
 }
 
 bool _isCandidateCredit(Transaction t) =>
-    !t.isDeleted && t.type == 'credit' && t.kind == 'normal' && !t.kindLocked && t.refundOfId == null;
+    !t.isDeleted &&
+    t.type == 'credit' &&
+    t.kind == 'normal' &&
+    !t.kindLocked &&
+    t.refundOfId == null;
 
-bool _isCandidateDebit(Transaction t) => !t.isDeleted && t.type == 'debit' && t.kind == 'normal';
+bool _isCandidateDebit(Transaction t) =>
+    !t.isDeleted && t.type == 'debit' && t.kind == 'normal';
 
 /// Links refund / reversal credits to the debit they undo, so they net
 /// against that spend instead of inflating income.
@@ -75,10 +99,14 @@ List<RefundMatch> detectRefunds(List<Transaction> transactions) {
       final maxDays = hinted ? 60 : 30;
       if (gap.inDays > maxDays) continue;
 
-      final exact = (remaining[debit.id] == credit.amountMinor) || debit.amountMinor == credit.amountMinor;
+      final exact =
+          (remaining[debit.id] == credit.amountMinor) ||
+          debit.amountMinor == credit.amountMinor;
       final similar = creditTokens.intersection(_tokens(debit)).isNotEmpty;
 
-      final ok = hinted ? (similar || (exact && gap.inDays <= 10)) : (similar && exact);
+      final ok = hinted
+          ? (similar || (exact && gap.inDays <= 10))
+          : (similar && exact);
       if (!ok) continue;
 
       final score = (exact ? 2 : 0) + (similar ? 1 : 0);

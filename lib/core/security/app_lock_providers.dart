@@ -4,8 +4,12 @@ import '../db/settings_repository.dart';
 import 'app_lock_service.dart';
 import 'hashing_service.dart';
 
-final appLockServiceProvider = Provider<AppLockService>((ref) => AppLockService());
-final hashingServiceProvider = Provider<HashingService>((ref) => const HashingService());
+final appLockServiceProvider = Provider<AppLockService>(
+  (ref) => AppLockService(),
+);
+final hashingServiceProvider = Provider<HashingService>(
+  (ref) => const HashingService(),
+);
 
 final appLockEnabledProvider = StreamProvider<bool>((ref) {
   final repo = ref.watch(settingsRepositoryProvider);

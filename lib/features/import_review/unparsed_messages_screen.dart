@@ -18,7 +18,8 @@ class UnparsedMessagesScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final messages = ref.watch(unparsedMessagesProvider).value ?? const <UnparsedMessage>[];
+    final messages =
+        ref.watch(unparsedMessagesProvider).value ?? const <UnparsedMessage>[];
     final repo = ref.watch(unparsedRepositoryProvider);
 
     return GlassBackground(
@@ -52,7 +53,9 @@ class UnparsedMessagesScreen extends ConsumerWidget {
                           children: [
                             Text(
                               '${m.senderCode ?? m.source} · ${DateFormat.yMMMd().add_jm().format(m.receivedAt)}',
-                              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                             ),
                             const SizedBox(height: 6),
                             Text(body, style: theme.textTheme.bodyMedium),
@@ -62,20 +65,26 @@ class UnparsedMessagesScreen extends ConsumerWidget {
                                 FilledButton(
                                   onPressed: snapshot.hasData
                                       ? () async {
-                                          final saved = await showTransactionFormSheet(
-                                            context,
-                                            prefill: TransactionPrefill(
-                                              amountMinor: extractAmountMinor(body),
-                                              date: m.receivedAt,
-                                              learnFromBody: body,
-                                              senderCode: m.senderCode,
-                                            ),
-                                          );
-                                          if (saved == true) await repo.resolve(m.id);
+                                          final saved =
+                                              await showTransactionFormSheet(
+                                                context,
+                                                prefill: TransactionPrefill(
+                                                  amountMinor:
+                                                      extractAmountMinor(body),
+                                                  date: m.receivedAt,
+                                                  learnFromBody: body,
+                                                  senderCode: m.senderCode,
+                                                ),
+                                              );
+                                          if (saved == true)
+                                            await repo.resolve(m.id);
                                         }
                                       : null,
                                   style: FilledButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 12,
+                                    ),
                                   ),
                                   child: const Text('Add transaction'),
                                 ),
@@ -83,7 +92,10 @@ class UnparsedMessagesScreen extends ConsumerWidget {
                                 OutlinedButton(
                                   onPressed: () => repo.resolve(m.id),
                                   style: OutlinedButton.styleFrom(
-                                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 20,
+                                      vertical: 12,
+                                    ),
                                   ),
                                   child: const Text('Dismiss'),
                                 ),

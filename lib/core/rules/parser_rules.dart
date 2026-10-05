@@ -74,8 +74,12 @@ class ParserPatterns {
       weakDebit = _re(p['weakDebit'], vars),
       weakCredit = _re(p['weakCredit'], vars),
       notTransaction = _re(p['notTransaction'], vars),
+      paymentAcknowledgement = _re(p['paymentAcknowledgement'], vars),
+      cardPaymentPhrase = _re(p['cardPaymentPhrase'], vars),
       failedWords = _re(p['failedWords'], vars),
-      merchantPatterns = [for (final m in _list(p['merchantPatterns'])) _re(m, vars)],
+      merchantPatterns = [
+        for (final m in _list(p['merchantPatterns'])) _re(m, vars),
+      ],
       creditFrom = _re(p['creditFrom'], vars),
       notMerchant = _re(p['notMerchant'], vars),
       genericPhrase = _re(p['genericPhrase'], vars),
@@ -87,21 +91,30 @@ class ParserPatterns {
       cardWords = _re(p['cardWords'], vars),
       internationalKeywords = _re(p['internationalKeywords'], vars),
       last4 = _re(p['last4'], vars),
+      last4Masked = _re(p['last4Masked'], vars),
       loanKind = _re(p['loanKind'], vars),
       loanWords = _re(p['loanWords'], vars),
       emailFooter = _re(p['emailFooter'], vars),
       stripVpa = _re(p['merchantCleanup']['stripVpa'], vars),
       stripChannel = _re(p['merchantCleanup']['stripChannel'], vars),
       numericOnly = _re(p['merchantCleanup']['numericOnly'], vars),
+      stripTrailingRef = _re(p['merchantCleanup']['stripTrailingRef'], vars),
       structuredType = _re(p['structured']['type'], vars),
       structuredAmount = _re(p['structured']['amount'], vars),
       structuredCurrency = _re(p['structured']['currency'], vars),
       structuredStatus = _re(p['structured']['status'], vars),
-      structuredOkStatuses = {for (final s in _list(p['structured']['okStatuses'])) s as String},
+      structuredOkStatuses = {
+        for (final s in _list(p['structured']['okStatuses'])) s as String,
+      },
       structuredFieldTemplate = p['structured']['fieldTemplate'] as String,
       structuredFieldLabels = vars['fieldLabels']!,
-      debitPartyLabels = [for (final s in _list(p['structured']['debitPartyLabels'])) s as String],
-      creditPartyLabels = [for (final s in _list(p['structured']['creditPartyLabels'])) s as String],
+      debitPartyLabels = [
+        for (final s in _list(p['structured']['debitPartyLabels'])) s as String,
+      ],
+      creditPartyLabels = [
+        for (final s in _list(p['structured']['creditPartyLabels']))
+          s as String,
+      ],
       partyTitle = _re(p['structured']['partyTitle'], vars),
       debitPurposes = _purposes(p['purposeLabels']['debit'], vars),
       creditPurposes = _purposes(p['purposeLabels']['credit'], vars);
@@ -117,6 +130,14 @@ class ParserPatterns {
   final RegExp weakDebit;
   final RegExp weakCredit;
   final RegExp notTransaction;
+
+  /// "Your payment was received toward your loan / credit card": the lender
+  /// or card issuer confirming money the user sent. Not income.
+  final RegExp paymentAcknowledgement;
+
+  /// "…towards Credit card repayment": the card is who is being paid, not the
+  /// account the money left.
+  final RegExp cardPaymentPhrase;
   final RegExp failedWords;
 
   /// Tried in order; the first usable capture wins.
@@ -132,12 +153,17 @@ class ParserPatterns {
   final RegExp cardWords;
   final RegExp internationalKeywords;
   final RegExp last4;
+
+  /// A masked number anywhere (`XX0715`, `xxxx2627`) when no "a/c"-style
+  /// word introduces it.
+  final RegExp last4Masked;
   final RegExp loanKind;
   final RegExp loanWords;
   final RegExp emailFooter;
   final RegExp stripVpa;
   final RegExp stripChannel;
   final RegExp numericOnly;
+  final RegExp stripTrailingRef;
   final RegExp structuredType;
   final RegExp structuredAmount;
   final RegExp structuredCurrency;
@@ -180,7 +206,9 @@ class ObligationPatterns {
       date = _re(j['extract']['date'], const {}),
       dueDateLead = _re(j['extract']['dueDateLead'], const {}),
       nextDebitLead = _re(j['extract']['nextDebitLead'], const {}),
-      billers = [for (final b in _list(j['extract']['billers'])) _re(b, const {})],
+      billers = [
+        for (final b in _list(j['extract']['billers'])) _re(b, const {}),
+      ],
       billerFallback = _re(j['extract']['billerFallback'], const {}),
       billerRejectStart = _re(j['extract']['billerRejectStart'], const {}),
       billerRejectEnd = _re(j['extract']['billerRejectEnd'], const {}),
@@ -259,9 +287,13 @@ class ParserRules {
 
   factory ParserRules.fromJson(Map<String, dynamic> json) {
     try {
-      if (json['format'] != 'nativespend-rules') throw RulesFormatException('not a rules document');
+      if (json['format'] != 'nativespend-rules')
+        throw RulesFormatException('not a rules document');
       final parserJson = json['parser'] as Map<String, dynamic>;
-      final vars = {for (final e in (parserJson['vars'] as Map<String, dynamic>).entries) e.key: e.value as String};
+      final vars = {
+        for (final e in (parserJson['vars'] as Map<String, dynamic>).entries)
+          e.key: e.value as String,
+      };
       final mn = json['merchantNormalizer'] as Map<String, dynamic>;
       final email = json['emailDomains'] as Map<String, dynamic>;
       return ParserRules._(
@@ -269,13 +301,16 @@ class ParserRules {
         packVersion: json['packVersion'] as int,
         senderCodes: {for (final c in _list(json['senderCodes'])) c as String},
         bankNames: [
-          for (final b in _list(json['bankNames'])) (prefix: b['prefix'] as String, name: b['name'] as String),
+          for (final b in _list(json['bankNames']))
+            (prefix: b['prefix'] as String, name: b['name'] as String),
         ],
         emailSuffix: email['suffix'] as String,
         emailDomains: [for (final d in _list(email['domains'])) d as String],
         categoryKeywords: [
           for (final c in _list(json['categoryKeywords']))
-            CategoryKeywords(c['category'] as String, [for (final w in _list(c['words'])) w as String]),
+            CategoryKeywords(c['category'] as String, [
+              for (final w in _list(c['words'])) w as String,
+            ]),
         ],
         incomeWords: [for (final w in _list(json['incomeWords'])) w as String],
         brands: [
@@ -283,18 +318,26 @@ class ParserRules {
             BrandRule(
               name: b['name'] as String,
               keywords: [for (final k in _list(b['keywords'])) k as String],
-              colorValue: 0xFF000000 | int.parse((b['color'] as String).substring(1), radix: 16),
+              colorValue:
+                  0xFF000000 |
+                  int.parse((b['color'] as String).substring(1), radix: 16),
               initial: b['initial'] as String,
               iconKey: b['icon'] as String?,
-              logoAsset: (b['logo'] as Map<String, dynamic>?)?['asset'] as String?,
-              logoIsWordmark: ((b['logo'] as Map<String, dynamic>?)?['wordmark'] as bool?) ?? false,
+              logoAsset:
+                  (b['logo'] as Map<String, dynamic>?)?['asset'] as String?,
+              logoIsWordmark:
+                  ((b['logo'] as Map<String, dynamic>?)?['wordmark']
+                      as bool?) ??
+                  false,
             ),
         ],
         aliases: [
           for (final a in _list(json['merchantAliases']))
             AliasRule(
               RegExp(
-                r'(?<![a-z0-9])' + RegExp.escape(a['match'] as String) + r'(?![a-z0-9])',
+                r'(?<![a-z0-9])' +
+                    RegExp.escape(a['match'] as String) +
+                    r'(?![a-z0-9])',
                 caseSensitive: false,
               ),
               a['name'] as String,
@@ -302,18 +345,25 @@ class ParserRules {
         ],
         noiseWords: {for (final w in _list(mn['noiseWords'])) w as String},
         acronyms: {for (final w in _list(mn['acronyms'])) w as String},
-        genericLabels: {for (final w in _list(mn['genericLabels'])) w as String},
+        genericLabels: {
+          for (final w in _list(mn['genericLabels'])) w as String,
+        },
         loanEmiLabel: _re(mn['loanEmiLabel'], const {}),
         nameTitles: {for (final w in _list(json['nameTitles'])) w as String},
         parser: ParserPatterns._(parserJson, vars),
-        obligations: ObligationPatterns._(json['obligations'] as Map<String, dynamic>),
+        obligations: ObligationPatterns._(
+          json['obligations'] as Map<String, dynamic>,
+        ),
         canaries: [
           for (final c in _list(json['canaries']))
             RuleCanary(
               text: c['text'] as String,
               type: (c['expect'] as Map<String, dynamic>)['type'] as String?,
-              amountMinor: (c['expect'] as Map<String, dynamic>)['amountMinor'] as int?,
-              merchantContains: (c['expect'] as Map<String, dynamic>)['merchantContains'] as String?,
+              amountMinor:
+                  (c['expect'] as Map<String, dynamic>)['amountMinor'] as int?,
+              merchantContains:
+                  (c['expect'] as Map<String, dynamic>)['merchantContains']
+                      as String?,
             ),
         ],
       );
@@ -325,7 +375,9 @@ class ParserRules {
   }
 
   /// The rules built into this version of the app.
-  factory ParserRules.bundled() => ParserRules.fromJson(jsonDecode(kBundledRulesJson) as Map<String, dynamic>);
+  factory ParserRules.bundled() => ParserRules.fromJson(
+    jsonDecode(kBundledRulesJson) as Map<String, dynamic>,
+  );
 
   static ParserRules? _current;
 
@@ -372,7 +424,10 @@ class ParserRules {
     for (final group in categoryKeywords)
       for (final w in group.words)
         (
-          RegExp(r'(?<![a-z0-9])' + RegExp.escape(w) + r'(?![a-z0-9])', caseSensitive: false),
+          RegExp(
+            r'(?<![a-z0-9])' + RegExp.escape(w) + r'(?![a-z0-9])',
+            caseSensitive: false,
+          ),
           group.categoryId,
         ),
   ];
@@ -385,7 +440,12 @@ class ParserRules {
 }
 
 class RuleCanary {
-  const RuleCanary({required this.text, this.type, this.amountMinor, this.merchantContains});
+  const RuleCanary({
+    required this.text,
+    this.type,
+    this.amountMinor,
+    this.merchantContains,
+  });
   final String text;
   final String? type;
   final int? amountMinor;
@@ -415,12 +475,21 @@ List<PurposeLabel> _purposes(Object? spec, Map<String, String> vars) => [
   for (final e in _list(spec))
     (e as Map<String, dynamic>)['special'] == 'loan'
         ? const PurposeLabel(isLoan: true)
-        : PurposeLabel(label: e['label'] as String, regex: _re({'pattern': e['pattern']}, vars)),
+        : PurposeLabel(
+            label: e['label'] as String,
+            regex: _re({'pattern': e['pattern']}, vars),
+          ),
 ];
 
 RegExp _brandRegex(List<String> keywords) {
-  final loose = [for (final k in keywords) if (!k.startsWith('=')) RegExp.escape(k)];
-  final exact = [for (final k in keywords) if (k.startsWith('=')) RegExp.escape(k.substring(1))];
+  final loose = [
+    for (final k in keywords)
+      if (!k.startsWith('=')) RegExp.escape(k),
+  ];
+  final exact = [
+    for (final k in keywords)
+      if (k.startsWith('=')) RegExp.escape(k.substring(1)),
+  ];
   return RegExp(
     [
       if (loose.isNotEmpty) '(?<![a-z0-9])(?:${loose.join('|')})(?![a-z0-9])',

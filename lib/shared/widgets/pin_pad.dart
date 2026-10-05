@@ -62,7 +62,9 @@ class PinPadState extends State<PinPad> {
                 border: Border.all(
                   color: filled
                       ? theme.colorScheme.secondary
-                      : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                      : theme.colorScheme.onSurfaceVariant.withValues(
+                          alpha: 0.4,
+                        ),
                   width: 1.5,
                 ),
               ),
@@ -157,7 +159,10 @@ class _KeypadButton extends StatelessWidget {
           customBorder: const CircleBorder(),
           onTap: onTap,
           child: Center(
-            child: Text(label, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w500)),
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w500),
+            ),
           ),
         ),
       ),

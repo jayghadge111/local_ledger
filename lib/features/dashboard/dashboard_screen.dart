@@ -36,7 +36,13 @@ class DashboardScreen extends ConsumerWidget {
             children: [
               Padding(
                 padding: EdgeInsets.fromLTRB(16, 16, 16, 0),
-                child: Column(children: [GreetingHeader(), SizedBox(height: 12), UpdateBanner()]),
+                child: Column(
+                  children: [
+                    GreetingHeader(),
+                    SizedBox(height: 12),
+                    UpdateBanner(),
+                  ],
+                ),
               ),
               Expanded(
                 child: PlaceholderBody(

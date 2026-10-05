@@ -83,6 +83,7 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
   late DateTime _date;
   late bool _isInternational;
   late bool _isTransfer;
+  late bool _isCardPayment;
   bool _paidInCash = false;
 
   /// When the loan is due — asked for (and required) when the category is
@@ -107,6 +108,7 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
     _date = existing?.date ?? prefill?.date ?? DateTime.now();
     _isInternational = existing?.isInternational ?? false;
     _isTransfer = existing?.kind == 'transfer';
+    _isCardPayment = existing?.kind == 'card_payment';
 
     // Editing a transaction that already made a Lend & borrow entry: start
     // from that entry's due date.
@@ -205,6 +207,7 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
         isInternational: _isInternational,
         accountId: accountId,
         isTransfer: _isTransfer,
+        isCardPayment: _isCardPayment,
       );
       loan = await lending.syncFromTransaction(
         transactionId: newId,
@@ -238,6 +241,7 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
         isInternational: _isInternational,
         accountId: accountId,
         isTransfer: _isTransfer,
+        isCardPayment: _isCardPayment,
       );
       loan = await lending.syncFromTransaction(
         transactionId: widget.existing!.id,
@@ -332,6 +336,70 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
   }
 
   Future<void> _delete() async {
+    final existing = widget.existing!;
+    var ignoreSimilar = false;
+
+    // A transaction that came from a bank message may be a message that was
+    // never a transaction at all (a lender confirming a payment, an
+    // acknowledgement…). Offer to remember that, so the same kind of message
+    // from this or any other bank is dropped from now on.
+    if (existing.rawTextEncrypted != null) {
+      final choice = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Delete this transaction?'),
+          content: const Text(
+            'If the message behind it was not really money moving — for '
+            'example a lender confirming your payment — NativeSpend can ignore '
+            'messages like it from now on.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop('delete'),
+              child: const Text('Delete'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop('ignore'),
+              child: const Text('Delete and ignore similar'),
+            ),
+          ],
+        ),
+      );
+      if (choice == null || !mounted) return;
+      ignoreSimilar = choice == 'ignore';
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
+    if (ignoreSimilar) {
+      try {
+        final body = await ref
+            .read(encryptionServiceProvider)
+            .decryptString(existing.rawTextEncrypted!);
+        final learned = await ref
+            .read(parserTemplateStoreProvider)
+            .learn(
+              body: body,
+              type: ignoreTemplateType,
+              amountMinor: existing.amountMinor,
+            );
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text(
+              learned
+                  ? 'Deleted. Messages like this will be ignored from now on.'
+                  : "Deleted. That message was too short to learn from, so similar ones may come back.",
+            ),
+          ),
+        );
+      } catch (_) {
+        // Learning is a bonus; the delete itself goes through.
+      }
+    }
+
     final repo = ref.read(transactionsRepositoryProvider);
     // A loan entry made from this transaction goes with it (unless
     // repayments were recorded against it).
@@ -515,6 +583,12 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
                       value: _isTransfer,
                       onChanged: (v) => setState(() => _isTransfer = v),
                     ),
+                    if (_type == 'debit' && !_isTransfer)
+                      GlassSwitchRow(
+                        label: 'Credit card bill payment (not counted)',
+                        value: _isCardPayment,
+                        onChanged: (v) => setState(() => _isCardPayment = v),
+                      ),
                     if (!isEditing && _type == 'debit')
                       GlassSwitchRow(
                         label: 'Paid in cash',

@@ -1980,8 +1980,20 @@ const kBundledRulesJson = r'''{
       "pattern": "\\b(intl|international|foreign currency|forex markup|cross.?currency)\\b",
       "flags": "i"
     },
+    "cardPaymentPhrase": {
+      "pattern": "credit\\s*card\\s+(?:repayment|bill|payment|due)|towards\\s+(?:your\\s+)?credit\\s*card",
+      "flags": "i"
+    },
+    "paymentAcknowledgement": {
+      "pattern": "^(?=.*\\b(?:payment|repayment|instal?lments?|emi|receipt|remittance)\\b)(?=.*\\b(?:received|credited|acknowledg\\w*|posted|adjusted|processed|realis\\w*|realiz\\w*)\\b)(?=.*\\b(?:loan|lan|credit\\s*card|card\\s+(?:no|number|ending|a/c|account)|emi)\\b)(?!.*\\b(?:refund\\w*|revers\\w+|cashback|chargeback|disburs\\w+|sanction\\w*|salary|interest\\s+credited|due\\s+on)\\b)",
+      "flags": "is"
+    },
+    "last4Masked": {
+      "pattern": "(?<![A-Za-z0-9])(?:\\d{0,6}[x*•]{1,}|[x*•]+\\s?)(\\d{4})\\b",
+      "flags": "i"
+    },
     "last4": {
-      "pattern": "(?:a/c|\\bac\\b|acct?\\.?|account|card|ending(?:\\s+with)?|ends\\s+with)\\s*(?:no\\.?|number)?\\s*[:\\-]?\\s*(?:x+|\\*+|\\.{2,}|#)?\\s*(\\d{4})\\b",
+      "pattern": "(?:a/c|\\bac\\b|acct?\\.?|account|card|bank(?=\\s+[x*])|ending(?:\\s+with)?|ends\\s+with)\\s*(?:no\\.?|number)?\\s*[:\\-]?\\s*(?:\\d{0,6}[x*]+|\\.{2,}|#)?\\s*(\\d{4})\\b",
       "flags": "i"
     },
     "loanKind": {
@@ -1989,7 +2001,7 @@ const kBundledRulesJson = r'''{
       "flags": "i"
     },
     "loanWords": {
-      "pattern": "\\b(emi|loan|nach|ecs|instal?lment)\\b",
+      "pattern": "\\b(emi|loan|nach|ach|ecs|instal?lment)\\b",
       "flags": "i"
     },
     "emailFooter": {
@@ -2036,7 +2048,11 @@ const kBundledRulesJson = r'''{
         "flags": "i"
       },
       "stripChannel": {
-        "pattern": "^(?:imps|neft|rtgs|upi)\\s+(?:to|from)\\s+",
+        "pattern": "^(?:imps|neft|rtgs|upi)\\s+(?:to|from)\\s+|^(?:ach|nach|ecs|ecom|pos|ib|mb|si)(?:\\s+[dc])?\\s*[-:/]\\s*",
+        "flags": "i"
+      },
+      "stripTrailingRef": {
+        "pattern": "\\s*[-/]\\s*\\d{5,}$",
         "flags": "i"
       },
       "numericOnly": {
@@ -2084,6 +2100,7 @@ const kBundledRulesJson = r'''{
         {"label": "ATM withdrawal", "pattern": "\\batm\\b|cash withdrawal"},
         {"label": "Mobile recharge", "pattern": "recharge"},
         {"label": "FASTag toll", "pattern": "fastag|\\btoll\\b"},
+        {"label": "Credit card bill", "pattern": "credit\\s*card\\s+(?:repayment|bill|payment|due)"},
         {"label": "Bill payment", "pattern": "bill ?pay|bbps|\\bbill\\b"},
         {"label": "Cheque payment", "pattern": "cheque|\\bchq\\b"},
         {"label": "NEFT transfer", "pattern": "\\bneft\\b"},
@@ -2322,6 +2339,26 @@ const kBundledRulesJson = r'''{
     {
       "text": "Total Due on your SBI Card ending 4412 is Rs 18,920.00 and Min Due is Rs 950.00 due by 18/10/2026. Avoid late fees by paying now: sbicard.com/pay",
       "expect": {"type": null}
+    },
+    {
+      "text": "Payment Update!\nPart Payment Rs. 59000.00 dated 11-Sep-26 successfully credited toward loan no. P405PSA3761027.Check your flexi limit here https://nbfl.in/BAJAJF/HLpMOV\nBajaj Finance Ltd",
+      "expect": {"type": null}
+    },
+    {
+      "text": "Payment Update!\nPart payment of Rs. 99500.0 received for loan P405PSA3761027 with txn no. P262663BWVAQQ8ED will get adjusted within 48hrs (excluding bank holidays). If no overdues, full amount would be adjusted towards principal outstanding else overdues will be recovered from this amount.\nBajaj Finance Ltd",
+      "expect": {"type": null}
+    },
+    {
+      "text": "We have received your payment of INR 921.00 towards your credit card number ending 9706. Thank you (Cheque/ECS Payment subject to realisation)-StanChart",
+      "expect": {"type": null}
+    },
+    {
+      "text": "Your account 427xxxx2627 has been debited on 28/09/2026 by INR 921.00 towards Credit card repayment.Available Balance:INR 123.64 -StanChart",
+      "expect": {"type": "debit", "amountMinor": 92100, "merchantContains": "credit card bill"}
+    },
+    {
+      "text": "UPDATE: INR 52,414.00 debited from HDFC Bank XX0715 on 05-SEP-26. Info: ACH D- HDFC BANK LTD-474875811. Avl bal:INR 70,703.19",
+      "expect": {"type": "debit", "amountMinor": 5241400, "merchantContains": "loan emi"}
     }
   ]
 }

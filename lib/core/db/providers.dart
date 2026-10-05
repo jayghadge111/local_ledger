@@ -11,9 +11,9 @@ final databaseProvider = Provider<AppDatabase>((ref) {
 
 final categoriesProvider = StreamProvider<List<Category>>((ref) {
   final db = ref.watch(databaseProvider);
-  return (db.select(db.categories)
-        ..orderBy([(c) => OrderingTerm.asc(c.name)]))
-      .watch();
+  return (db.select(
+    db.categories,
+  )..orderBy([(c) => OrderingTerm.asc(c.name)])).watch();
 });
 
 /// Non-deleted transactions, most recent first.

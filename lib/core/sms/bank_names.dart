@@ -1,7 +1,6 @@
 import '../rules/parser_rules.dart';
 import 'bank_sms_parser.dart';
 
-
 /// A readable bank name for an SMS sender ID (`VM-HDFCBK-S` -> "HDFC Bank")
 /// or an email address (`alerts@hdfcbank.net`), falling back to the raw code.
 String bankDisplayName(String sender) {

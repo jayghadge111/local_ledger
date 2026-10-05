@@ -13,7 +13,9 @@ class ImportProgressView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final muted = theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant);
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
     final fraction = progress.fraction;
 
     return Column(
@@ -21,11 +23,15 @@ class ImportProgressView extends StatelessWidget {
       children: [
         Row(
           children: [
-            Expanded(child: Text(progress.phase, style: theme.textTheme.bodyMedium)),
+            Expanded(
+              child: Text(progress.phase, style: theme.textTheme.bodyMedium),
+            ),
             if (fraction != null)
               Text(
                 '${(fraction * 100).round()}%',
-                style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
               ),
           ],
         ),
@@ -41,7 +47,10 @@ class ImportProgressView extends StatelessWidget {
         ),
         const SizedBox(height: 6),
         if (progress.total > 0)
-          Text('${progress.done} of ${progress.total} checked · ${progress.remaining} left', style: muted),
+          Text(
+            '${progress.done} of ${progress.total} checked · ${progress.remaining} left',
+            style: muted,
+          ),
         if (progress.found > 0)
           Text(
             '${progress.found} transaction${progress.found == 1 ? '' : 's'} added so far',
@@ -73,7 +82,11 @@ class ImportResultNote extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(ok ? Icons.check_circle_rounded : Icons.error_rounded, color: color, size: 20),
+          Icon(
+            ok ? Icons.check_circle_rounded : Icons.error_rounded,
+            color: color,
+            size: 20,
+          ),
           const SizedBox(width: 10),
           Expanded(child: Text(text, style: theme.textTheme.bodyMedium)),
         ],

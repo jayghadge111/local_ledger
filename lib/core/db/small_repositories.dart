@@ -38,9 +38,9 @@ class OwnIdentifiersRepository {
   Future<void> add(String value) {
     final v = value.trim().toLowerCase();
     if (v.length < 3) return Future.value();
-    return _db.into(_db.ownIdentifiers).insert(
-          OwnIdentifiersCompanion.insert(id: _uuid.v4(), value: v),
-        );
+    return _db
+        .into(_db.ownIdentifiers)
+        .insert(OwnIdentifiersCompanion.insert(id: _uuid.v4(), value: v));
   }
 
   Future<void> delete(String id) =>
@@ -59,7 +59,11 @@ final othersShareByTxnProvider = Provider<Map<String, int>>((ref) {
   final shares = ref.watch(splitSharesProvider).value ?? const <SplitShare>[];
   final map = <String, int>{};
   for (final s in shares) {
-    map.update(s.transactionId, (v) => v + s.shareMinor, ifAbsent: () => s.shareMinor);
+    map.update(
+      s.transactionId,
+      (v) => v + s.shareMinor,
+      ifAbsent: () => s.shareMinor,
+    );
   }
   return map;
 });
@@ -87,7 +91,9 @@ class SplitsRepository {
     required String personName,
     required int shareMinor,
   }) {
-    return _db.into(_db.splitShares).insert(
+    return _db
+        .into(_db.splitShares)
+        .insert(
           SplitSharesCompanion.insert(
             id: _uuid.v4(),
             transactionId: transactionId,
@@ -98,8 +104,9 @@ class SplitsRepository {
   }
 
   Future<void> setSettled(String id, bool settled) =>
-      (_db.update(_db.splitShares)..where((t) => t.id.equals(id)))
-          .write(SplitSharesCompanion(settled: Value(settled)));
+      (_db.update(_db.splitShares)..where((t) => t.id.equals(id))).write(
+        SplitSharesCompanion(settled: Value(settled)),
+      );
 
   Future<void> delete(String id) =>
       (_db.delete(_db.splitShares)..where((t) => t.id.equals(id))).go();
@@ -128,6 +135,7 @@ class UnparsedRepository {
       _ref.read(encryptionServiceProvider).decryptString(m.rawTextEncrypted);
 
   Future<void> resolve(String id) =>
-      (_db.update(_db.unparsedMessages)..where((t) => t.id.equals(id)))
-          .write(const UnparsedMessagesCompanion(resolved: Value(true)));
+      (_db.update(_db.unparsedMessages)..where((t) => t.id.equals(id))).write(
+        const UnparsedMessagesCompanion(resolved: Value(true)),
+      );
 }

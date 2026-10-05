@@ -161,7 +161,8 @@ class Alerts extends Table {
   TextColumn get id => text()();
   TextColumn get transactionId =>
       text().nullable().references(Transactions, #id)();
-  TextColumn get alertType => text()(); // recurring_due, international, unusual, duplicate
+  TextColumn get alertType =>
+      text()(); // recurring_due, international, unusual, duplicate
   TextColumn get message => text()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   BoolColumn get dismissed => boolean().withDefault(const Constant(false))();

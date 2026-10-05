@@ -19,6 +19,7 @@ class ParsedSmsTransaction {
     this.last4,
     this.refundHint = false,
     this.accountKind,
+    this.cardPayment = false,
   });
 
   final int amountMinor; // minor units of [currency]
@@ -36,7 +37,17 @@ class ParsedSmsTransaction {
   /// What the message says the account is: forex, prepaid, credit_card,
   /// debit_card, or plain card/bank when it doesn't say more.
   final String? accountKind;
+
+  /// A debit that pays a credit-card bill. The swipes it settles are already
+  /// counted when they were made, so this must not be counted again.
+  final bool cardPayment;
 }
+
+/// True when [merchant]/[body] describe money paid towards a credit-card bill.
+bool _isCardBillPayment(String type, String merchant, String body) =>
+    type == 'debit' &&
+    (merchant.toLowerCase() == 'credit card bill' ||
+        _p.cardPaymentPhrase.hasMatch(body));
 
 /// Extracts the bank-code portion of a DLT SMS header — e.g. `HDFCBK` out
 /// of `VM-HDFCBK-S` — so it can be checked against the known sender codes
@@ -105,7 +116,10 @@ RegExp get _creditCardWords => _p.creditCardWords;
 RegExp get _debitCardWords => _p.debitCardWords;
 RegExp get _cardWords => _p.cardWords;
 
-String _accountKind(String body) {
+String _accountKind(String rawBody) {
+  // "Debited towards Credit card repayment" says what was paid, not which
+  // account the money came from.
+  final body = rawBody.replaceAll(_p.cardPaymentPhrase, ' ');
   if (_forexWords.hasMatch(body)) return 'forex';
   if (_prepaidWords.hasMatch(body)) return 'prepaid';
   if (_creditCardWords.hasMatch(body)) return 'credit_card';
@@ -116,6 +130,12 @@ String _accountKind(String body) {
 RegExp get _internationalKeywords => _p.internationalKeywords;
 
 RegExp get _last4Pattern => _p.last4;
+
+/// The last four digits of the account/card a message is about: after an
+/// "a/c"-style word, or failing that any masked number (`XX0715`).
+String? _findLast4(String body) =>
+    _last4Pattern.firstMatch(body)?.group(1) ??
+    _p.last4Masked.firstMatch(body)?.group(1);
 
 ({String currency, double amount})? _findAmount(String body) {
   for (final m in _prefixAmountPattern.allMatches(body)) {
@@ -173,7 +193,8 @@ String? _merchant(String body, String type) {
         .group(1)!
         .trim()
         .replaceFirst(_p.stripVpa, '')
-        .replaceFirst(_p.stripChannel, '');
+        .replaceFirst(_p.stripChannel, '')
+        .replaceFirst(_p.stripTrailingRef, '');
     if (candidate.length < 2) continue;
     if (_notMerchant.hasMatch(candidate) ||
         _genericPhrase.hasMatch(candidate)) {
@@ -273,6 +294,14 @@ ParsedSmsTransaction? _parseStructured(String body) {
   );
 }
 
+/// A lender or card issuer saying it received the user's own payment
+/// ("Part payment … credited toward loan", "We have received your payment
+/// toward your credit card"). It is the other side of a debit already
+/// recorded, so it must not count as money received.
+bool isPaymentAcknowledgement(String body) =>
+    _p.paymentAcknowledgement.hasMatch(body) &&
+    _type(body) != 'debit'; // a receipt is never a debit
+
 /// Returns null if the message doesn't look like a parseable transaction
 /// alert (balance-check SMS, OTPs, promotional messages, etc.).
 ParsedSmsTransaction? parseBankSms(String body) {
@@ -281,6 +310,10 @@ ParsedSmsTransaction? parseBankSms(String body) {
   if (_structuredType.hasMatch(body)) return null; // a failed/pending record
 
   if (_notTransaction.hasMatch(body)) return null;
+
+  // The lender or card issuer confirming a payment the user made — the money
+  // already left as a debit, so this is a receipt, not income.
+  if (isPaymentAcknowledgement(body)) return null;
 
   // "Will be debited on…", "mandate registered", "EMI is due", "debit
   // failed": notices about money, not a transaction (see ObligationKind).
@@ -306,9 +339,10 @@ ParsedSmsTransaction? parseBankSms(String body) {
     isInternational:
         amount.currency != 'INR' || _internationalKeywords.hasMatch(body),
     currency: amount.currency,
-    last4: _last4Pattern.firstMatch(body)?.group(1),
+    last4: _findLast4(body),
     refundHint: type == 'credit' && _refundWords.hasMatch(body),
     accountKind: _accountKind(body),
+    cardPayment: _isCardBillPayment(type, merchant, body),
   );
 }
 
@@ -321,20 +355,22 @@ ParsedSmsTransaction parsedFromLearned({
   required int amountMinor,
   String? merchant,
 }) {
+  final name =
+      (merchant == null || merchant.trim().length < 2
+          ? null
+          : merchant.trim()) ??
+      _purposeLabel(body, type) ??
+      (type == 'credit' ? 'Credit' : 'Unknown merchant');
   return ParsedSmsTransaction(
     amountMinor: amountMinor,
     type: type,
-    merchant:
-        (merchant == null || merchant.trim().length < 2
-            ? null
-            : merchant.trim()) ??
-        _purposeLabel(body, type) ??
-        (type == 'credit' ? 'Credit' : 'Unknown merchant'),
+    merchant: name,
     isInternational: _internationalKeywords.hasMatch(body),
     currency: 'INR',
-    last4: _last4Pattern.firstMatch(body)?.group(1),
+    last4: _findLast4(body),
     refundHint: type == 'credit' && _refundWords.hasMatch(body),
     accountKind: _accountKind(body),
+    cardPayment: _isCardBillPayment(type, name, body),
   );
 }
 
@@ -351,6 +387,7 @@ int? extractAmountMinor(String body) {
 /// so the review queue isn't flooded with noise.
 bool looksLikeUnparsedTransaction(String body) {
   if (_notTransaction.hasMatch(body)) return false;
+  if (isPaymentAcknowledgement(body)) return false;
   if (classifyObligation(body) != null) return false;
   if (_findAmount(body) == null) return false;
   return parseBankSms(body) == null;

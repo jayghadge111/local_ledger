@@ -23,7 +23,12 @@ class MonthSelector extends ConsumerWidget {
 /// Step month by month, or tap the label to pick any month and year between
 /// [earliest] and the current month.
 class MonthNavigator extends StatelessWidget {
-  const MonthNavigator({super.key, required this.month, required this.earliest, required this.onChanged});
+  const MonthNavigator({
+    super.key,
+    required this.month,
+    required this.earliest,
+    required this.onChanged,
+  });
 
   final DateTime month;
   final DateTime earliest;
@@ -39,7 +44,9 @@ class MonthNavigator extends StatelessWidget {
       children: [
         _StepButton(
           icon: Icons.chevron_left_rounded,
-          onPressed: canGoBack ? () => onChanged(DateTime(month.year, month.month - 1)) : null,
+          onPressed: canGoBack
+              ? () => onChanged(DateTime(month.year, month.month - 1))
+              : null,
           tooltip: 'Previous month',
         ),
         const SizedBox(width: 6),
@@ -47,7 +54,11 @@ class MonthNavigator extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(14),
             onTap: () async {
-              final picked = await pickMonth(context, selected: month, earliest: earliest);
+              final picked = await pickMonth(
+                context,
+                selected: month,
+                earliest: earliest,
+              );
               if (picked != null) onChanged(picked);
             },
             child: Container(
@@ -59,18 +70,27 @@ class MonthNavigator extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.calendar_month_rounded, size: 18, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.calendar_month_rounded,
+                    size: 18,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(width: 8),
                   Flexible(
                     child: Text(
                       monthYearLabel(month),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 4),
-                  Icon(Icons.arrow_drop_down_rounded, color: theme.colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.arrow_drop_down_rounded,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ],
               ),
             ),
@@ -79,7 +99,9 @@ class MonthNavigator extends StatelessWidget {
         const SizedBox(width: 6),
         _StepButton(
           icon: Icons.chevron_right_rounded,
-          onPressed: canGoForward ? () => onChanged(DateTime(month.year, month.month + 1)) : null,
+          onPressed: canGoForward
+              ? () => onChanged(DateTime(month.year, month.month + 1))
+              : null,
           tooltip: 'Next month',
         ),
       ],
@@ -113,10 +135,16 @@ class _StepButton extends StatelessWidget {
 }
 
 /// Asks for a month and year; null if dismissed.
-Future<DateTime?> pickMonth(BuildContext context, {required DateTime selected, required DateTime earliest}) {
+Future<DateTime?> pickMonth(
+  BuildContext context, {
+  required DateTime selected,
+  required DateTime earliest,
+}) {
   return showDialog<DateTime>(
     context: context,
-    builder: (_) => CenteredDialogCard(child: _MonthPickerCard(selected: selected, earliest: earliest)),
+    builder: (_) => CenteredDialogCard(
+      child: _MonthPickerCard(selected: selected, earliest: earliest),
+    ),
   );
 }
 
@@ -137,7 +165,9 @@ class _MonthPickerCardState extends State<_MonthPickerCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final current = monthOf(DateTime.now());
-    final years = [for (var y = current.year; y >= widget.earliest.year; y--) y];
+    final years = [
+      for (var y = current.year; y >= widget.earliest.year; y--) y,
+    ];
     if (!years.contains(_year)) _year = years.first;
 
     bool enabled(int month) {
@@ -159,7 +189,12 @@ class _MonthPickerCardState extends State<_MonthPickerCard> {
               children: [
                 Row(
                   children: [
-                    Expanded(child: Text('Choose a month', style: theme.textTheme.titleLarge)),
+                    Expanded(
+                      child: Text(
+                        'Choose a month',
+                        style: theme.textTheme.titleLarge,
+                      ),
+                    ),
                     IconButton(
                       icon: const Icon(Icons.close_rounded),
                       tooltip: 'Close',
@@ -170,8 +205,14 @@ class _MonthPickerCardState extends State<_MonthPickerCard> {
                 const SizedBox(height: 8),
                 DropdownButtonFormField<int>(
                   initialValue: _year,
-                  decoration: const InputDecoration(labelText: 'Year', prefixIcon: Icon(Icons.event_rounded)),
-                  items: [for (final y in years) DropdownMenuItem(value: y, child: Text('$y'))],
+                  decoration: const InputDecoration(
+                    labelText: 'Year',
+                    prefixIcon: Icon(Icons.event_rounded),
+                  ),
+                  items: [
+                    for (final y in years)
+                      DropdownMenuItem(value: y, child: Text('$y')),
+                  ],
                   onChanged: (y) => setState(() => _year = y ?? _year),
                 ),
                 const SizedBox(height: 14),
@@ -186,9 +227,12 @@ class _MonthPickerCardState extends State<_MonthPickerCard> {
                     for (var m = 1; m <= 12; m++)
                       _MonthCell(
                         label: DateFormat.MMM().format(DateTime(2000, m)),
-                        selected: widget.selected.year == _year && widget.selected.month == m,
+                        selected:
+                            widget.selected.year == _year &&
+                            widget.selected.month == m,
                         enabled: enabled(m),
-                        onTap: () => Navigator.of(context).pop(DateTime(_year, m)),
+                        onTap: () =>
+                            Navigator.of(context).pop(DateTime(_year, m)),
                       ),
                   ],
                 ),

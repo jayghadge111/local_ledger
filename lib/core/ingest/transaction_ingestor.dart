@@ -81,6 +81,13 @@ class IngestSession {
   /// Existing rows corrected because the parser now reads them differently.
   int repaired = 0;
 
+  /// Rows removed because their message is now known not to be a transaction
+  /// (a pre-debit notice, or a lender confirming the user's own payment).
+  int removed = 0;
+
+  /// Existing SMS/email pairs found to be one transaction and merged.
+  int merged = 0;
+
   AppDatabase get _db => _owner._db;
 
   String _hash(String source, String body, DateTime date) => sha512
@@ -96,6 +103,16 @@ class IngestSession {
     required DateTime date,
   }) async {
     final hash = _hash(source, body, date);
+
+    // A layout the user told us is not a transaction ("Delete and ignore
+    // similar messages"): their word comes before everything else, and a row
+    // an earlier sync made from it goes too.
+    if (_isIgnored(sender, body)) {
+      await _dropStale(hash);
+      skipped++;
+      return IngestOutcome.skipped;
+    }
+
     final learned = _readWithTemplates(sender, body);
 
     // "Your A/c will be debited on 07-OCT-26", "e-Mandate registered",
@@ -113,6 +130,8 @@ class IngestSession {
           hash: hash,
           receivedAt: date,
         );
+        // An earlier version may have stored this very message as spending.
+        await _dropStale(hash);
         if (outcome == RecordOutcome.duplicate) {
           duplicates++;
           return IngestOutcome.duplicate;
@@ -125,6 +144,10 @@ class IngestSession {
     final parsed = learned ?? parseBankSms(body);
 
     if (parsed == null) {
+      // "Part payment credited toward your loan": the lender confirming a
+      // payment the user already made. If an earlier version stored it as
+      // money received, take that row back.
+      if (isPaymentAcknowledgement(body)) await _dropStale(hash);
       if (!looksLikeUnparsedTransaction(body)) {
         skipped++;
         return IngestOutcome.skipped;
@@ -181,11 +204,25 @@ class IngestSession {
             date: date,
             isInternational: Value(parsed.isInternational),
             refundHint: Value(parsed.refundHint),
+            kind: Value(parsed.cardPayment ? 'card_payment' : 'normal'),
             sourceHash: Value(hash),
           ),
         );
     imported++;
     return IngestOutcome.imported;
+  }
+
+  bool _isIgnored(String sender, String body) {
+    if (_templates.isEmpty) return false;
+    final code = bankCodeOf(sender);
+    for (final t in _templates) {
+      if (t.type != ignoreTemplateType) continue;
+      if (t.senderCode != null && t.senderCode != code) continue;
+      if (matchTemplate(body, t.regex) == null) continue;
+      _templateHits.update(t.id, (v) => v + 1, ifAbsent: () => 1);
+      return true;
+    }
+    return false;
   }
 
   /// Reads [body] with a layout the user taught the app, if one fits. These
@@ -195,6 +232,7 @@ class IngestSession {
     if (_templates.isEmpty) return null;
     final code = bankCodeOf(sender);
     for (final t in _templates) {
+      if (t.type == ignoreTemplateType) continue;
       if (t.senderCode != null && t.senderCode != code) continue;
       final match = matchTemplate(body, t.regex);
       if (match == null) continue;
@@ -210,8 +248,12 @@ class IngestSession {
   }
 
   /// How far apart two channels' reports of one transaction may arrive. Bank
-  /// emails can lag the SMS by several minutes.
+  /// emails can lag the SMS by several minutes...
   static const _twinWindow = Duration(minutes: 30);
+
+  /// ...and some by hours (an HDFC mandate debit texted at 8 am was emailed at
+  /// 2 pm). When both reports name the same account, that is allowed too.
+  static const _lateTwinWindow = Duration(hours: 24);
 
   /// Finds the already-stored transaction that [parsed] (arriving from
   /// [source]) is a second report of, or null if it is a new transaction.
@@ -242,7 +284,9 @@ class IngestSession {
     for (final t in candidates) {
       if (t.type != parsed.type || t.currency != parsed.currency) continue;
       final gap = t.date.difference(date).abs();
-      if (gap > _twinWindow) continue;
+      final sameAccount =
+          parsed.last4 != null && _storedLast4(t) == parsed.last4;
+      if (gap > (sameAccount ? _lateTwinWindow : _twinWindow)) continue;
       if ((t.alsoInSource ?? '').split(',').contains(source)) continue;
       if (!_lastFourAgrees(t, parsed.last4)) continue;
       if (bestGap == null || gap < bestGap) {
@@ -253,13 +297,124 @@ class IngestSession {
     return best;
   }
 
-  bool _lastFourAgrees(Transaction stored, String? incomingLast4) {
-    if (incomingLast4 == null || stored.accountId == null) return true;
-    final account = _accounts.values
+  String? _storedLast4(Transaction stored) {
+    if (stored.accountId == null) return null;
+    return _accounts.values
         .where((a) => a.id == stored.accountId)
-        .firstOrNull;
-    final storedLast4 = account?.last4;
+        .firstOrNull
+        ?.last4;
+  }
+
+  bool _lastFourAgrees(Transaction stored, String? incomingLast4) {
+    if (incomingLast4 == null) return true;
+    final storedLast4 = _storedLast4(stored);
     return storedLast4 == null || storedLast4 == incomingLast4;
+  }
+
+  /// Takes back a row an earlier version stored from this message, unless the
+  /// user has edited it (their word wins).
+  Future<void> _dropStale(String hash) async {
+    final rows =
+        await (_db.select(_db.transactions)..where(
+              (t) =>
+                  t.sourceHash.equals(hash) &
+                  t.isDeleted.equals(false) &
+                  t.userEdited.equals(false),
+            ))
+            .get();
+    for (final t in rows) {
+      await (_db.update(_db.transactions)..where((x) => x.id.equals(t.id)))
+          .write(const TransactionsCompanion(isDeleted: Value(true)));
+      removed++;
+    }
+  }
+
+  /// Finds SMS/email pairs already stored as two transactions that are really
+  /// one — same amount, direction and account, within a day — and keeps one.
+  /// Pairs are matched one to one, closest first, so two genuine payments of
+  /// the same amount are never collapsed into a single one.
+  Future<void> _mergeLateTwins() async {
+    final accounts = {
+      for (final a in await _db.select(_db.accounts).get()) a.id: a.last4,
+    };
+    final live =
+        await (_db.select(_db.transactions)..where(
+              (t) =>
+                  t.isDeleted.equals(false) &
+                  t.kind.equals('normal') &
+                  t.source.isIn(['sms', 'email']),
+            ))
+            .get();
+
+    final groups = <String, List<Transaction>>{};
+    for (final t in live) {
+      final last4 = t.accountId == null ? null : accounts[t.accountId];
+      if (last4 == null) continue;
+      groups
+          .putIfAbsent(
+            '${t.type}|${t.currency}|${t.amountMinor}|$last4',
+            () => [],
+          )
+          .add(t);
+    }
+
+    for (final group in groups.values) {
+      final sms = [
+        for (final t in group)
+          if (t.source == 'sms' && !(t.alsoInSource ?? '').contains('email')) t,
+      ];
+      final mails = [
+        for (final t in group)
+          if (t.source == 'email' && !(t.alsoInSource ?? '').contains('sms')) t,
+      ];
+      if (sms.isEmpty || mails.isEmpty) continue;
+
+      final pairs = <(Transaction, Transaction, Duration)>[
+        for (final a in sms)
+          for (final b in mails)
+            if (a.date.difference(b.date).abs() <= _lateTwinWindow)
+              (a, b, a.date.difference(b.date).abs()),
+      ]..sort((x, y) => x.$3.compareTo(y.$3));
+
+      final used = <String>{};
+      for (final (a, b, _) in pairs) {
+        if (used.contains(a.id) || used.contains(b.id)) continue;
+        used.addAll([a.id, b.id]);
+        await _mergePair(a, b);
+        merged++;
+        duplicates++;
+      }
+    }
+  }
+
+  /// Keeps one of an SMS/email pair: the one the user edited, else the one
+  /// that is better categorised, else the SMS. The other is set aside.
+  Future<void> _mergePair(Transaction sms, Transaction email) async {
+    bool categorised(Transaction t) =>
+        t.categoryId != null && t.categoryId != 'cat_other';
+    final keepEmail =
+        !sms.userEdited &&
+        (email.userEdited || (categorised(email) && !categorised(sms)));
+    final keep = keepEmail ? email : sms;
+    final drop = keepEmail ? sms : email;
+
+    await (_db.update(
+      _db.transactions,
+    )..where((t) => t.id.equals(keep.id))).write(
+      TransactionsCompanion(
+        alsoInSource: Value(
+          {
+            ...(keep.alsoInSource ?? '').split(',').where((x) => x.isNotEmpty),
+            drop.source,
+          }.join(','),
+        ),
+        accountId: keep.accountId == null
+            ? Value(drop.accountId)
+            : const Value.absent(),
+      ),
+    );
+    await (_db.update(_db.transactions)..where((t) => t.id.equals(drop.id)))
+        .write(const TransactionsCompanion(isDeleted: Value(true)));
   }
 
   /// Records that [source] also reported [twin], and fills in anything the
@@ -329,7 +484,10 @@ class IngestSession {
         existing.currency != parsed.currency ||
         existing.merchant != display ||
         existing.rawMerchant != raw ||
-        existing.isInternational != parsed.isInternational;
+        existing.isInternational != parsed.isInternational ||
+        (!existing.kindLocked &&
+            ((parsed.cardPayment && existing.kind == 'normal') ||
+                (!parsed.cardPayment && existing.kind == 'card_payment')));
     if (!changed) return;
 
     final typeChanged = existing.type != parsed.type;
@@ -350,7 +508,13 @@ class IngestSession {
         ),
         // A flipped debit/credit invalidates any transfer/refund link made
         // from the wrong reading; the reconciler re-evaluates it.
-        kind: typeChanged && !existing.kindLocked
+        kind: existing.kindLocked
+            ? const Value.absent()
+            : typeChanged
+            ? Value(parsed.cardPayment ? 'card_payment' : 'normal')
+            : parsed.cardPayment && existing.kind == 'normal'
+            ? const Value('card_payment')
+            : !parsed.cardPayment && existing.kind == 'card_payment'
             ? const Value('normal')
             : const Value.absent(),
         transferGroupId: typeChanged && !existing.kindLocked
@@ -461,6 +625,8 @@ class IngestSession {
         _owner._encryption,
       ).recordHits(_templateHits);
     }
+    await _mergeLateTwins();
+
     // Settle upcoming debits against the transactions now in the app: a real
     // debit of the same amount marks its notice paid.
     await ObligationsRepository(_db).reconcile();

@@ -16,7 +16,8 @@ import '../rules/parser_rules.dart';
 /// salary/interest credits land in Income.
 String? defaultCategoryFor(String merchantText, {bool isCredit = false}) {
   final rules = ParserRules.current;
-  if (isCredit && rules.incomePattern.hasMatch(merchantText)) return 'cat_income';
+  if (isCredit && rules.incomePattern.hasMatch(merchantText))
+    return 'cat_income';
   for (final (pattern, categoryId) in rules.categoryMatchers) {
     if (pattern.hasMatch(merchantText)) return categoryId;
   }

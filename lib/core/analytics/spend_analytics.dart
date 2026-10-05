@@ -3,6 +3,9 @@ import '../db/app_database.dart';
 /// The transactions that totals, charts and budgets should be built from.
 ///
 /// - Transfers between the user's own accounts are left out entirely.
+/// - Credit-card bill payments are left out: the swipes they settle were
+///   already counted when the card was used, so counting the bill too would
+///   spend the same money twice.
 /// - Refund credits are left out of income; instead the debit they reverse
 ///   is reduced by the refunded amount (and dropped if fully refunded).
 /// - A debit the user split with others only counts their own share
@@ -21,13 +24,21 @@ List<Transaction> spendingView(
   final refundedOf = <String, int>{};
   for (final t in live) {
     if (t.kind == 'refund' && t.refundOfId != null) {
-      refundedOf.update(t.refundOfId!, (v) => v + t.amountMinor, ifAbsent: () => t.amountMinor);
+      refundedOf.update(
+        t.refundOfId!,
+        (v) => v + t.amountMinor,
+        ifAbsent: () => t.amountMinor,
+      );
     }
   }
 
   final view = <Transaction>[];
   for (final t in live) {
-    if (t.kind == 'transfer' || t.kind == 'refund') continue;
+    if (t.kind == 'transfer' ||
+        t.kind == 'refund' ||
+        t.kind == 'card_payment') {
+      continue;
+    }
     if (t.type == 'credit') {
       view.add(t);
       continue;

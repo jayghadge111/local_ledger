@@ -29,7 +29,10 @@ class RecurringInsight {
 /// you visit daily out of the list: one day-to-day gap rules it out, however
 /// the rest average. At least three payments are needed, and the last one
 /// must be recent so cancelled subscriptions drop off.
-List<RecurringInsight> detectRecurring(List<Transaction> transactions, {DateTime? now}) {
+List<RecurringInsight> detectRecurring(
+  List<Transaction> transactions, {
+  DateTime? now,
+}) {
   final today = now ?? DateTime.now();
   DateTime day(DateTime d) => DateTime(d.year, d.month, d.day);
 
@@ -43,7 +46,9 @@ List<RecurringInsight> detectRecurring(List<Transaction> transactions, {DateTime
   for (final entries in byMerchant.values) {
     if (entries.length < 3) continue;
     entries.sort((a, b) => a.date.compareTo(b.date));
-    final recent = entries.length > 6 ? entries.sublist(entries.length - 6) : entries;
+    final recent = entries.length > 6
+        ? entries.sublist(entries.length - 6)
+        : entries;
 
     final gaps = <int>[
       for (var i = 1; i < recent.length; i++)
@@ -53,11 +58,14 @@ List<RecurringInsight> detectRecurring(List<Transaction> transactions, {DateTime
 
     final amounts = recent.map((t) => t.amountMinor).toList();
     final avgAmount = amounts.reduce((a, b) => a + b) / amounts.length;
-    final maxDrift = amounts.map((a) => (a - avgAmount).abs()).reduce((a, b) => a > b ? a : b);
+    final maxDrift = amounts
+        .map((a) => (a - avgAmount).abs())
+        .reduce((a, b) => a > b ? a : b);
     if (maxDrift > avgAmount * _maxAmountDrift) continue;
 
     final last = recent.last;
-    if (day(today).difference(day(last.date)).inDays > _maxDaysSinceLast) continue;
+    if (day(today).difference(day(last.date)).inDays > _maxDaysSinceLast)
+      continue;
 
     final sortedGaps = [...gaps]..sort();
     final typicalGap = sortedGaps[sortedGaps.length ~/ 2];

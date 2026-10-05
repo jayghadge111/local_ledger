@@ -83,7 +83,12 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                 if (_checking)
                   const CircularProgressIndicator()
                 else
-                  PinPad(key: _padKey, length: 4, onSubmitted: _onSubmitted, errorText: _error),
+                  PinPad(
+                    key: _padKey,
+                    length: 4,
+                    onSubmitted: _onSubmitted,
+                    errorText: _error,
+                  ),
                 if (biometricEnabled) ...[
                   const SizedBox(height: 20),
                   TextButton.icon(
@@ -93,7 +98,10 @@ class _LockScreenState extends ConsumerState<LockScreen> {
                   ),
                 ],
               ] else ...[
-                Text('Unlock with Biometrics', style: theme.textTheme.titleLarge),
+                Text(
+                  'Unlock with Biometrics',
+                  style: theme.textTheme.titleLarge,
+                ),
                 const SizedBox(height: 28),
                 const Icon(Icons.fingerprint, size: 64),
                 const SizedBox(height: 20),

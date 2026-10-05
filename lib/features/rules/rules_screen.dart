@@ -17,8 +17,7 @@ class RulesScreen extends ConsumerWidget {
     final theme = Theme.of(context);
     final rulesAsync = ref.watch(rulesProvider);
     final categoriesById = {
-      for (final c in ref.watch(categoriesProvider).value ?? [])
-        c.id: c,
+      for (final c in ref.watch(categoriesProvider).value ?? []) c.id: c,
     };
 
     return GlassBackground(
@@ -31,8 +30,7 @@ class RulesScreen extends ConsumerWidget {
               return const PlaceholderBody(
                 icon: Icons.rule_outlined,
                 title: 'No rules yet',
-                subtitle:
-                    'Add a rule so a merchant name is categorized automatically next time — e.g. "swiggy" → Food & dining.',
+                subtitle: 'Add a rule so a merchant name is categorized automatically next time — e.g. "swiggy" → Food & dining.',
               );
             }
             return ListView.separated(
@@ -59,7 +57,10 @@ class RulesScreen extends ConsumerWidget {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('"${rule.pattern}"', style: theme.textTheme.titleMedium),
+                              Text(
+                                '"${rule.pattern}"',
+                                style: theme.textTheme.titleMedium,
+                              ),
                               Text(
                                 '→ ${category?.name ?? 'Unknown category'}',
                                 style: theme.textTheme.bodySmall?.copyWith(
