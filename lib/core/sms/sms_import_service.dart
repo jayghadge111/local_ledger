@@ -15,10 +15,14 @@ class SmsImportResult {
     required this.scanned,
     required this.imported,
     this.queued = 0,
+    this.obligations = 0,
     this.cancelled = false,
   });
   final int scanned;
   final int imported;
+
+  /// Auto-debit notices kept as upcoming debits (not spending).
+  final int obligations;
 
   /// Bank messages that looked like transactions but couldn't be read —
   /// waiting in the review queue.
@@ -234,6 +238,7 @@ class SmsImportService {
         scanned: offset + messages.length,
         imported: session.imported,
         queued: session.queued,
+        obligations: session.obligations,
         cancelled: cancelled,
       );
     } finally {

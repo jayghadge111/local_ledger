@@ -152,6 +152,82 @@ class ParserPatterns {
   final List<PurposeLabel> creditPurposes;
 }
 
+/// The patterns that recognise and read auto-debit related messages: mandate
+/// registrations, pre-debit notices, EMI and card dues, and bounces. None of
+/// these is a spend — they are upcoming or failed obligations.
+class ObligationPatterns {
+  ObligationPatterns._(Map<String, dynamic> j)
+    : bounce = _re(j['classify']['bounce'], const {}),
+      setup = _re(j['classify']['setup'], const {}),
+      preDebit = _re(j['classify']['preDebit'], const {}),
+      cardStatement = _re(j['classify']['cardStatement'], const {}),
+      cardDue = _re(j['classify']['cardDue'], const {}),
+      emiDue = _re(j['classify']['emiDue'], const {}),
+      totalDueWords = _re(j['classify']['totalDueWords'], const {}),
+      emiWords = _re(j['classify']['emiWords'], const {}),
+      cardWords = _re(j['classify']['cardWords'], const {}),
+      amount = _re(j['extract']['amount'], const {}),
+      maxAmount = _re(j['extract']['maxAmount'], const {}),
+      totalDue = _re(j['extract']['totalDue'], const {}),
+      minDue = _re(j['extract']['minDue'], const {}),
+      umrn = _re(j['extract']['umrn'], const {}),
+      mandateId = _re(j['extract']['mandateId'], const {}),
+      account = _re(j['extract']['account'], const {}),
+      loanRef = _re(j['extract']['loanRef'], const {}),
+      card = _re(j['extract']['card'], const {}),
+      frequency = _re(j['extract']['frequency'], const {}),
+      reason = _re(j['extract']['reason'], const {}),
+      date = _re(j['extract']['date'], const {}),
+      dueDateLead = _re(j['extract']['dueDateLead'], const {}),
+      nextDebitLead = _re(j['extract']['nextDebitLead'], const {}),
+      billers = [for (final b in _list(j['extract']['billers'])) _re(b, const {})],
+      billerFallback = _re(j['extract']['billerFallback'], const {}),
+      billerRejectStart = _re(j['extract']['billerRejectStart'], const {}),
+      billerRejectEnd = _re(j['extract']['billerRejectEnd'], const {}),
+      billerTrim = _re(j['extract']['billerTrim'], const {}),
+      cardIssuer = _re(j['extract']['cardIssuer'], const {}),
+      signature = _re(j['extract']['signature'], const {}),
+      yourLoan = _re(j['extract']['yourLoan'], const {}),
+      loanTypeWord = _re(j['extract']['loanTypeWord'], const {});
+
+  final RegExp bounce;
+  final RegExp setup;
+  final RegExp preDebit;
+  final RegExp cardStatement;
+  final RegExp cardDue;
+  final RegExp emiDue;
+  final RegExp totalDueWords;
+  final RegExp emiWords;
+  final RegExp cardWords;
+  final RegExp amount;
+  final RegExp maxAmount;
+  final RegExp totalDue;
+  final RegExp minDue;
+  final RegExp umrn;
+  final RegExp mandateId;
+  final RegExp account;
+  final RegExp loanRef;
+  final RegExp card;
+  final RegExp frequency;
+  final RegExp reason;
+  final RegExp date;
+  final RegExp dueDateLead;
+  final RegExp nextDebitLead;
+
+  /// Tried in order; the first usable capture wins.
+  final List<RegExp> billers;
+
+  /// Looser "for NAME" pattern, used only for mandates and pre-debits.
+  final RegExp billerFallback;
+  final RegExp billerRejectStart;
+  final RegExp billerRejectEnd;
+  final RegExp billerTrim;
+  final RegExp cardIssuer;
+  final RegExp signature;
+  final RegExp yourLoan;
+  final RegExp loanTypeWord;
+}
+
 /// All the text-matching rules the app uses to recognise banks, read
 /// transactions and name merchants, loaded from one JSON document.
 ///
@@ -177,6 +253,7 @@ class ParserRules {
     required this.loanEmiLabel,
     required this.nameTitles,
     required this.parser,
+    required this.obligations,
     required this.canaries,
   });
 
@@ -229,6 +306,7 @@ class ParserRules {
         loanEmiLabel: _re(mn['loanEmiLabel'], const {}),
         nameTitles: {for (final w in _list(json['nameTitles'])) w as String},
         parser: ParserPatterns._(parserJson, vars),
+        obligations: ObligationPatterns._(json['obligations'] as Map<String, dynamic>),
         canaries: [
           for (final c in _list(json['canaries']))
             RuleCanary(
@@ -282,6 +360,7 @@ class ParserRules {
   final RegExp loanEmiLabel;
   final Set<String> nameTitles;
   final ParserPatterns parser;
+  final ObligationPatterns obligations;
 
   /// Sample messages with the result they must produce — a safety net for
   /// anyone changing the rules.

@@ -1,6 +1,4 @@
 import '../../core/lending/lending_repository.dart';
-import '../../core/sms/parser_templates.dart';
-import '../import_review/learned_layouts_screen.dart';
 import '../lending/lending_screen.dart';
 
 import 'package:flutter/material.dart';
@@ -10,17 +8,14 @@ import 'package:intl/intl.dart';
 import '../../core/db/app_database.dart';
 import '../../core/db/budgets_repository.dart';
 import '../../core/db/rules_repository.dart';
-import '../../core/db/settings_repository.dart';
 import '../../core/db/small_repositories.dart';
 import '../../shared/widgets/fade_slide_in.dart';
-import '../../shared/widgets/glass_surface.dart';
 import '../budgets/budgets_screen.dart';
-import '../import_review/bank_email_domains_screen.dart';
-import '../import_review/own_identifiers_screen.dart';
-import '../import_review/unparsed_messages_screen.dart';
+import 'manage_card.dart';
 import '../rules/rules_screen.dart';
 import '../splits/splits_ui.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/obligations/obligation_repository.dart';
+import '../obligations/obligations_screen.dart';
 
 /// The "Manage" tab: everything that organises the data beyond the basic
 /// lists, surfaced here (with a live one-line summary each) so new users
@@ -42,15 +37,11 @@ class ManageScreen extends ConsumerWidget {
       monthBudgetsProvider(DateTime(now.year, now.month)),
     );
     final shares = ref.watch(splitSharesProvider).value ?? const <SplitShare>[];
-    final unparsed =
-        ref.watch(unparsedMessagesProvider).value ?? const <UnparsedMessage>[];
     final rules = ref.watch(rulesProvider).value ?? const <Rule>[];
-    final own =
-        ref.watch(ownIdentifiersProvider).value ?? const <OwnIdentifier>[];
-    final senders =
-        ref.watch(customBankEmailDomainsProvider).value ?? const <String>[];
 
-    final learnedLayouts = ref.watch(parserTemplateCountProvider).value ?? 0;
+    final upcomingDues = ref.watch(upcomingObligationsProvider);
+    final mandatesNow = ref.watch(activeMandatesProvider);
+    final failedDebits = ref.watch(recentFailuresProvider);
     final lendingBalancesNow = ref.watch(lendingBalancesProvider);
     final lendingTotals = ref.watch(lendingTotalsProvider);
     final lendingOpen = lendingBalancesNow.where((b) => !b.isSettled).length;
@@ -58,8 +49,8 @@ class ManageScreen extends ConsumerWidget {
         .where((s) => !s.settled)
         .fold<int>(0, (sum, s) => sum + s.shareMinor);
 
-    final items = <_ManageItem>[
-      _ManageItem(
+    final items = <ManageItem>[
+      ManageItem(
         icon: Icons.pie_chart_rounded,
         title: 'Budgets',
         subtitle: budgets.isEmpty
@@ -67,7 +58,18 @@ class ManageScreen extends ConsumerWidget {
             : '${budgets.length} budget${budgets.length == 1 ? '' : 's'} set',
         screen: const BudgetsScreen(),
       ),
-      _ManageItem(
+      ManageItem(
+        icon: Icons.event_repeat_rounded,
+        title: 'Auto-pay & dues',
+        subtitle: failedDebits.isNotEmpty
+            ? '${failedDebits.length} failed auto-debit${failedDebits.length == 1 ? '' : 's'} · fund your account'
+            : upcomingDues.isEmpty && mandatesNow.isEmpty
+            ? 'Upcoming auto-debits, EMIs and card bills, from your bank messages'
+            : '${upcomingDues.length} coming up · ${mandatesNow.length} mandate${mandatesNow.length == 1 ? '' : 's'}',
+        badge: failedDebits.isEmpty ? null : failedDebits.length,
+        screen: const ObligationsScreen(),
+      ),
+      ManageItem(
         icon: Icons.call_split_rounded,
         title: 'Splits & IOUs',
         subtitle: owed > 0
@@ -75,7 +77,7 @@ class ManageScreen extends ConsumerWidget {
             : 'Split an expense with friends and track who owes you',
         screen: const SplitsScreen(),
       ),
-      _ManageItem(
+      ManageItem(
         icon: Icons.handshake_rounded,
         title: 'Lend & borrow',
         subtitle: lendingOpen == 0
@@ -85,46 +87,13 @@ class ManageScreen extends ConsumerWidget {
                   '${lendingTotals.iOweMinor > 0 ? 'You owe ${money.format(lendingTotals.iOweMinor / 100)}' : ''}',
         screen: const LendingScreen(),
       ),
-      _ManageItem(
-        icon: Icons.mark_email_unread_rounded,
-        title: 'Messages to review',
-        subtitle: unparsed.isEmpty
-            ? 'Bank messages we couldn\'t read will appear here'
-            : '${unparsed.length} need${unparsed.length == 1 ? 's' : ''} your attention',
-        badge: unparsed.isEmpty ? null : unparsed.length,
-        screen: const UnparsedMessagesScreen(),
-      ),
-      _ManageItem(
-        icon: Icons.auto_fix_high_rounded,
-        title: 'Learned message layouts',
-        subtitle: learnedLayouts == 0
-            ? 'Fix a transaction and the app learns to read messages like it'
-            : '$learnedLayouts learned from your corrections',
-        screen: const LearnedLayoutsScreen(),
-      ),
-      _ManageItem(
+      ManageItem(
         icon: Icons.rule_rounded,
         title: 'Category rules',
         subtitle: rules.isEmpty
             ? 'Teach the app which merchants belong to which category'
             : '${rules.length} rule${rules.length == 1 ? '' : 's'} saved',
         screen: const RulesScreen(),
-      ),
-      _ManageItem(
-        icon: Icons.swap_horiz_rounded,
-        title: 'My other names & UPI IDs',
-        subtitle: own.isEmpty
-            ? 'Extra UPI IDs or spellings of your name, so transfers between your accounts aren\'t counted as spending'
-            : '${own.length} saved · also used to spot Self Transfers',
-        screen: const OwnIdentifiersScreen(),
-      ),
-      _ManageItem(
-        icon: Icons.alternate_email_rounded,
-        title: 'Bank email senders',
-        subtitle: senders.isEmpty
-            ? 'Gmail alerts from your bank skipped? Add its sender address'
-            : '${senders.length} extra sender${senders.length == 1 ? '' : 's'} added',
-        screen: const BankEmailDomainsScreen(),
       ),
     ];
 
@@ -142,92 +111,10 @@ class ManageScreen extends ConsumerWidget {
             padding: const EdgeInsets.only(bottom: 12),
             child: FadeSlideIn(
               delay: Duration(milliseconds: 25 * (i + 1)),
-              child: _ManageCard(item: items[i]),
+              child: ManageCard(item: items[i]),
             ),
           ),
       ],
-    );
-  }
-}
-
-class _ManageItem {
-  const _ManageItem({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.screen,
-    this.badge,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Widget screen;
-  final int? badge;
-}
-
-class _ManageCard extends StatelessWidget {
-  const _ManageCard({required this.item});
-  final _ManageItem item;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final chart = ChartColors.of(context);
-    return GlassCard(
-      onTap: () =>
-          Navigator.of(context)
-              .push(MaterialPageRoute(builder: (_) => item.screen)),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: chart.soft,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(item.icon, color: chart.softText),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item.title, style: theme.textTheme.titleMedium),
-                const SizedBox(height: 2),
-                Text(
-                  item.subtitle,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (item.badge != null)
-            Container(
-              margin: const EdgeInsets.only(right: 6),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.error,
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: Text(
-                '${item.badge}',
-                style: TextStyle(
-                  color: theme.colorScheme.onError,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ),
-          Icon(
-            Icons.chevron_right_rounded,
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
-        ],
-      ),
     );
   }
 }

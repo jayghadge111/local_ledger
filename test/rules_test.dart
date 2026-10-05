@@ -35,7 +35,7 @@ void main() {
           r.senderCodes,
           containsAll(['HDFCBK', 'ICICIT', 'SCBANK', 'SBMIND', 'EQUTAS']),
         );
-        expect(r.bankNames.length, 24);
+        expect(r.bankNames.length, 37);
         expect(r.emailSuffix, 'bank.in');
         expect(r.emailDomains.length, greaterThan(85));
         expect(r.emailDomains, contains('hdfcbank.net'));

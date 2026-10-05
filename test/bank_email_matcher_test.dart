@@ -7,7 +7,11 @@ void main() {
     expect(q, startsWith('after:2025/10/01 from:(bank.in OR '));
     expect(q, contains('hdfcbank.net'));
     expect(q, contains('sc.com'));
-    expect(q, endsWith('(debited OR credited OR spent)'));
+    // Transaction words, plus the wording of auto-debit notices.
+    expect(q, contains('(debited OR credited OR spent OR mandate OR UMRN'));
+    expect(q, contains('"auto-debit"'));
+    expect(q, contains('"amount due"'));
+    expect(q, endsWith('"EMI due")'));
   });
 
   group('looksLikeBankEmail', () {

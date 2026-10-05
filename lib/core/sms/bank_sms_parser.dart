@@ -1,3 +1,4 @@
+import '../obligations/obligation_classifier.dart';
 import '../rules/parser_rules.dart';
 
 /// Best-effort parse of a bank transaction SMS into structured fields.
@@ -281,6 +282,10 @@ ParsedSmsTransaction? parseBankSms(String body) {
 
   if (_notTransaction.hasMatch(body)) return null;
 
+  // "Will be debited on…", "mandate registered", "EMI is due", "debit
+  // failed": notices about money, not a transaction (see ObligationKind).
+  if (classifyObligation(body) != null) return null;
+
   final amount = _findAmount(body);
   if (amount == null) return null;
 
@@ -346,6 +351,7 @@ int? extractAmountMinor(String body) {
 /// so the review queue isn't flooded with noise.
 bool looksLikeUnparsedTransaction(String body) {
   if (_notTransaction.hasMatch(body)) return false;
+  if (classifyObligation(body) != null) return false;
   if (_findAmount(body) == null) return false;
   return parseBankSms(body) == null;
 }

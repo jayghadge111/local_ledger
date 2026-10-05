@@ -135,8 +135,8 @@ void main() {
 
     test('early in the month, until put away', () {
       expect(show(), isTrue);
-      expect(show(day: 10), isTrue);
-      expect(show(day: 11), isFalse);
+      expect(show(day: 5), isTrue);
+      expect(show(day: 6), isFalse);
       expect(show(dismissed: '2026-10'), isFalse);
       expect(show(dismissed: '2026-09'), isTrue); // an old dismissal
     });
@@ -234,7 +234,7 @@ void main() {
     final real = DateTime.now();
     final thisMonth = DateTime(real.year, real.month);
     final lastMonth = DateTime(real.year, real.month - 1);
-    // The 4th of the real current month, so the card's 10-day window is open.
+    // The 4th of the real current month, so the card's 5-day window is open.
     DateTime today() => DateTime(real.year, real.month, 4);
 
     const food = ReviewItem(
@@ -359,6 +359,55 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(seconds: 1));
       expect(find.byTooltip('Close'), findsNothing);
+      await unmount(tester);
+    });
+
+    testWidgets('never overflows, at any width the page animates through', (
+      tester,
+    ) async {
+      await seedBudgets(tester);
+      for (final width in [
+        120.0,
+        151.0,
+        200.0,
+        239.0,
+        240.0,
+        280.0,
+        340.0,
+        402.0,
+      ]) {
+        tester.view.physicalSize = Size(width, 900);
+        tester.view.devicePixelRatio = 1;
+        await tester.pumpWidget(
+          ProviderScope(
+            key: ValueKey(width),
+            overrides: [
+              databaseProvider.overrideWithValue(db),
+              budgetReviewProvider.overrideWithValue(
+                BudgetReview(
+                  month: lastMonth,
+                  totalBudgets: 3,
+                  over: const [food, fuel, shopping],
+                ),
+              ),
+            ],
+            child: MaterialApp(
+              home: Scaffold(
+                body: SingleChildScrollView(
+                  child: BudgetReviewCard(today: today),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'overflow at width $width',
+        );
+      }
+      addTearDown(tester.view.reset);
       await unmount(tester);
     });
 

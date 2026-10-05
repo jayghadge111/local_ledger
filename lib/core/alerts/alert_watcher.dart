@@ -10,6 +10,8 @@ import '../db/budgets_repository.dart';
 import '../db/providers.dart';
 import '../db/settings_repository.dart';
 import '../lending/lending_repository.dart';
+import '../obligations/obligation_reminders.dart';
+import '../obligations/obligation_repository.dart';
 import '../notifications/notification_providers.dart';
 import '../notifications/notification_service.dart';
 import 'budget_alerts.dart';
@@ -35,6 +37,13 @@ final alertWatcherProvider = Provider<void>((ref) {
   ref.listen(budgetsProvider, (_, _) => watcher.checkBudgets());
   ref.listen(budgetOverridesProvider, (_, _) => watcher.checkBudgets());
   ref.listen(categoriesProvider, (_, _) => watcher.checkBudgets());
+  // Auto-debit notices: settle them against real debits, remind before they
+  // fall due, and say so at once when one fails.
+  ref.listen(transactionsProvider, (_, _) => watcher.reconcileObligations());
+  ref.listen(obligationsProvider, (_, _) {
+    watcher.syncObligationReminders();
+    watcher.checkFailedDebits();
+  }, fireImmediately: true);
   ref.listen(
     lendingBalancesProvider,
     (_, _) => watcher.syncLendingReminders(),
@@ -162,6 +171,81 @@ class _AlertWatcher {
       return (jsonDecode(raw) as List).cast<String>().toSet();
     } catch (_) {
       return {};
+    }
+  }
+
+  /// A real debit may have arrived (or been added by hand): mark the upcoming
+  /// debits it settles as paid.
+  Future<void> reconcileObligations() async {
+    if (!_ref.read(transactionsProvider).hasValue) return;
+    await ObligationsRepository(_ref.read(databaseProvider)).reconcile();
+  }
+
+  /// Schedules each upcoming debit's reminders and cancels those of anything
+  /// that is paid, failed or gone. Re-using an id replaces the old schedule.
+  Future<void> syncObligationReminders() async {
+    final all = _ref.read(obligationsProvider).value;
+    if (all == null) return;
+    final now = DateTime.now();
+    for (final o in all) {
+      // Anything due long ago has no reminders left to schedule or cancel.
+      final due = o.dueDate;
+      if (due == null || due.isBefore(now.subtract(const Duration(days: 2)))) {
+        continue;
+      }
+      final planned = {for (final r in planReminders(o, now)) r.slot: r};
+      for (var slot = 0; slot < reminderSlots; slot++) {
+        final id = reminderIdFor(o.id, slot);
+        final r = planned[slot];
+        if (r == null) {
+          await _notifications.cancel(id);
+        } else {
+          await _notifications.scheduleAt(
+            id: id,
+            title: r.title,
+            body: r.body,
+            when: r.when,
+          );
+        }
+      }
+    }
+  }
+
+  /// A failed debit is worth knowing about now: once per failure, and only
+  /// when it is recent (importing a year of mail must not replay old ones).
+  Future<void> checkFailedDebits() async {
+    final all = _ref.read(obligationsProvider).value;
+    if (all == null) return;
+    final cutoff = DateTime.now().subtract(const Duration(days: 3));
+    final failed = [
+      for (final o in all)
+        if (o.status == ObligationStatus.failed && o.receivedAt.isAfter(cutoff))
+          o,
+    ];
+    if (failed.isEmpty) return;
+
+    final settings = _ref.read(settingsRepositoryProvider);
+    final shown = _decode(
+      await settings.get(SettingsKeys.obligationAlertsShown),
+    );
+    var changed = false;
+    for (final o in failed) {
+      if (shown.contains(o.id)) continue;
+      final text = failureText(o);
+      await _notifications.showNow(
+        id: failureIdFor(o.id),
+        title: text.title,
+        body: text.body,
+      );
+      shown.add(o.id);
+      changed = true;
+    }
+    if (changed) {
+      final keep = shown.toList();
+      await settings.set(
+        SettingsKeys.obligationAlertsShown,
+        jsonEncode(keep.length > 200 ? keep.sublist(keep.length - 200) : keep),
+      );
     }
   }
 

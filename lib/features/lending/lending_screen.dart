@@ -10,6 +10,9 @@ import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_background.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/text_button_styles.dart';
+import '../../core/lending/lending_messages.dart';
+import '../../core/theme/app_theme.dart';
+import 'lending_share_dialog.dart';
 
 final _money = NumberFormat.currency(
   locale: 'en_IN',
@@ -732,7 +735,22 @@ class _PaymentFormState extends ConsumerState<_PaymentForm> {
                                 amountMinor: minor,
                                 date: _date,
                               );
-                          if (context.mounted) Navigator.of(context).pop();
+                          if (!context.mounted) return;
+                          // Offer to tell the other person, once this
+                          // dialog has closed.
+                          final host = Navigator.of(
+                            context,
+                            rootNavigator: true,
+                          );
+                          Navigator.of(context).pop();
+                          if (host.mounted) {
+                            await showLendingShare(
+                              host.context,
+                              widget.entryId,
+                              kind: LendingShareKind.payment,
+                              paymentMinor: minor,
+                            );
+                          }
                         },
                         child: const Text('Save'),
                       ),
@@ -755,6 +773,79 @@ Future<void> showLendingDetail(BuildContext context, String entryId) {
     context: context,
     builder: (_) => CenteredDialogCard(child: _Detail(entryId: entryId)),
   );
+}
+
+/// "40% paid", a bar, and the paid / pending amounts — worded for whichever
+/// side the user is on.
+class _ProgressBlock extends StatelessWidget {
+  const _ProgressBlock({required this.balance});
+
+  final LendingBalance balance;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final b = balance;
+    final percent = paidPercent(b);
+    final settled = b.isSettled;
+    final muted = theme.colorScheme.onSurfaceVariant;
+
+    Widget figure(String label, String value, {bool end = false}) => Column(
+      crossAxisAlignment: end
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
+      children: [
+        Text(label, style: theme.textTheme.bodySmall?.copyWith(color: muted)),
+        Text(
+          value,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+      ],
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          settled
+              ? 'Settled'
+              : b.isLent
+              ? '$percent% paid'
+              : 'You\'ve paid back $percent%',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(999),
+          child: LinearProgressIndicator(
+            value: percent / 100,
+            minHeight: 8,
+            backgroundColor: theme.colorScheme.outline,
+            color: settled ? Colors.green : ChartColors.of(context).accent,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            figure(
+              b.isLent ? 'Paid' : 'Paid back',
+              _money.format(b.paidMinor / 100),
+            ),
+            figure(
+              b.isLent ? 'Pending' : 'Still owe',
+              _money.format(b.outstandingMinor / 100),
+              end: true,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 }
 
 class _Detail extends ConsumerWidget {
@@ -819,16 +910,12 @@ class _Detail extends ConsumerWidget {
                     Text(e.note!, style: theme.textTheme.bodyMedium),
                   ],
                   const SizedBox(height: 14),
-                  Text(
-                    balance.isSettled
-                        ? 'Settled'
-                        : '${_money.format(balance.outstandingMinor / 100)} left',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
+                  _ProgressBlock(balance: balance),
                   const SizedBox(height: 12),
-                  Text('Repayments', style: theme.textTheme.labelLarge),
+                  Text(
+                    balance.isLent ? 'Repayments' : 'Payments you made',
+                    style: theme.textTheme.labelLarge,
+                  ),
                   if (payments.isEmpty)
                     Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -852,18 +939,58 @@ class _Detail extends ConsumerWidget {
                       ),
                     ),
                   const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 4,
+                  Row(
                     children: [
-                      if (!balance.isSettled)
-                        FilledButton.icon(
-                          onPressed: () =>
-                              showLendingPaymentDialog(context, e.id),
-                          icon: const Icon(Icons.payments_outlined, size: 18),
-                          label: const Text('Record payment'),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: () => showLendingShare(
+                            context,
+                            e.id,
+                            kind: LendingShareKind.status,
+                          ),
+                          icon: const Icon(Icons.ios_share_rounded, size: 18),
+                          label: const Text('Share status'),
                         ),
-                      OutlinedButton(
+                      ),
+                      if (!balance.isSettled) ...[
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: () => showLendingShare(
+                              context,
+                              e.id,
+                              kind: LendingShareKind.message,
+                            ),
+                            icon: Icon(
+                              balance.isLent
+                                  ? Icons.notifications_active_outlined
+                                  : Icons.send_rounded,
+                              size: 18,
+                            ),
+                            label: Text(
+                              balance.isLent ? 'Remind' : 'Send update',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (!balance.isSettled) ...[
+                    const SizedBox(height: 8),
+                    FilledButton.tonalIcon(
+                      onPressed: () => showLendingPaymentDialog(context, e.id),
+                      icon: const Icon(Icons.payments_outlined, size: 18),
+                      label: Text(
+                        balance.isLent ? 'Record payment' : 'I paid some',
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 4),
+                  // Edit, settle and delete: same style, evenly spaced.
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
                         onPressed: () {
                           Navigator.of(context).pop();
                           showLendingEntryDialog(context, existing: e);

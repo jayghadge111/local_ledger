@@ -20,6 +20,10 @@ abstract class SettingsKeys {
   static const gmailCheckpoint = 'gmail_import_checkpoint'; // JSON
   static const smsCheckpoint = 'sms_import_checkpoint'; // JSON
   static const smsAutoSync = 'sms_auto_sync'; // 'true' | 'false'
+  static const gmailAccount =
+      'gmail_account'; // the email the user connected; empty = none
+  static const obligationAlertsShown =
+      'obligation_alerts_shown'; // JSON list of obligation ids
   static const budgetReviewDismissed =
       'budget_review_dismissed'; // month key the review card was put away for
   static const monthSummaryShown =

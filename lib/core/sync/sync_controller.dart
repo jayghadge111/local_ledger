@@ -106,17 +106,24 @@ String _stoppedText(int added) =>
     'Stopped — ${added == 0 ? 'nothing added yet' : 'added $added so far'}. '
     'Tap Resume to carry on where it left off.';
 
+String _dueNotices(int n) => n > 0
+    ? ' $n auto-debit notice${n == 1 ? '' : 's'} saved under Auto-pay & dues.'
+    : '';
+
 String describeGmailResult(EmailImportResult r) {
   if (r.cancelled) return _stoppedText(r.imported);
   if (r.imported > 0) {
     return 'Done — added ${r.imported} transaction${r.imported == 1 ? '' : 's'} '
         'from ${r.scanned} bank email${r.scanned == 1 ? '' : 's'}.'
+        '${_dueNotices(r.obligations)}'
         '${r.queued > 0 ? ' ${r.queued} need your review (Manage tab).' : ''}';
   }
   if (r.scanned == 0) {
     return 'Connected. No bank emails found in the last year.';
   }
   final reasons = [
+    if (r.obligations > 0)
+      '${r.obligations} auto-debit notice${r.obligations == 1 ? '' : 's'} saved under Auto-pay & dues',
     if (r.duplicates > 0) '${r.duplicates} already in the app',
     if (r.queued > 0) '${r.queued} need your review (Manage tab)',
     if (r.notRecognised > 0) "${r.notRecognised} weren't transaction alerts",
@@ -128,9 +135,9 @@ String describeGmailResult(EmailImportResult r) {
 
 String describeSmsResult(SmsImportResult r) {
   if (r.cancelled) return _stoppedText(r.imported);
-  final review = r.queued > 0
-      ? ' ${r.queued} need your review (Manage tab).'
-      : '';
+  final review =
+      '${_dueNotices(r.obligations)}'
+      '${r.queued > 0 ? ' ${r.queued} need your review (Manage tab).' : ''}';
   return r.imported > 0
       ? 'Done — added ${r.imported} transaction${r.imported == 1 ? '' : 's'} from ${r.scanned} messages.$review'
       : 'Done — scanned ${r.scanned} messages, no new bank transactions found.$review';
@@ -231,13 +238,18 @@ class SyncController extends Notifier<SyncState> {
 
   // ---- Gmail ----
 
-  /// Shows "Connected as …" if Google still has a session. Never imports.
+  /// Shows "Connected as …" for an account the user connected earlier. Reads
+  /// only what this app saved on the device: it never contacts Google, opens
+  /// an account picker, or imports anything. Connecting happens only when the
+  /// user taps Connect Gmail or Scan now.
   Future<void> restoreGmailAccount() async {
     if (state.gmailAccount != null) return;
-    try {
-      final account = await ref.read(gmailAuthServiceProvider).currentAccount();
-      if (account != null) state = state.copyWith(gmailAccount: account.email);
-    } catch (_) {}
+    final saved = await ref
+        .read(settingsRepositoryProvider)
+        .get(SettingsKeys.gmailAccount);
+    if (saved != null && saved.isNotEmpty && state.gmailAccount == null) {
+      state = state.copyWith(gmailAccount: saved);
+    }
   }
 
   void stopGmail() {
@@ -274,6 +286,9 @@ class SyncController extends Notifier<SyncState> {
           ? await auth.signInFresh()
           : (await auth.currentAccount() ?? await auth.signInFresh());
       state = state.copyWith(gmailAccount: account.email);
+      await ref
+          .read(settingsRepositoryProvider)
+          .set(SettingsKeys.gmailAccount, account.email);
 
       final result = await ref
           .read(gmailImportServiceProvider)
@@ -341,6 +356,9 @@ class SyncController extends Notifier<SyncState> {
       await ref.read(gmailAuthServiceProvider).disconnect();
     } catch (_) {}
     await _store.clearGmail();
+    await ref
+        .read(settingsRepositoryProvider)
+        .set(SettingsKeys.gmailAccount, '');
     state = state.copyWith(
       clearAccount: true,
       gmail: const SyncJob(

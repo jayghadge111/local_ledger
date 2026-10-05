@@ -9,6 +9,8 @@ import '../../core/db/app_database.dart';
 import '../../core/db/providers.dart';
 import '../../core/db/rules_repository.dart';
 import '../../core/intelligence/default_category_rules.dart';
+import '../../core/lending/lending_math.dart';
+import '../../core/lending/lending_repository.dart';
 import '../../shared/widgets/text_button_styles.dart';
 import '../../core/intelligence/rule_matcher.dart';
 import '../../shared/widgets/glass_surface.dart';
@@ -83,6 +85,10 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
   late bool _isTransfer;
   bool _paidInCash = false;
 
+  /// When the loan is due — asked for (and required) when the category is
+  /// Lending money / Borrowing money. Same field as on the Lend & borrow page.
+  DateTime? _dueDate;
+
   @override
   void initState() {
     super.initState();
@@ -101,6 +107,44 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
     _date = existing?.date ?? prefill?.date ?? DateTime.now();
     _isInternational = existing?.isInternational ?? false;
     _isTransfer = existing?.kind == 'transfer';
+
+    // Editing a transaction that already made a Lend & borrow entry: start
+    // from that entry's due date.
+    if (existing != null) {
+      ref.read(lendingRepositoryProvider).entryForTransaction(existing.id).then(
+        (entry) {
+          if (mounted && entry?.dueDate != null && _dueDate == null) {
+            setState(() => _dueDate = entry!.dueDate);
+          }
+        },
+      );
+    }
+  }
+
+  /// 'lent' / 'borrowed' when this transaction is a loan, else null.
+  String? get _loanDirection => lendingDirectionFor(_categoryId, _type);
+
+  static DateTime _day(DateTime d) => DateTime(d.year, d.month, d.day);
+
+  Future<void> _pickDueDate() async {
+    final first = _day(_date);
+    final start = _dueDate ?? first.add(const Duration(days: 7));
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: start.isBefore(first) ? first : start,
+      firstDate: first,
+      lastDate: DateTime(2100),
+    );
+    if (picked != null) setState(() => _dueDate = picked);
+  }
+
+  String? _validateDueDate() {
+    final due = _dueDate;
+    if (due == null) return 'Due date is required for lending and borrowing';
+    if (_day(due).isBefore(_day(_date))) {
+      return "Due date can't be before the transaction date";
+    }
+    return null;
   }
 
   void _tryAutoCategorize() {
@@ -148,8 +192,11 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
     final accountId = _paidInCash ? await repo.cashAccountId() : null;
 
     final merchantText = _merchantController.text.trim();
+    final lending = ref.read(lendingRepositoryProvider);
+    final direction = _loanDirection;
+    LendingSync loan = LendingSync.none;
     if (widget.existing == null) {
-      await repo.addManualTransaction(
+      final newId = await repo.addManualTransaction(
         amountMinor: amountMinor,
         merchant: _merchantController.text.trim(),
         categoryId: _categoryId!,
@@ -159,12 +206,28 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
         accountId: accountId,
         isTransfer: _isTransfer,
       );
+      loan = await lending.syncFromTransaction(
+        transactionId: newId,
+        direction: direction,
+        person: merchantText,
+        amountMinor: amountMinor,
+        date: _date,
+        dueDate: _dueDate,
+      );
       final body = widget.prefill?.learnFromBody;
       if (body != null) {
-        await _learn(body: body, amountMinor: amountMinor, merchant: merchantText, senderCode: widget.prefill?.senderCode);
+        await _learn(
+          body: body,
+          amountMinor: amountMinor,
+          merchant: merchantText,
+          senderCode: widget.prefill?.senderCode,
+        );
       }
     } else {
-      await _learnFromCorrection(amountMinor: amountMinor, merchant: merchantText);
+      await _learnFromCorrection(
+        amountMinor: amountMinor,
+        merchant: merchantText,
+      );
       final renamed = await repo.updateTransaction(
         widget.existing!.id,
         amountMinor: amountMinor,
@@ -176,6 +239,14 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
         accountId: accountId,
         isTransfer: _isTransfer,
       );
+      loan = await lending.syncFromTransaction(
+        transactionId: widget.existing!.id,
+        direction: direction,
+        person: merchantText,
+        amountMinor: amountMinor,
+        date: _date,
+        dueDate: _dueDate,
+      );
       if (renamed > 0) {
         messenger.showSnackBar(
           SnackBar(
@@ -185,6 +256,15 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
           ),
         );
       }
+    }
+    final loanNote = switch (loan) {
+      LendingSync.created =>
+        'Added to Lend & borrow — you will be reminded on the due date',
+      LendingSync.keptWithPayments => 'Kept the Lend & borrow entry, since repayments are recorded against it',
+      _ => null,
+    };
+    if (loanNote != null) {
+      messenger.showSnackBar(SnackBar(content: Text(loanNote)));
     }
 
     if (mounted) Navigator.of(context).pop(true);
@@ -199,17 +279,23 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
     bool requireMerchant = false,
   }) async {
     try {
-      final learned = await ref.read(parserTemplateStoreProvider).learn(
-        body: body,
-        type: _type,
-        amountMinor: amountMinor,
-        merchant: merchant,
-        senderCode: senderCode,
-        requireMerchant: requireMerchant,
-      );
+      final learned = await ref
+          .read(parserTemplateStoreProvider)
+          .learn(
+            body: body,
+            type: _type,
+            amountMinor: amountMinor,
+            merchant: merchant,
+            senderCode: senderCode,
+            requireMerchant: requireMerchant,
+          );
       if (learned && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Learned this message layout — similar messages will be read automatically')),
+          const SnackBar(
+            content: Text(
+              'Learned this message layout — similar messages will be read automatically',
+            ),
+          ),
         );
       }
     } catch (_) {
@@ -220,7 +306,10 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
   /// Editing an imported transaction fixes something the parser got wrong:
   /// the payee, the direction or the amount. If so, learn from the original
   /// message.
-  Future<void> _learnFromCorrection({required int amountMinor, required String merchant}) async {
+  Future<void> _learnFromCorrection({
+    required int amountMinor,
+    required String merchant,
+  }) async {
     final existing = widget.existing!;
     final encrypted = existing.rawTextEncrypted;
     if (encrypted == null) return;
@@ -229,7 +318,9 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
     final changedMerchant = merchant != existing.merchant;
     if (!changedType && !changedAmount && !changedMerchant) return;
     try {
-      final body = await ref.read(encryptionServiceProvider).decryptString(encrypted);
+      final body = await ref
+          .read(encryptionServiceProvider)
+          .decryptString(encrypted);
       await _learn(
         body: body,
         amountMinor: amountMinor,
@@ -242,6 +333,17 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
 
   Future<void> _delete() async {
     final repo = ref.read(transactionsRepositoryProvider);
+    // A loan entry made from this transaction goes with it (unless
+    // repayments were recorded against it).
+    await ref
+        .read(lendingRepositoryProvider)
+        .syncFromTransaction(
+          transactionId: widget.existing!.id,
+          direction: null,
+          person: '',
+          amountMinor: 0,
+          date: DateTime.now(),
+        );
     await repo.softDelete(widget.existing!.id);
     if (mounted) Navigator.of(context).pop();
   }
@@ -314,9 +416,13 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _merchantController,
-                      decoration: const InputDecoration(
-                        labelText: 'Merchant / description',
-                        border: OutlineInputBorder(),
+                      decoration: InputDecoration(
+                        labelText: switch (_loanDirection) {
+                          'lent' => 'Lent to',
+                          'borrowed' => 'Borrowed from',
+                          _ => 'Merchant / description',
+                        },
+                        border: const OutlineInputBorder(),
                       ),
                       validator: (value) =>
                           (value == null || value.trim().isEmpty)
@@ -343,6 +449,56 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
                       loading: () => const LinearProgressIndicator(),
                       error: (e, _) => Text('Could not load categories: $e'),
                     ),
+                    if (_loanDirection != null) ...[
+                      const SizedBox(height: 12),
+                      FormField<DateTime>(
+                        validator: (_) => _validateDueDate(),
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        builder: (field) => Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () async {
+                                await _pickDueDate();
+                                field.didChange(_dueDate);
+                              },
+                              icon: const Icon(Icons.alarm_rounded, size: 18),
+                              label: Text(
+                                _dueDate == null
+                                    ? 'Set due date (reminder) *'
+                                    : 'Due ${DateFormat('d MMM yyyy').format(_dueDate!)}',
+                              ),
+                              style: field.hasError
+                                  ? OutlinedButton.styleFrom(
+                                      foregroundColor: Theme.of(context)
+                                          .colorScheme
+                                          .error,
+                                      side: BorderSide(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .error,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 12, top: 6),
+                              child: Text(
+                                field.errorText ?? 'Also added to Lend & borrow, with a reminder on this date.',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: field.hasError
+                                          ? Theme.of(context).colorScheme.error
+                                          : Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                    ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     OutlinedButton.icon(
                       onPressed: _pickDate,

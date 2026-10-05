@@ -8,6 +8,8 @@ import '../db/app_database.dart';
 import '../intelligence/default_category_rules.dart';
 import '../intelligence/merchant_normalizer.dart';
 import '../intelligence/rule_matcher.dart';
+import '../obligations/obligation_parser.dart';
+import '../obligations/obligation_repository.dart';
 import '../security/encryption_service.dart';
 import '../sms/bank_names.dart';
 import '../sms/bank_sms_parser.dart';
@@ -15,7 +17,7 @@ import '../sms/parser_templates.dart';
 import '../sms/template_learning.dart';
 import 'reconciler.dart';
 
-enum IngestOutcome { imported, duplicate, queued, skipped }
+enum IngestOutcome { imported, duplicate, queued, skipped, obligation }
 
 /// The one place SMS and email messages become stored transactions:
 /// parse, drop duplicates, resolve the account, clean the merchant name,
@@ -46,7 +48,13 @@ class TransactionIngestor {
 }
 
 class IngestSession {
-  IngestSession._(this._owner, this._templates, this._rules, this._aliases, this._accounts);
+  IngestSession._(
+    this._owner,
+    this._templates,
+    this._rules,
+    this._aliases,
+    this._accounts,
+  );
 
   final TransactionIngestor _owner;
   final List<CompiledTemplate> _templates;
@@ -66,6 +74,10 @@ class IngestSession {
   /// alerts, anything without a clear amount and direction).
   int skipped = 0;
 
+  /// Auto-debit notices (mandate set-ups, pre-debit alerts, EMI and card
+  /// dues, bounces) that were kept as upcoming debits instead of spending.
+  int obligations = 0;
+
   /// Existing rows corrected because the parser now reads them differently.
   int repaired = 0;
 
@@ -84,7 +96,33 @@ class IngestSession {
     required DateTime date,
   }) async {
     final hash = _hash(source, body, date);
-    final parsed = _readWithTemplates(sender, body) ?? parseBankSms(body);
+    final learned = _readWithTemplates(sender, body);
+
+    // "Your A/c will be debited on 07-OCT-26", "e-Mandate registered",
+    // "EMI is due", "debit failed": notices about money, not money spent.
+    // They are kept as upcoming debits and never counted in the totals. A
+    // layout the user taught the app takes priority — that is their word
+    // that the message *is* a transaction.
+    if (learned == null) {
+      final notice = parseObligation(body, sender: sender);
+      if (notice != null) {
+        final outcome = await ObligationsRepository(_db).record(
+          notice,
+          source: source,
+          sender: sender,
+          hash: hash,
+          receivedAt: date,
+        );
+        if (outcome == RecordOutcome.duplicate) {
+          duplicates++;
+          return IngestOutcome.duplicate;
+        }
+        obligations++;
+        return IngestOutcome.obligation;
+      }
+    }
+
+    final parsed = learned ?? parseBankSms(body);
 
     if (parsed == null) {
       if (!looksLikeUnparsedTransaction(body)) {
@@ -418,8 +456,14 @@ class IngestSession {
   /// Call once after the last [add]: links transfers and refunds.
   Future<ReconcileResult> finish() async {
     if (_templateHits.isNotEmpty) {
-      await ParserTemplateStore(_db, _owner._encryption).recordHits(_templateHits);
+      await ParserTemplateStore(
+        _db,
+        _owner._encryption,
+      ).recordHits(_templateHits);
     }
+    // Settle upcoming debits against the transactions now in the app: a real
+    // debit of the same amount marks its notice paid.
+    await ObligationsRepository(_db).reconcile();
     return Reconciler(_db).run();
   }
 }

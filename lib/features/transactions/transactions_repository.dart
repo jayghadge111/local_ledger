@@ -17,7 +17,8 @@ class TransactionsRepository {
   final AppDatabase _db;
   static const _uuid = Uuid();
 
-  Future<void> addManualTransaction({
+  /// Returns the new transaction's id.
+  Future<String> addManualTransaction({
     required int amountMinor,
     required String merchant,
     required String categoryId,
@@ -27,11 +28,12 @@ class TransactionsRepository {
     String? accountId,
     bool isTransfer = false,
   }) async {
+    final id = _uuid.v4();
     await _db
         .into(_db.transactions)
         .insert(
           TransactionsCompanion.insert(
-            id: _uuid.v4(),
+            id: id,
             accountId: Value(accountId),
             amountMinor: amountMinor,
             merchant: merchant,
@@ -46,6 +48,7 @@ class TransactionsRepository {
           ),
         );
     await Reconciler(_db).run();
+    return id;
   }
 
   /// Returns how many *other* transactions were relabelled because the
@@ -208,7 +211,8 @@ class TransactionsRepository {
         TransactionsCompanion(
           kind: Value(isTransfer ? 'transfer' : 'normal'),
           kindLocked: const Value(true),
-          categoryId: isTransfer &&
+          categoryId:
+              isTransfer &&
                   !tx.userEdited &&
                   (tx.categoryId == null || tx.categoryId == 'cat_other')
               ? const Value('cat_self_transfer')

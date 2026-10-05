@@ -14,6 +14,7 @@ import '../lock/pin_setup_screen.dart';
 import '../update/update_test_card.dart';
 import 'widgets/backup_card.dart';
 import 'widgets/email_connect_card.dart';
+import 'widgets/message_tools_section.dart';
 import 'widgets/profile_card.dart';
 import 'widgets/sms_connect_card.dart';
 
@@ -139,6 +140,11 @@ class SettingsScreen extends ConsumerWidget {
         FadeSlideIn(
           delay: const Duration(milliseconds: 55),
           child: const EmailConnectCard(),
+        ),
+        const SizedBox(height: 16),
+        const FadeSlideIn(
+          delay: Duration(milliseconds: 60),
+          child: MessageToolsSection(),
         ),
         const SizedBox(height: 40),
         const _MadeInIndia(),

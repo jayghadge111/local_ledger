@@ -1,5 +1,21 @@
 import '../db/app_database.dart';
 
+/// The categories that mean money lent out and money borrowed.
+const kLendingCategoryId = 'cat_lending';
+const kBorrowingCategoryId = 'cat_borrowing';
+
+/// 'lent' or 'borrowed' when a transaction in [categoryId] of [type]
+/// (debit = spent, credit = received) is a loan, otherwise null.
+///
+/// Lending money is money going out and borrowing money is money coming in.
+/// The other way round (a "Lending money" payment you *received*) is most
+/// likely a repayment, so it does not start a new loan.
+String? lendingDirectionFor(String? categoryId, String type) {
+  if (categoryId == kLendingCategoryId && type == 'debit') return 'lent';
+  if (categoryId == kBorrowingCategoryId && type == 'credit') return 'borrowed';
+  return null;
+}
+
 /// One lent/borrowed entry together with what has been paid back so far.
 class LendingBalance {
   const LendingBalance({required this.entry, required this.paidMinor});

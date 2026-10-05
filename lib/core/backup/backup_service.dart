@@ -32,6 +32,8 @@ class BackupService {
       'transactions':
           (await _db.select(_db.transactions).get()).map((e) => e.toJson()).toList(),
       'budgets': (await _db.select(_db.budgets).get()).map((e) => e.toJson()).toList(),
+      'obligations':
+          (await _db.select(_db.obligations).get()).map((e) => e.toJson()).toList(),
       'budgetOverrides':
           (await _db.select(_db.budgetOverrides).get()).map((e) => e.toJson()).toList(),
       'rules': (await _db.select(_db.rules).get()).map((e) => e.toJson()).toList(),
@@ -114,6 +116,11 @@ class BackupService {
                 'fromMonthKey': '0000-00',
                 ...(row as Map<String, dynamic>),
               }).toCompanion(true),
+            );
+      }
+      for (final row in (payload['obligations'] as List? ?? [])) {
+        await _db.into(_db.obligations).insertOnConflictUpdate(
+              Obligation.fromJson(row as Map<String, dynamic>).toCompanion(true),
             );
       }
       for (final row in (payload['budgetOverrides'] as List? ?? [])) {

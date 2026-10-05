@@ -129,7 +129,7 @@ bool shouldShowReview({
   required DateTime now,
   required String? dismissedForMonthKey,
   required String currentMonthKey,
-  int visibleForDays = 10,
+  int visibleForDays = 5,
 }) {
   if (review == null || review.allWithinLimits) return false;
   if (now.day > visibleForDays) return false;

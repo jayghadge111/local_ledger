@@ -55,7 +55,8 @@ String? normalizeSenderDomain(String input) {
 
 /// The Gmail search that selects bank alerts: only mail *from* a bank
 /// domain, from [afterDate] (`YYYY/MM/DD`) onwards, containing a
-/// debit/credit word. Filtering by sender in the query means other mail is
+/// debit/credit word — or the wording of an auto-debit notice (mandate set-up,
+/// pre-debit advice, EMI or card bill), which the app keeps as upcoming debits. Filtering by sender in the query means other mail is
 /// never downloaded. Gmail's `from:` matches by substring, so it can let a
 /// few look-alikes through; [looksLikeBankEmail] is the exact check applied
 /// to everything fetched.
@@ -64,4 +65,5 @@ String bankEmailSearchQuery(
   List<String> extraDomains = const [],
 }) =>
     'after:$afterDate from:($bankInSuffix OR ${[...knownBankEmailDomains, ...extraDomains].join(' OR ')}) '
-    '(debited OR credited OR spent)';
+    '(debited OR credited OR spent OR mandate OR UMRN OR "auto-debit" OR '
+    '"auto debit" OR "amount due" OR "EMI due")';

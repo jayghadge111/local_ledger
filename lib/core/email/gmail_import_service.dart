@@ -7,6 +7,7 @@ import '../import_window.dart';
 import '../db/settings_repository.dart';
 import '../import_progress.dart';
 import '../sync/import_checkpoints.dart';
+import '../obligations/obligation_parser.dart';
 import '../sms/bank_sms_parser.dart';
 import 'html_text.dart';
 import '../ingest/transaction_ingestor.dart';
@@ -18,6 +19,7 @@ class EmailImportResult {
     required this.scanned,
     required this.imported,
     this.queued = 0,
+    this.obligations = 0,
     this.notRecognised = 0,
     this.unreadable = 0,
     this.duplicates = 0,
@@ -28,6 +30,9 @@ class EmailImportResult {
 
   /// Looked like a transaction but couldn't be read — in the review queue.
   final int queued;
+
+  /// Auto-debit notices kept as upcoming debits (not spending).
+  final int obligations;
 
   /// Read fine but isn't a transaction alert (OTP, promo, statement notice).
   final int notRecognised;
@@ -212,6 +217,7 @@ class GmailImportService {
       scanned: messageRefs.length,
       imported: session.imported,
       queued: session.queued,
+      obligations: session.obligations,
       notRecognised: session.skipped,
       unreadable: unreadable,
       duplicates: session.duplicates,
@@ -281,6 +287,20 @@ class GmailImportService {
     final plain = _extractPart(payload, 'text/plain');
     final html = _extractPart(payload, 'text/html');
     final snippet = json['snippet'] as String? ?? '';
+    final subject =
+        messageHeaders.firstWhere(
+              (h) => h['name'] == 'Subject',
+              orElse: () => const {},
+            )['value']
+            as String? ??
+        '';
+
+    // An auto-debit notice (mandate set-up, pre-debit advice, EMI or card
+    // bill) has no single "transaction sentence" to focus on, and its subject
+    // often carries the key fact ("Successful Registration of e-Mandate -
+    // UMRN …"). Keep the subject and the whole readable body.
+    final notice = _noticeText(subject, plain, html, snippet);
+    if (notice != null) return (from, internalDate, notice);
 
     // Prefer the plain part; many bank alerts are HTML-only, so fall back to
     // the HTML turned into text. Keep just the sentence that reports the
@@ -294,6 +314,26 @@ class GmailImportService {
     }
     if (body.isEmpty) return null;
     return (from, internalDate, body);
+  }
+
+  static const _noticeLimit = 2500;
+
+  String? _noticeText(
+    String subject,
+    String? plain,
+    String? html,
+    String snippet,
+  ) {
+    for (final text in [plain, if (html != null) htmlToText(html), snippet]) {
+      if (text == null || text.trim().isEmpty) continue;
+      final flat = '$subject. $text'.replaceAll(RegExp(r'\s+'), ' ').trim();
+      if (classifyObligation(flat) != null) {
+        return flat.length > _noticeLimit
+            ? flat.substring(0, _noticeLimit)
+            : flat;
+      }
+    }
+    return null;
   }
 
   String? _extractPart(Map<String, dynamic> part, String wantedMime) {

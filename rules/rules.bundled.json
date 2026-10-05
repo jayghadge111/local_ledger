@@ -162,9 +162,23 @@
     "VNSBBR", "VNSBLK", "VSBANK", "VSBNKL", "VSPCCB", "VSVBNK", "VUCBKP", "VUCBNK", "VUVSBJ",
     "VVCCBK", "VVSBNK", "WANABK", "WASHIM", "WDCBNK", "WGLCCB", "WMBSMS", "WUCBKL", "WYDDCB",
     "YASHBK", "YDRVBK", "YESBCC", "YESBCM", "YESBNK", "YESPAY", "YUCBLY", "ZPSBNK", "ZSAGRA",
-    "ZSBGZB", "ZSBJBK", "ZSBMRT", "ZSBRMP"
+    "ZSBGZB", "ZSBJBK", "ZSBMRT", "ZSBRMP",
+    "SBICRD", "ONECRD", "SCAPIA", "FIMONY", "JUPITR", "BAJAJF", "TATACAP", "LTFIN", "ABFLTD", "MUTHOT", "DMIFIN", "NPCI", "CREDBK", "BNDHNB", "ARYVRT", "BUPGB"
   ],
   "bankNames": [
+    {"prefix": "SBICRD", "name": "SBI Card"},
+    {"prefix": "ONECRD", "name": "OneCard"},
+    {"prefix": "SCAPIA", "name": "Scapia"},
+    {"prefix": "FIMONY", "name": "Fi Money"},
+    {"prefix": "JUPITR", "name": "Jupiter"},
+    {"prefix": "BAJAJF", "name": "Bajaj Finance"},
+    {"prefix": "TATACAP", "name": "Tata Capital"},
+    {"prefix": "LTFIN", "name": "L&T Finance"},
+    {"prefix": "ABFLTD", "name": "Aditya Birla Finance"},
+    {"prefix": "MUTHOT", "name": "Muthoot Finance"},
+    {"prefix": "DMIFIN", "name": "DMI Finance"},
+    {"prefix": "NPCI", "name": "NPCI"},
+    {"prefix": "CREDBK", "name": "CRED"},
     {"prefix": "HDFC", "name": "HDFC Bank"},
     {"prefix": "ICICI", "name": "ICICI Bank"},
     {"prefix": "ICIBNK", "name": "ICICI Bank"},
@@ -209,7 +223,8 @@
       "aexp.com", "americanexpress.com", "dbs.com", "sbicard.com", "bobcard.co.in", "paytmbank.com",
       "airtelbank.com", "ippbonline.com", "finobank.com", "jjsbl.com", "jjsbl.co.in", "jpcbank.com",
       "saraswatbank.com", "cosmosbank.com", "svcbank.com", "nkgsb-bank.com", "apnabank.co.in",
-      "dnsb.co.in", "mucbank.com", "rnsbindia.com", "amcbank.in"
+      "dnsb.co.in", "mucbank.com", "rnsbindia.com", "amcbank.in",
+      "bankofbaroda.com", "barodaupbank.co.in", "getonecard.app", "scapia.cards", "fi.money", "bajajfinserv.in", "tatacapital.com", "ltfs.com"
     ]
   },
   "categoryKeywords": [
@@ -2084,6 +2099,150 @@
       ]
     }
   },
+  "obligations": {
+    "classify": {
+      "bounce": {
+        "pattern": "returned\\s+unpaid|\\b(?:e-?mandate|e-?nach|nach|ecs|mandate|auto-?\\s?pay|auto-?\\s?debit|standing\\s+instruction|si)\\b.{0,100}?\\b(?:failed|unsuccessful|declined|bounced|dishonou?red|rejected|returned)\\b|\\b(?:failed|unsuccessful|declined|bounced|dishonou?red|rejected)\\b.{0,100}?(?:insufficient|return\\s+charges)|bounce\\s+(?:charges|fee)\\s+(?:applicable|levied|charged)|execution\\s+failed",
+        "flags": "i"
+      },
+      "setup": {
+        "pattern": "\\b(?:e-?mandate|e-?nach|nach|ecs|auto-?\\s?pay|standing\\s+instruction|mandate)\\b.{0,80}?\\b(?:regist(?:ered|ration)|created|set\\s?up|approved|activated|initiated|successful(?:ly)?)\\b|\\bregistration\\s+of\\s+(?:an?\\s+)?(?:e-?)?(?:mandate|nach)|set\\s+up\\s+an?\\s+automatic\\s+payment|automatic\\s+payment\\s+of\\s+up\\s+to",
+        "flags": "i"
+      },
+      "preDebit": {
+        "pattern": "will\\s+be\\s+(?:auto-?\\s?)?debited|\\bauto-?\\s?debit\\b.{0,100}?(?:will\\s+be\\s+processed|is\\s+scheduled|scheduled\\s+for|due\\b)|(?:is\\s+)?scheduled\\s+(?:for\\s+)?(?:an?\\s+)?(?:auto(?:mated)?-?\\s?)?(?:debit|nach|deduction)|scheduled\\s+debit|upcoming\\s+(?:auto-?\\s?)?debit|auto-?\\s?pay\\s+reminder|pre-?debit|auto-?\\s?debit\\s+advice|debit\\b.{0,40}\\bwill\\s+occur",
+        "flags": "i"
+      },
+      "cardStatement": {
+        "pattern": "(?:statement|bill)\\b.{0,80}?\\b(?:generated|ready|issued)\\b|\\bstatement\\s+(?:for|of)\\b.{0,70}?\\bcard\\b|\\bcard\\b.{0,50}?\\bbill\\s*[:\\-]|total\\s+(?:amt\\.?\\s*|amount\\s*)?due\\s+on\\s+your\\b.{0,40}?\\bcard\\b",
+        "flags": "i"
+      },
+      "cardDue": {
+        "pattern": "\\bcard\\b.{0,80}?\\b(?:is\\s+)?due\\s+(?:on|by|tomorrow|today|in)\\b|\\bpayment\\s+of\\b.{0,60}?\\bcard\\b.{0,60}?\\bdue\\b",
+        "flags": "i"
+      },
+      "emiDue": {
+        "pattern": "\\bemi\\b.{0,80}?\\bis\\s+due\\b|\\bloan\\s+emi\\b.{0,80}?\\bdue\\b|\\bemi\\s+of\\b.{0,100}?\\bdue\\b|monthly\\s+instal?lment\\s+of.{0,100}?\\bdue\\b|(?:interest|instal?lment)\\s+of\\b.{0,80}?\\bdue\\b|upcoming\\s+emi",
+        "flags": "i"
+      },
+      "totalDueWords": {
+        "pattern": "total\\s+(?:amt\\.?\\s*|amount\\s*)?due",
+        "flags": "i"
+      },
+      "emiWords": {
+        "pattern": "\\bemi\\b|instal?lment",
+        "flags": "i"
+      },
+      "cardWords": {
+        "pattern": "\\b(?:one)?card\\b",
+        "flags": "i"
+      }
+    },
+    "extract": {
+      "amount": {
+        "pattern": "(?<![a-z])(?:rs\\.?|inr|₹)\\s*([\\d,]+(?:\\.\\d{1,2})?)",
+        "flags": "i"
+      },
+      "maxAmount": {
+        "pattern": "(?:\\bmax(?:imum)?(?:\\s+(?:amt|amount|limit|cap|debit)){0,3}|\\bup\\s*to|upper\\s+limit)\\s*[:\\-]?\\s*(?<![a-z])(?:rs\\.?|inr|₹)\\s*([\\d,]+(?:\\.\\d{1,2})?)",
+        "flags": "i"
+      },
+      "totalDue": {
+        "pattern": "total\\s+(?:amt\\.?\\s*|amount\\s*)?due\\b.{0,60}?(?<![a-z])(?:rs\\.?|inr|₹)\\s*([\\d,]+(?:\\.\\d{1,2})?)",
+        "flags": "i"
+      },
+      "minDue": {
+        "pattern": "\\bmin(?:imum)?\\.?\\s*(?:amt\\.?\\s*|amount\\s*)?(?:due)?\\s*(?:is\\s*|:\\s*|-\\s*)?(?<![a-z])(?:rs\\.?|inr|₹)\\s*([\\d,]+(?:\\.\\d{1,2})?)",
+        "flags": "i"
+      },
+      "umrn": {
+        "pattern": "\\bumrn\\)?\\s*[:\\-]?\\s*([A-Z0-9]{10,25})\\b",
+        "flags": "i"
+      },
+      "mandateId": {
+        "pattern": "\\bmandate\\s+(?:id|ref(?:erence)?)\\b(?:\\s+no\\.?)?\\s*[:\\-]?\\s*([A-Z0-9]{6,25})\\b",
+        "flags": "i"
+      },
+      "account": {
+        "pattern": "(?:\\ba/c|\\bac\\b|\\bacct?\\.?|\\baccount)\\s*(?:no\\.?|number)?\\s*[:\\-]?\\s*(?:ending(?:\\s+with)?\\s*)?(?:x+|\\*+|\\.{2,}|#)?\\s*(\\d{4,6})\\b",
+        "flags": "i"
+      },
+      "loanRef": {
+        "pattern": "\\bloan\\s+(?:a/c|account|ac)?\\s*(?:no\\.?|number)?\\s*[:\\-]?\\s*(?:ending\\s*)?([A-Z0-9][A-Z0-9\\-]{3,11})\\b",
+        "flags": "i"
+      },
+      "card": {
+        "pattern": "\\bcard\\b\\s*(?:no\\.?|number)?\\s*[:\\-]?\\s*(?:ending(?:\\s+with)?\\s*)?(?:x+[\\-x ]*|\\*+|\\.{2,}|#)?\\s*(\\d{4})\\b|\\bcard\\s+x+(\\d{4})",
+        "flags": "i"
+      },
+      "frequency": {
+        "pattern": "\\b(?:frequency|periodicity)\\s*[:\\-]\\s*([A-Za-z ]{3,20}?)(?:\\.|,|$)|every\\s+(month|week|year|quarter)|\\b(monthly|weekly|quarterly|yearly|annually)\\b",
+        "flags": "i"
+      },
+      "reason": {
+        "pattern": "\\bdue\\s+to\\s+(.{3,40}?)(?:\\.\\s|\\.$|,|$)",
+        "flags": "i"
+      },
+      "date": {
+        "pattern": "(?<![\\d/\\-.])(\\d{1,2})(?:[\\s\\-/.]*(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sept?(?:ember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)[\\s\\-/.,]*|[\\-/.](\\d{1,2})[\\-/.])(\\d{4}|\\d{2})(?!\\d)",
+        "flags": "i"
+      },
+      "dueDateLead": {
+        "pattern": "due\\s*(?:date)?\\s*(?:is\\s*|on\\s*|by\\s*|:\\s*|-\\s*)?\\(?\\s*(?=\\d)",
+        "flags": "i"
+      },
+      "nextDebitLead": {
+        "pattern": "next\\s+debit\\s+date\\s*[:\\-]?\\s*(?=\\d)",
+        "flags": "i"
+      },
+      "billers": [
+        {
+          "pattern": "\\bumrn\\s+[A-Z0-9]{10,25}\\s*\\(([^)]{3,60})\\)",
+          "flags": "i"
+        },
+        {
+          "pattern": "(?:\\btowards|in\\s+favou?r\\s+of|\\bfavou?ring|\\bbeneficiary|\\bbiller|\\bmerchant|\\bpayee)\\s*[:\\-]?\\s*(?!umrn)([A-Za-z0-9][A-Za-z0-9&.'+\\- ]{1,55}?)(?=\\s+(?:for|on|with|under|from|via|max|maximum|umrn|mandate|frequency|periodicity|validity|is|has|will|and|ending|failed|returned|due)\\b|\\s*\\(|\\s*[.,;:]\\s|\\.$|,|$)",
+          "flags": "i"
+        },
+        {
+          "pattern": "\\bto\\s+([A-Za-z0-9][A-Za-z0-9&.'+\\- ]{1,40}?)\\s+on\\s+(?:google|phonepe|paytm|bhim|cred)\\b",
+          "flags": "i"
+        }
+      ],
+      "billerFallback": {
+        "pattern": "\\bfor\\s+(?!your\\b|a/c\\b|ac\\b|account\\b|rs\\b|inr\\b|amount\\b|max\\b)([A-Za-z][A-Za-z0-9&.'+\\- ]{1,50}?)(?=\\s+(?:for|on|with|under|from|via|max|maximum|umrn|mandate|and)\\b|\\s*[.,;:]\\s|\\.$|,|$)",
+        "flags": "i"
+      },
+      "billerRejectStart": {
+        "pattern": "^(?:umrn|a/c|ac\\b|account|your|rs\\b|inr\\b|\\d|xx|\\.|the account|loan\\b|card\\b|auto|debit|payment|amount)",
+        "flags": "i"
+      },
+      "billerRejectEnd": {
+        "pattern": "\\bdebit$",
+        "flags": "i"
+      },
+      "billerTrim": {
+        "pattern": "\\s+(?:emi|mandate|ecs|nach|loan)$",
+        "flags": "i"
+      },
+      "cardIssuer": {
+        "pattern": "\\b(hdfc|icici|axis|sbi|kotak|rbl|indusind|yes|idfc(?:\\s+first)?|au|federal|bob|pnb|canara|union|onecard|scapia|amex|american\\s+express|hsbc|citi|standard\\s+chartered|bajaj|tata|fi|jupiter|uni)\\b(?:\\s+bank)?",
+        "flags": "i"
+      },
+      "signature": {
+        "pattern": "[\\-–]\\s*([A-Za-z][A-Za-z &]{2,30}?)\\s*$",
+        "flags": "i"
+      },
+      "yourLoan": {
+        "pattern": "\\byour\\s+([A-Za-z][A-Za-z&. ]{1,30}?)\\s+(?:loan|emi)\\b",
+        "flags": "i"
+      },
+      "loanTypeWord": {
+        "pattern": "^(?:home|housing|personal|car|auto|vehicle|education|gold|business|two\\s*wheeler|bike|consumer|mortgage|new|used)\\b",
+        "flags": "i"
+      }
+    }
+  },
   "canaries": [
     {
       "text": "Sent Rs.500.00\nFrom HDFC Bank A/c *1234\nTo SUNRISE CAFE\nOn 02/10/26\nRef 600000000001\nNot You? Call 18002586161/SMS BLOCK UPI to 7308080808",
@@ -2127,6 +2286,38 @@
       "expect": {
         "type": "debit"
       }
+    },
+    {
+      "text": "Reminder: Your A/c ending 4921 will be debited for Rs 5,000.00 on 07-OCT-26 towards UMRN HDFC7029104820194812 (NIPPON INDIA MUTUAL FUND). Ensure sufficient balance. -HDFC Bank",
+      "expect": {"type": null}
+    },
+    {
+      "text": "Dear Customer, your ICICI Bank Account ending 1042 is scheduled for auto debit of Rs 14,520.00 on 06-Oct-26 towards BAJAJ FINANCE LTD EMI.",
+      "expect": {"type": null}
+    },
+    {
+      "text": "Reminder: Auto debit of Rs 1,999.00 will be processed on 08-OCT-26 from your A/C XXXXX12345 towards TATA AIA LIFE INSURANCE under UMRN SBIN0000004928174921. -SBI",
+      "expect": {"type": null}
+    },
+    {
+      "text": "Mandate setup successful on A/c ending 8812. UMRN: UTIB0001928471928401 for MOTILAL OSWAL MF. Max Debit Amount: Rs 10000.00. Validity: 01-OCT-2026 to 31-DEC-2035. -Axis Bank",
+      "expect": {"type": null}
+    },
+    {
+      "text": "You've set up an automatic payment of up to Rs 2,500.00 to Zerodha on Google Pay. Next debit date: 05-NOV-26.",
+      "expect": {"type": null}
+    },
+    {
+      "text": "ECS/NACH debit for Loan A/C 9012 of Rs 32,450.00 returned unpaid on 05-OCT-26. Please pay immediately via link to avoid negative CIBIL impact.",
+      "expect": {"type": null}
+    },
+    {
+      "text": "Your DMI Finance loan EMI Rs 1,899.00 is scheduled for NACH debit on 05-Oct-26. Keep your bank account funded to avoid NACH bounce fee.",
+      "expect": {"type": null}
+    },
+    {
+      "text": "Total Due on your SBI Card ending 4412 is Rs 18,920.00 and Min Due is Rs 950.00 due by 18/10/2026. Avoid late fees by paying now: sbicard.com/pay",
+      "expect": {"type": null}
     }
   ]
 }

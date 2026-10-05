@@ -213,6 +213,11 @@ class LendingEntries extends Table {
   BoolColumn get isSettled => boolean().withDefault(const Constant(false))();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
+  /// The transaction this entry came from, when it was created by marking a
+  /// transaction "Lending money" / "Borrowing money". Editing that transaction
+  /// updates this entry rather than adding another.
+  TextColumn get transactionId => text().nullable()();
+
   @override
   Set<Column> get primaryKey => {id};
 }
@@ -243,6 +248,64 @@ class ParserTemplates extends Table {
 
   /// How many later messages this template has handled.
   IntColumn get hits => integer().withDefault(const Constant(0))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+/// Money that is about to move, or failed to, because of an auto-debit:
+/// a registered mandate (NACH / e-mandate / UPI AutoPay), a scheduled
+/// debit, a loan EMI or card bill falling due, or a failed debit. Read from
+/// SMS and email notices. None of these is a spend — an actual debit arrives
+/// later as its own message and becomes a transaction.
+class Obligations extends Table {
+  TextColumn get id => text()();
+
+  /// mandate | pre_debit | emi_due | card_due | bounce.
+  TextColumn get kind => text()();
+
+  /// active (a mandate) | upcoming | paid | missed | failed.
+  TextColumn get status => text()();
+
+  /// Who is paid: "NIPPON INDIA MUTUAL FUND", "HDFC Bank Credit Card".
+  TextColumn get biller => text().nullable()();
+
+  /// The amount to be debited; a card's total due; for a mandate its cap
+  /// when [isMaxAmount].
+  IntColumn get amountMinor => integer().nullable()();
+  BoolColumn get isMaxAmount => boolean().withDefault(const Constant(false))();
+  IntColumn get minDueMinor => integer().nullable()();
+
+  /// When it falls due (a mandate's next debit date).
+  DateTimeColumn get dueDate => dateTime().nullable()();
+
+  /// Mandate reference (UMRN or a UPI AutoPay mandate id).
+  TextColumn get umrn => text().nullable()();
+
+  /// Bank account the debit is from.
+  TextColumn get accountLast4 => text().nullable()();
+
+  /// Card last 4 or loan number, per [refType] (card | loan).
+  TextColumn get refLast4 => text().nullable()();
+  TextColumn get refType => text().nullable()();
+  TextColumn get frequency => text().nullable()();
+
+  /// Why a debit failed.
+  TextColumn get reason => text().nullable()();
+
+  /// sms | email.
+  TextColumn get source => text()();
+  TextColumn get senderCode => text().nullable()();
+
+  /// Hash of the message, so reading the same message again adds nothing.
+  TextColumn get sourceHash => text().nullable()();
+
+  /// The transaction that settled it, once the real debit arrives.
+  TextColumn get matchedTransactionId => text().nullable()();
+
+  /// When the message arrived.
+  DateTimeColumn get receivedAt => dateTime()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 
   @override

@@ -23,8 +23,9 @@ class BackupCard extends ConsumerWidget {
           const SizedBox(height: 4),
           Text(
             'Export an encrypted copy of everything to save or move to another device, protected by a passphrase only you know.',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
           const SizedBox(height: 16),
           OutlinedButton.icon(
@@ -48,7 +49,9 @@ class BackupCard extends ConsumerWidget {
     if (passphrase == null) return;
 
     try {
-      final file = await ref.read(backupServiceProvider).exportEncrypted(passphrase);
+      final file = await ref
+          .read(backupServiceProvider)
+          .exportEncrypted(passphrase);
       await SharePlus.instance.share(
         ShareParams(files: [XFile(file.path)], text: 'NativeSpend backup'),
       );
@@ -93,14 +96,19 @@ class BackupCard extends ConsumerWidget {
     }
   }
 
-  Future<String?> _promptPassphrase(BuildContext context, {required bool confirm}) async {
+  Future<String?> _promptPassphrase(
+    BuildContext context, {
+    required bool confirm,
+  }) async {
     final controller = TextEditingController();
     final confirmController = TextEditingController();
 
     return showDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(confirm ? 'Choose a backup passphrase' : 'Enter backup passphrase'),
+        title: Text(
+          confirm ? 'Choose a backup passphrase' : 'Enter backup passphrase',
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -128,8 +136,8 @@ class BackupCard extends ConsumerWidget {
               Text(
                 "Remember this — there's no way to recover a backup without it.",
                 style: Theme.of(dialogContext).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(dialogContext).colorScheme.error,
-                    ),
+                  color: Theme.of(dialogContext).colorScheme.error,
+                ),
               ),
             ],
           ],

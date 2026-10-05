@@ -33,6 +33,8 @@ final lendingRepositoryProvider = Provider<LendingRepository>(
   (ref) => LendingRepository(ref.watch(databaseProvider)),
 );
 
+enum LendingSync { none, created, updated, removed, keptWithPayments }
+
 /// Hand-entered lending and borrowing. Nothing here touches transactions or
 /// spending totals — it is a separate record of who owes whom.
 class LendingRepository {
@@ -48,6 +50,7 @@ class LendingRepository {
     required DateTime date,
     DateTime? dueDate,
     String? note,
+    String? transactionId,
   }) async {
     final id = _uuid.v4();
     await _db
@@ -63,9 +66,72 @@ class LendingRepository {
             note: Value(
               note == null || note.trim().isEmpty ? null : note.trim(),
             ),
+            transactionId: Value(transactionId),
           ),
         );
     return id;
+  }
+
+  /// The entry made from [transactionId], if any.
+  Future<LendingEntry?> entryForTransaction(String transactionId) =>
+      (_db.select(
+        _db.lendingEntries,
+      )..where((e) => e.transactionId.equals(transactionId))).getSingleOrNull();
+
+  /// Keeps the Lend & borrow page in step with a transaction the user marked
+  /// as lending or borrowing money.
+  ///
+  /// With a [direction] (see `lendingDirectionFor`) the entry is created, or
+  /// updated if this transaction already made one — so editing the amount or
+  /// the due date never adds a second entry. With none (the category was
+  /// changed away) the entry goes, unless repayments were already recorded
+  /// against it: that history is kept and the entry is just detached.
+  Future<LendingSync> syncFromTransaction({
+    required String transactionId,
+    required String? direction,
+    required String person,
+    required int amountMinor,
+    required DateTime date,
+    DateTime? dueDate,
+  }) async {
+    final existing = await entryForTransaction(transactionId);
+
+    if (direction == null) {
+      if (existing == null) return LendingSync.none;
+      final payments = await (_db.select(
+        _db.lendingPayments,
+      )..where((p) => p.entryId.equals(existing.id))).get();
+      if (payments.isEmpty) {
+        await deleteEntry(existing.id);
+        return LendingSync.removed;
+      }
+      await (_db.update(_db.lendingEntries)
+            ..where((e) => e.id.equals(existing.id)))
+          .write(const LendingEntriesCompanion(transactionId: Value(null)));
+      return LendingSync.keptWithPayments;
+    }
+
+    if (existing == null) {
+      await addEntry(
+        person: person,
+        direction: direction,
+        amountMinor: amountMinor,
+        date: date,
+        dueDate: dueDate,
+        transactionId: transactionId,
+      );
+      return LendingSync.created;
+    }
+    await updateEntry(
+      existing.id,
+      person: person,
+      direction: direction,
+      amountMinor: amountMinor,
+      date: date,
+      dueDate: dueDate,
+      note: existing.note,
+    );
+    return LendingSync.updated;
   }
 
   Future<void> updateEntry(

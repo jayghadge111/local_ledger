@@ -34,6 +34,9 @@ class BudgetReviewCard extends ConsumerWidget {
 
   static const _maxRows = 2;
 
+  /// Narrower than this, the three buttons wrap instead of sharing a line.
+  static const _buttonsOneLineFrom = 300.0;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final shown = ref.watch(dashboardMonthProvider);
@@ -65,6 +68,41 @@ class BudgetReviewCard extends ConsumerWidget {
     final thisName = DateFormat('MMMM').format(thisMonth);
     final shownRows = pending.take(_maxRows).toList();
 
+    // While the shell animates in, the page is briefly laid out far narrower
+    // than the screen — leave a quiet gap rather than overflow.
+    return LayoutBuilder(
+      builder: (context, box) {
+        if (box.maxWidth < 240) return const SizedBox(height: 12);
+        return _card(
+          context,
+          ref,
+          theme: theme,
+          review: review,
+          pending: pending,
+          shownRows: shownRows,
+          categories: categories,
+          lastName: lastName,
+          thisName: thisName,
+          thisMonth: thisMonth,
+          thisKey: thisKey,
+        );
+      },
+    );
+  }
+
+  Widget _card(
+    BuildContext context,
+    WidgetRef ref, {
+    required ThemeData theme,
+    required BudgetReview review,
+    required List<ReviewItem> pending,
+    required List<ReviewItem> shownRows,
+    required Map<String, Category> categories,
+    required String lastName,
+    required String thisName,
+    required DateTime thisMonth,
+    required String thisKey,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: GlassCard(
@@ -115,37 +153,69 @@ class BudgetReviewCard extends ConsumerWidget {
                   thisMonth,
                 ),
               ),
-            Row(
-              children: [
-                if (pending.length > shownRows.length)
-                  TextButton(
-                    style: _compactButton,
-                    onPressed: () => showDialog<void>(
-                      context: context,
-                      builder: (_) => CenteredDialogCard(
-                        child: _AllReviewDialog(today: today),
-                      ),
-                    ),
-                    child: Text(
-                      'Show ${pending.length - shownRows.length} more',
-                    ),
-                  ),
-                const Spacer(),
-                TextButton(
+            LayoutBuilder(
+              builder: (context, box) {
+                final more = pending.length > shownRows.length
+                    ? TextButton(
+                        style: _compactButton,
+                        onPressed: () => showDialog<void>(
+                          context: context,
+                          builder: (_) => CenteredDialogCard(
+                            child: _AllReviewDialog(today: today),
+                          ),
+                        ),
+                        child: Text(
+                          'Show ${pending.length - shownRows.length} more',
+                        ),
+                      )
+                    : null;
+                final review = TextButton(
                   style: _compactButton,
                   onPressed: () => Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const BudgetsScreen()),
                   ),
                   child: const Text('Review budgets'),
-                ),
-                TextButton(
+                );
+                final keep = TextButton(
                   style: _compactButton,
                   onPressed: () => ref
                       .read(settingsRepositoryProvider)
                       .set(SettingsKeys.budgetReviewDismissed, thisKey),
                   child: const Text('Keep as is'),
-                ),
-              ],
+                );
+
+                // "Show more" on the left, the other two on the right. When
+                // the card is too narrow for one line they wrap instead.
+                if (box.maxWidth >= _buttonsOneLineFrom) {
+                  return Row(
+                    children: [
+                      ?more,
+                      Expanded(
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          // Shrinks a little rather than overflowing.
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerRight,
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [review, keep],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+                return SizedBox(
+                  width: double.infinity,
+                  child: Wrap(
+                    alignment: WrapAlignment.start,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [?more, review, keep],
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -304,46 +374,80 @@ class _Row extends StatelessWidget {
   final Category? category;
   final VoidCallback onRaise;
 
+  /// Below this width the button drops under the text instead of beside it.
+  static const _sideBySideFrom = 300.0;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 1),
-      child: Row(
-        children: [
-          Icon(
-            iconForKey(category?.icon),
-            size: 16,
+
+    final details = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          category?.name ?? 'Other',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        Text(
+          '${_money.format(item.spentMinor / 100)} / '
+          '${_money.format(item.limitMinor / 100)} · '
+          '${(item.fraction * 100).round()}%',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.labelSmall?.copyWith(
             color: theme.colorScheme.error,
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        ),
+      ],
+    );
+    final raise = TextButton(
+      style: _compactButton,
+      onPressed: onRaise,
+      child: Text(
+        'Raise to ${_money.format(item.suggestedMinor / 100)}',
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+    );
+    final icon = Icon(
+      iconForKey(category?.icon),
+      size: 16,
+      color: theme.colorScheme.error,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 1),
+      child: LayoutBuilder(
+        builder: (context, box) {
+          if (box.maxWidth >= _sideBySideFrom) {
+            // Text takes what it needs; the button sits at the right edge.
+            return Row(
               children: [
-                Text(
-                  category?.name ?? 'Other',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                Text(
-                  '${_money.format(item.spentMinor / 100)} / '
-                  '${_money.format(item.limitMinor / 100)} · '
-                  '${(item.fraction * 100).round()}%',
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.error,
-                  ),
-                ),
+                icon,
+                const SizedBox(width: 8),
+                Expanded(child: details),
+                raise,
               ],
-            ),
-          ),
-          TextButton(
-            style: _compactButton,
-            onPressed: onRaise,
-            child: Text('Raise to ${_money.format(item.suggestedMinor / 100)}'),
-          ),
-        ],
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  icon,
+                  const SizedBox(width: 8),
+                  Expanded(child: details),
+                ],
+              ),
+              Align(alignment: Alignment.centerRight, child: raise),
+            ],
+          );
+        },
       ),
     );
   }

@@ -12,12 +12,15 @@ import '../../core/lending/lending_repository.dart';
 import '../../core/intelligence/intelligence_providers.dart';
 import '../../core/intelligence/recurring_detector.dart';
 import '../../core/notifications/notification_providers.dart';
+import '../../core/obligations/obligation_repository.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/placeholder_body.dart';
 import '../budgets/budgets_screen.dart';
 import '../dashboard/widgets/home_budgets_card.dart';
 import '../lending/lending_screen.dart';
+import '../obligations/obligation_card.dart';
+import '../obligations/obligations_screen.dart';
 import '../transactions/widgets/transaction_tile.dart';
 
 class AlertsScreen extends ConsumerStatefulWidget {
@@ -76,8 +79,12 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
         c.id: c,
     };
     final lendingDue = dueSoon(ref.watch(lendingBalancesProvider), now);
+    final failedDebits = ref.watch(recentFailuresProvider);
+    final upcomingDebits = ref.watch(upcomingObligationsProvider);
 
-    if (recurring.isEmpty &&
+    if (failedDebits.isEmpty &&
+        upcomingDebits.isEmpty &&
+        recurring.isEmpty &&
         unusual.isEmpty &&
         international.isEmpty &&
         budgetAlerts.isEmpty &&
@@ -92,6 +99,69 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
       children: [
+        if (failedDebits.isNotEmpty) ...[
+          Text(
+            'Auto-debit failed',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: theme.colorScheme.error,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Add money to your account to avoid return charges.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          for (final o in failedDebits.take(2))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: ObligationCard(
+                obligation: o,
+                onTap: () => showObligationDetails(context, ref, o),
+              ),
+            ),
+          const SizedBox(height: 10),
+        ],
+        if (upcomingDebits.isNotEmpty) ...[
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Upcoming auto-debits & dues',
+                  style: theme.textTheme.titleMedium,
+                ),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ObligationsScreen()),
+                ),
+                child: Text(
+                  upcomingDebits.length > 3
+                      ? 'See all ${upcomingDebits.length}'
+                      : 'Open',
+                ),
+              ),
+            ],
+          ),
+          Text(
+            'Not counted as spending until the money leaves.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 8),
+          for (final o in upcomingDebits.take(3))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: ObligationCard(
+                obligation: o,
+                onTap: () => showObligationDetails(context, ref, o),
+              ),
+            ),
+          const SizedBox(height: 10),
+        ],
         if (budgetAlerts.isNotEmpty) ...[
           Row(
             children: [

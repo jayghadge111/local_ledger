@@ -28,6 +28,7 @@ part 'app_database.g.dart';
     LendingPayments,
     ParserTemplates,
     BudgetOverrides,
+    Obligations,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -36,7 +37,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -90,6 +91,10 @@ class AppDatabase extends _$AppDatabase {
             // Existing rows get the default "0000-00": in force for every
             // month, exactly as before.
             await m.addColumn(budgets, budgets.fromMonthKey);
+          }
+          if (from < 9) await m.createTable(obligations);
+          if (from < 10) {
+            await m.addColumn(lendingEntries, lendingEntries.transactionId);
           }
         },
       );
