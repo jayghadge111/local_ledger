@@ -133,16 +133,18 @@ class _EmailConnectCardState extends ConsumerState<EmailConnectCard> {
           ],
           if (job.canResume) ...[
             const SizedBox(height: 10),
-            Row(
+            Wrap(
+              spacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 FilledButton.icon(
                   onPressed: controller.resumeGmail,
                   icon: const Icon(Icons.play_arrow_rounded),
                   label: const Text('Resume'),
                 ),
-                const SizedBox(width: 8),
                 TextButton(
                   onPressed: controller.dismissGmail,
+                  style: dangerTextButtonStyle(context),
                   child: const Text('Discard'),
                 ),
               ],
@@ -151,6 +153,22 @@ class _EmailConnectCardState extends ConsumerState<EmailConnectCard> {
           if (job.message != null && !working) ...[
             const SizedBox(height: 14),
             ImportResultNote(ok: !job.failed, text: job.message!),
+            if (job.failed)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () =>
+                      controller.startGmail(fresh: job.needsReconnect || !connected),
+                  icon: Icon(
+                    job.needsReconnect
+                        ? Icons.link_rounded
+                        : Icons.refresh_rounded,
+                  ),
+                  label: Text(
+                    job.needsReconnect ? 'Reconnect Gmail' : 'Try again',
+                  ),
+                ),
+              ),
           ],
         ],
       ),

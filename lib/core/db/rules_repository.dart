@@ -1,3 +1,4 @@
+import '../ui/undo.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -34,7 +35,14 @@ class RulesRepository {
         );
   }
 
-  Future<void> deleteRule(String id) {
-    return (_db.delete(_db.rules)..where((r) => r.id.equals(id))).go();
+  /// Returns the way back.
+  Future<UndoAction> deleteRule(String id) async {
+    final row = await (_db.select(
+      _db.rules,
+    )..where((r) => r.id.equals(id))).getSingleOrNull();
+    await (_db.delete(_db.rules)..where((r) => r.id.equals(id))).go();
+    return () async {
+      if (row != null) await _db.into(_db.rules).insertOnConflictUpdate(row);
+    };
   }
 }

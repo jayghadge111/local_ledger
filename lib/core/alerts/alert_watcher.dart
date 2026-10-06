@@ -1,3 +1,4 @@
+import '../../core/money_format.dart';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,9 +17,7 @@ import '../notifications/notification_providers.dart';
 import '../notifications/notification_service.dart';
 import 'budget_alerts.dart';
 
-final _money = NumberFormat.currency(
-  locale: 'en_IN',
-  symbol: '₹',
+NumberFormat get _money => appCurrency(symbol: '₹',
   decimalDigits: 0,
 );
 

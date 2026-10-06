@@ -1,5 +1,13 @@
+import 'dart:io';
+
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
+import 'package:sqlite3/sqlite3.dart' as sqlite;
+
+import '../backup/local_snapshots.dart';
+import '../diagnostics/diagnostic_log.dart';
 
 import '../intelligence/default_category_rules.dart';
 import '../intelligence/merchant_normalizer.dart';
@@ -29,6 +37,7 @@ part 'app_database.g.dart';
     ParserTemplates,
     BudgetOverrides,
     Obligations,
+    MergedMessages,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -37,7 +46,23 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => kSchemaVersion;
+
+  /// Adds [column] unless the table already has it. A table created earlier in
+  /// the same upgrade is created from today's definition, which already holds
+  /// every column added since — adding it again would stop the upgrade with
+  /// "duplicate column name" (this broke any upgrade from before v7).
+  Future<void> _addColumnIfMissing(
+    Migrator m,
+    TableInfo<Table, dynamic> table,
+    GeneratedColumn column,
+  ) async {
+    final existing = await customSelect(
+      'PRAGMA table_info(${table.actualTableName})',
+    ).get();
+    if (existing.any((r) => r.read<String>('name') == column.name)) return;
+    await m.addColumn(table, column);
+  }
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -51,20 +76,20 @@ class AppDatabase extends _$AppDatabase {
         await m.createTable(appSettings);
       }
       if (from < 3) {
-        await m.addColumn(transactions, transactions.rawMerchant);
-        await m.addColumn(transactions, transactions.kind);
-        await m.addColumn(transactions, transactions.kindLocked);
-        await m.addColumn(transactions, transactions.transferGroupId);
-        await m.addColumn(transactions, transactions.refundOfId);
-        await m.addColumn(transactions, transactions.refundHint);
-        await m.addColumn(transactions, transactions.sourceHash);
+        await _addColumnIfMissing(m, transactions, transactions.rawMerchant);
+        await _addColumnIfMissing(m, transactions, transactions.kind);
+        await _addColumnIfMissing(m, transactions, transactions.kindLocked);
+        await _addColumnIfMissing(m, transactions, transactions.transferGroupId);
+        await _addColumnIfMissing(m, transactions, transactions.refundOfId);
+        await _addColumnIfMissing(m, transactions, transactions.refundHint);
+        await _addColumnIfMissing(m, transactions, transactions.sourceHash);
         await m.createTable(ownIdentifiers);
         await m.createTable(merchantAliases);
         await m.createTable(splitShares);
         await m.createTable(unparsedMessages);
       }
       if (from < 4) {
-        await m.addColumn(transactions, transactions.alsoInSource);
+        await _addColumnIfMissing(m, transactions, transactions.alsoInSource);
       }
       if (from < 5) {
         // Self Transfer, EMI, SIP / Investment, Lending, Borrowing.
@@ -90,11 +115,18 @@ class AppDatabase extends _$AppDatabase {
       if (from < 8) {
         // Existing rows get the default "0000-00": in force for every
         // month, exactly as before.
-        await m.addColumn(budgets, budgets.fromMonthKey);
+        await _addColumnIfMissing(m, budgets, budgets.fromMonthKey);
       }
       if (from < 9) await m.createTable(obligations);
       if (from < 10) {
-        await m.addColumn(lendingEntries, lendingEntries.transactionId);
+        await _addColumnIfMissing(m, lendingEntries, lendingEntries.transactionId);
+      }
+      if (from < 11) {
+        await m.createIndex(idxTxnLiveDate);
+        await m.createIndex(idxTxnAccount);
+        await m.createIndex(idxTxnKind);
+        await m.createIndex(idxTxnSourceHash);
+        await m.createTable(mergedMessages);
       }
     },
   );
@@ -167,12 +199,60 @@ class AppDatabase extends _$AppDatabase {
   }
 }
 
+/// The database structure version. Bump together with a new `onUpgrade` step,
+/// then dump the schema (see test/migration_test.dart).
+const kSchemaVersion = 11;
+
+const _databaseName = 'local_ledger_db';
+
+/// Where the database file lives (drift's default location, spelled out so the
+/// snapshot and restore code can reach the same file).
+Future<File> databaseFile() async => File(
+  p.join((await getApplicationDocumentsDirectory()).path, '$_databaseName.sqlite'),
+);
+
+/// Where automatic copies of the database are kept.
+Future<Directory> snapshotsDirectory() async => Directory(
+  p.join((await getApplicationSupportDirectory()).path, 'snapshots'),
+);
+
 QueryExecutor _openConnection() {
-  return driftDatabase(
-    name: 'local_ledger_db',
-    web: DriftWebOptions(
-      sqlite3Wasm: Uri.parse('sqlite3.wasm'),
-      driftWorker: Uri.parse('drift_worker.dart.js'),
-    ),
+  return DatabaseConnection.delayed(
+    Future(() async {
+      final file = await databaseFile();
+      await _snapshotBeforeUpgrade(file);
+      return driftDatabase(
+        name: _databaseName,
+        native: DriftNativeOptions(databasePath: () async => file.path),
+        web: DriftWebOptions(
+          sqlite3Wasm: Uri.parse('sqlite3.wasm'),
+          driftWorker: Uri.parse('drift_worker.dart.js'),
+        ),
+      );
+    }),
   );
+}
+
+/// If the database on disk is older than this version of the app, it is about
+/// to be upgraded in place. Copy it first, so that a faulty upgrade can never
+/// cost the user their data: the copy can be restored from Settings.
+Future<void> _snapshotBeforeUpgrade(File file) async {
+  try {
+    if (!file.existsSync() || file.lengthSync() == 0) return;
+    final raw = sqlite.sqlite3.open(file.path);
+    int version;
+    try {
+      version = raw.select('PRAGMA user_version').first.values.first as int;
+    } finally {
+      raw.close();
+    }
+    if (version <= 0 || version >= kSchemaVersion) return;
+    LocalSnapshots(snapshotsDirectory).createFromFile(
+      file,
+      'upgrade-v$version',
+      await snapshotsDirectory(),
+    );
+  } catch (error, stack) {
+    DiagnosticLog.instance.record('backup', error, stack, 'pre-upgrade copy');
+  }
 }

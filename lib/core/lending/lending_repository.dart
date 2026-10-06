@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 
 import '../db/app_database.dart';
 import '../db/providers.dart';
+import '../ui/undo.dart';
 import 'lending_math.dart';
 
 final lendingEntriesProvider = StreamProvider<List<LendingEntry>>((ref) {
@@ -194,28 +195,65 @@ class LendingRepository {
   }
 
   /// Removes a repayment; an entry that was settled by it is reopened.
-  Future<void> deletePayment(String id) async {
+  /// Returns the way back.
+  Future<UndoAction> deletePayment(String id) async {
     final payment = await (_db.select(
       _db.lendingPayments,
     )..where((p) => p.id.equals(id))).getSingleOrNull();
-    if (payment == null) return;
-    await (_db.delete(_db.lendingPayments)..where((p) => p.id.equals(id))).go();
-    final entry = await (_db.select(
+    if (payment == null) return () async {};
+    final entryBefore = await (_db.select(
       _db.lendingEntries,
     )..where((e) => e.id.equals(payment.entryId))).getSingleOrNull();
-    if (entry == null || !entry.isSettled) return;
-    final left = await (_db.select(
-      _db.lendingPayments,
-    )..where((p) => p.entryId.equals(entry.id))).get();
-    if (left.fold<int>(0, (s, p) => s + p.amountMinor) < entry.amountMinor) {
-      await setSettled(entry.id, false);
+    await (_db.delete(_db.lendingPayments)..where((p) => p.id.equals(id))).go();
+    final entry = entryBefore;
+    if (entry != null && entry.isSettled) {
+      final left = await (_db.select(
+        _db.lendingPayments,
+      )..where((p) => p.entryId.equals(entry.id))).get();
+      if (left.fold<int>(0, (s, p) => s + p.amountMinor) < entry.amountMinor) {
+        await setSettled(entry.id, false);
+      }
     }
+    return () async {
+      await _db.into(_db.lendingPayments).insertOnConflictUpdate(payment);
+      if (entryBefore != null) await setSettled(entryBefore.id, entryBefore.isSettled);
+    };
   }
 
-  Future<void> deleteEntry(String id) async {
+  /// Removes an entry and its repayments. Returns the way back.
+  Future<UndoAction> deleteEntry(String id) async {
+    final entry = await (_db.select(
+      _db.lendingEntries,
+    )..where((e) => e.id.equals(id))).getSingleOrNull();
+    final payments = await (_db.select(
+      _db.lendingPayments,
+    )..where((p) => p.entryId.equals(id))).get();
     await (_db.delete(
       _db.lendingPayments,
     )..where((p) => p.entryId.equals(id))).go();
     await (_db.delete(_db.lendingEntries)..where((e) => e.id.equals(id))).go();
+    return () => _putBack(entry, payments);
+  }
+
+  Future<void> _putBack(LendingEntry? entry, List<LendingPayment> payments) async {
+    if (entry == null) return;
+    await _db.transaction(() async {
+      await _db.into(_db.lendingEntries).insertOnConflictUpdate(entry);
+      for (final p in payments) {
+        await _db.into(_db.lendingPayments).insertOnConflictUpdate(p);
+      }
+    });
+  }
+
+  /// Notes what [transactionId]'s loan entry looks like now, so that
+  /// deleting the transaction (which removes or detaches that entry) can be
+  /// taken back as a whole.
+  Future<UndoAction> captureForTransaction(String transactionId) async {
+    final entry = await entryForTransaction(transactionId);
+    if (entry == null) return () async {};
+    final payments = await (_db.select(
+      _db.lendingPayments,
+    )..where((p) => p.entryId.equals(entry.id))).get();
+    return () => _putBack(entry, payments);
   }
 }

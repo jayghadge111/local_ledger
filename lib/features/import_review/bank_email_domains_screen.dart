@@ -1,3 +1,4 @@
+import '../../shared/widgets/text_button_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -113,6 +114,8 @@ class _BankEmailDomainsScreenState
                       ),
                       title: Text(d),
                       trailing: IconButton(
+                        tooltip: 'Remove',
+                        color: dangerColor(context),
                         icon: const Icon(Icons.close_rounded),
                         onPressed: () =>
                             _save(domains.where((x) => x != d).toList()),

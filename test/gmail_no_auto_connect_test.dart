@@ -8,6 +8,9 @@ import 'package:local_ledger/core/db/providers.dart';
 import 'package:local_ledger/core/db/settings_repository.dart';
 import 'package:local_ledger/core/email/email_providers.dart';
 import 'package:local_ledger/core/email/gmail_auth_service.dart';
+import 'package:local_ledger/core/backup/local_snapshots.dart';
+import 'package:local_ledger/core/backup/snapshot_providers.dart';
+import 'package:local_ledger/core/sync/connectivity.dart';
 import 'package:local_ledger/core/sync/sync_controller.dart';
 import 'package:local_ledger/features/settings/widgets/email_connect_card.dart';
 
@@ -38,6 +41,15 @@ class _SpyAuth extends GmailAuthService {
   Future<void> disconnect() async => calls.add('disconnect');
 }
 
+class _NoSnapshots implements SnapshotService {
+  @override
+  Future<SnapshotInfo?> snapshot(String reason) async => null;
+  @override
+  Future<bool> restore(SnapshotInfo snapshot) async => false;
+  @override
+  bool delete(SnapshotInfo snapshot) => false;
+}
+
 void main() {
   late AppDatabase db;
   late _SpyAuth auth;
@@ -53,6 +65,8 @@ void main() {
         overrides: [
           databaseProvider.overrideWithValue(db),
           gmailAuthServiceProvider.overrideWithValue(auth),
+          internetCheckProvider.overrideWithValue(() async => true),
+          snapshotServiceProvider.overrideWithValue(_NoSnapshots()),
         ],
         child: const MaterialApp(
           home: Scaffold(

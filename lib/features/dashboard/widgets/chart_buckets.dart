@@ -123,7 +123,6 @@ List<ChartBucket> _weeklyBucketsForMonth(
   List<Transaction> transactions,
   DateTime now,
 ) {
-  final monthStart = DateTime(now.year, now.month, 1);
   final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
   final buckets = <ChartBucket>[];
   var weekIndex = 1;
@@ -147,8 +146,6 @@ List<ChartBucket> _weeklyBucketsForMonth(
       ),
     );
   }
-  // monthStart is unused directly but documents the bucket's reference frame.
-  assert(monthStart.month == now.month);
   return buckets;
 }
 

@@ -1,3 +1,4 @@
+import '../../shared/widgets/shimmer.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -207,7 +208,7 @@ class DashboardScreen extends ConsumerWidget {
           ],
         );
       },
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const HomeSkeleton(),
       error: (error, _) =>
           Center(child: Text('Could not load dashboard: $error')),
     );

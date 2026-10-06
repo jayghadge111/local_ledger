@@ -121,7 +121,19 @@ void main() {
       expect(counted.map((t) => t.amountMinor), [50000]);
     });
 
-    test('without a saved name nothing is guessed', () async {
+    test('without a saved name, one-sided evidence is not guessed', () async {
+      final s = await ingestor.begin();
+      await s.add(
+        source: 'email',
+        sender: 'alerts@hdfcbank.bank.in',
+        body: selfCredit,
+        date: t0,
+      );
+      await s.finish();
+      expect((await all()).single.kind, 'normal');
+    });
+
+    test('but a message naming the same person on both sides needs no saved name', () async {
       final s = await ingestor.begin();
       await s.add(
         source: 'email',
@@ -130,7 +142,7 @@ void main() {
         date: t0,
       );
       await s.finish();
-      expect((await all()).single.kind, 'normal');
+      expect((await all()).single.kind, 'transfer');
     });
 
     test(

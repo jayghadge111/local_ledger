@@ -7,7 +7,10 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../core/backup/backup_providers.dart';
 import '../../../core/backup/backup_service.dart';
+import '../../../core/backup/snapshot_providers.dart';
+import '../../../core/ui/share_origin.dart';
 import '../../../shared/widgets/glass_surface.dart';
+import 'auto_backup_card.dart';
 
 class BackupCard extends ConsumerWidget {
   const BackupCard({super.key});
@@ -20,6 +23,8 @@ class BackupCard extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('Backup', style: theme.textTheme.titleMedium),
+          const SizedBox(height: 14),
+          Text('Save to a file', style: theme.textTheme.titleSmall),
           const SizedBox(height: 4),
           Text(
             'Export an encrypted copy of everything to save or move to another device, protected by a passphrase only you know.',
@@ -39,6 +44,11 @@ class BackupCard extends ConsumerWidget {
             icon: const Icon(Icons.download_outlined),
             label: const Text('Import backup'),
           ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16),
+            child: Divider(height: 1),
+          ),
+          const AutoBackupSection(),
         ],
       ),
     );
@@ -53,7 +63,11 @@ class BackupCard extends ConsumerWidget {
           .read(backupServiceProvider)
           .exportEncrypted(passphrase);
       await SharePlus.instance.share(
-        ShareParams(files: [XFile(file.path)], text: 'NativeSpend backup'),
+        ShareParams(
+          files: [XFile(file.path)],
+          text: 'NativeSpend backup',
+          sharePositionOrigin: shareOrigin(),
+        ),
       );
     } catch (e) {
       if (context.mounted) {
@@ -75,6 +89,8 @@ class BackupCard extends ConsumerWidget {
     if (passphrase == null) return;
 
     try {
+      // Importing merges a lot of rows in: keep a copy to go back to.
+      await ref.read(snapshotServiceProvider).snapshot('before-import');
       await ref
           .read(backupServiceProvider)
           .importEncrypted(File(files.first.path!), passphrase);

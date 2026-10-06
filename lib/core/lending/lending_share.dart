@@ -4,6 +4,8 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../ui/share_origin.dart';
+
 /// Hands a message — and optionally a picture — to the phone's share sheet:
 /// WhatsApp, Telegram, SMS, email, whatever the user has. The app never sends
 /// anything itself: the user chooses the app and the person, and presses send
@@ -22,7 +24,11 @@ final lendingShareProvider = Provider<ShareMessage>(
       files.add(XFile(file.path, mimeType: 'image/png'));
     }
     await SharePlus.instance.share(
-      ShareParams(text: text, files: files.isEmpty ? null : files),
+      ShareParams(
+        text: text,
+        files: files.isEmpty ? null : files,
+        sharePositionOrigin: shareOrigin(),
+      ),
     );
   },
 );

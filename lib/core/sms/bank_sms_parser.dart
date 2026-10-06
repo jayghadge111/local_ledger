@@ -1,3 +1,4 @@
+import '../intelligence/name_match.dart';
 import '../obligations/obligation_classifier.dart';
 import '../rules/parser_rules.dart';
 
@@ -20,6 +21,7 @@ class ParsedSmsTransaction {
     this.refundHint = false,
     this.accountKind,
     this.cardPayment = false,
+    this.selfTransfer = false,
   });
 
   final int amountMinor; // minor units of [currency]
@@ -41,6 +43,30 @@ class ParsedSmsTransaction {
   /// A debit that pays a credit-card bill. The swipes it settles are already
   /// counted when they were made, so this must not be counted again.
   final bool cardPayment;
+
+  /// The message names the same person as payer and payee — money the user
+  /// moved between their own accounts, not spending or income.
+  final bool selfTransfer;
+}
+
+// "Payer Name: JAYESH BHIKA GHADGE Payee Name: MR JAYESH BHIKA GHADGE To VPA…"
+// Banks put the two labels in either order, so each name is read on its own,
+// up to whatever label comes next.
+RegExp _nameAfter(String label) => RegExp(
+  '$label\\s*name\\s*[:\\-]?\\s*(.+?)'
+  r'(?=\s+(?:payer|payee)\s*name\b|\s+(?:to|from)\s+(?:vpa|account|a/c)\b|'
+  r'\s+(?:currency|amount|remarks|upi|transaction|reference|ref)\b|$)',
+  caseSensitive: false,
+  dotAll: true,
+);
+
+final _payerName = _nameAfter('payer');
+final _payeeName = _nameAfter('payee');
+
+bool _isSelfTransfer(String body) {
+  final payer = _payerName.firstMatch(body)?.group(1)?.trim();
+  final payee = _payeeName.firstMatch(body)?.group(1)?.trim();
+  return payer != null && payee != null && isSameName(payer, payee);
 }
 
 /// True when [merchant]/[body] describe money paid towards a credit-card bill.
@@ -291,6 +317,7 @@ ParsedSmsTransaction? _parseStructured(String body) {
     isInternational: currency != 'INR',
     currency: currency,
     accountKind: 'bank',
+    selfTransfer: _isSelfTransfer(body),
   );
 }
 
@@ -343,6 +370,7 @@ ParsedSmsTransaction? parseBankSms(String body) {
     refundHint: type == 'credit' && _refundWords.hasMatch(body),
     accountKind: _accountKind(body),
     cardPayment: _isCardBillPayment(type, merchant, body),
+    selfTransfer: _isSelfTransfer(body),
   );
 }
 
@@ -371,6 +399,7 @@ ParsedSmsTransaction parsedFromLearned({
     refundHint: type == 'credit' && _refundWords.hasMatch(body),
     accountKind: _accountKind(body),
     cardPayment: _isCardBillPayment(type, name, body),
+    selfTransfer: _isSelfTransfer(body),
   );
 }
 

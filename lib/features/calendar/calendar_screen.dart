@@ -1,3 +1,4 @@
+import '../../core/money_format.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -66,9 +67,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       (m, d) => d.spentMinor > m ? d.spentMinor : m,
     );
     final cells = monthGrid(_month);
-    final money = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
+    final money = appCurrency(symbol: '₹',
       decimalDigits: 0,
     );
 
@@ -335,42 +334,46 @@ class _DayCell extends StatelessWidget {
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  '${day.day}',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    color: fg,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                if (spent > 0)
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      '-${compactMoney(spent)}',
-                      style: TextStyle(
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.red.shade700,
-                      ),
+            // Big system text must shrink to fit a day cell, not overflow it.
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    '${day.day}',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: fg,
                     ),
                   ),
-                if (received > 0)
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(
-                      '+${compactMoney(received)}',
-                      style: TextStyle(
-                        fontSize: 9.5,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.green.shade700,
+                  const SizedBox(height: 2),
+                  if (spent > 0)
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        '-${compactMoney(spent)}',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.red.shade700,
+                        ),
                       ),
                     ),
-                  ),
-              ],
+                  if (received > 0)
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        '+${compactMoney(received)}',
+                        style: TextStyle(
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.green.shade700,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),

@@ -24,91 +24,96 @@ class OnboardingConnectScreen extends ConsumerWidget {
     final running = sync.anyRunning;
     final ready = canLeaveOnboarding(sync);
     final percent = syncPercent(sync);
-    return GlassBackground(
-      child: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-              child: FadeSlideIn(
+    // Not a Scaffold, so give the switches and ink in the cards below a
+    // (see-through) Material to live on.
+    return Material(
+      type: MaterialType.transparency,
+      child: GlassBackground(
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
+                child: FadeSlideIn(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Import your transactions?',
+                        style: theme.textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Optional. Change it anytime in Settings. '
+                        'Your data stays on this phone and is never sent anywhere.',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
+                  children: [
+                    FadeSlideIn(
+                      delay: const Duration(milliseconds: 40),
+                      child: const SmsConnectCard(),
+                    ),
+                    const SizedBox(height: 14),
+                    FadeSlideIn(
+                      delay: const Duration(milliseconds: 70),
+                      child: const EmailConnectCard(),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Import your transactions?',
-                      style: theme.textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Optional. Change it anytime in Settings. '
-                      'Your data stays on this phone and is never sent anywhere.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      running
+                          ? 'You can head to the app once the import passes $kOnboardingContinueAtPercent% — '
+                                'it finishes in the background and your transactions appear as they arrive.'
+                          : "Skip either (or both) — you can always add transactions manually.",
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: ready
+                            ? () {
+                                if (running) {
+                                  showRootSnackBar(
+                                    'Your import is still running in the background — '
+                                    "we'll let you know when it's done.",
+                                  );
+                                }
+                                onDone();
+                              }
+                            : null,
+                        child: Text(
+                          !running
+                              ? 'Continue'
+                              : ready
+                              ? 'Continue — import keeps running'
+                              : 'Importing… ${percent ?? 0}% (continue at $kOnboardingContinueAtPercent%)',
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(24, 20, 24, 20),
-                children: [
-                  FadeSlideIn(
-                    delay: const Duration(milliseconds: 40),
-                    child: const SmsConnectCard(),
-                  ),
-                  const SizedBox(height: 14),
-                  FadeSlideIn(
-                    delay: const Duration(milliseconds: 70),
-                    child: const EmailConnectCard(),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-              child: Column(
-                children: [
-                  Text(
-                    running
-                        ? 'You can head to the app once the import passes $kOnboardingContinueAtPercent% — '
-                              'it finishes in the background and your transactions appear as they arrive.'
-                        : "Skip either (or both) — you can always add transactions manually.",
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: ready
-                          ? () {
-                              if (running) {
-                                showRootSnackBar(
-                                  'Your import is still running in the background — '
-                                  "we'll let you know when it's done.",
-                                );
-                              }
-                              onDone();
-                            }
-                          : null,
-                      child: Text(
-                        !running
-                            ? 'Continue'
-                            : ready
-                            ? 'Continue — import keeps running'
-                            : 'Importing… ${percent ?? 0}% (continue at $kOnboardingContinueAtPercent%)',
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -48,9 +48,13 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   int _index = 0;
 
   Future<void> _completeOnboarding() async {
-    await ref
-        .read(settingsRepositoryProvider)
-        .set(SettingsKeys.onboardingComplete, 'true');
+    final settings = ref.read(settingsRepositoryProvider);
+    // A fresh install gets the walkthrough of the five sections once, when it
+    // first reaches Home.
+    if (await settings.get(SettingsKeys.onboardingComplete) != 'true') {
+      await settings.set(SettingsKeys.introTourPending, 'true');
+    }
+    await settings.set(SettingsKeys.onboardingComplete, 'true');
   }
 
   /// Skipping the intro still asks for the name when there isn't one yet —

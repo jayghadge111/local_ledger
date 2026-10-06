@@ -64,8 +64,9 @@ List<RecurringInsight> detectRecurring(
     if (maxDrift > avgAmount * _maxAmountDrift) continue;
 
     final last = recent.last;
-    if (day(today).difference(day(last.date)).inDays > _maxDaysSinceLast)
+    if (day(today).difference(day(last.date)).inDays > _maxDaysSinceLast) {
       continue;
+    }
 
     final sortedGaps = [...gaps]..sort();
     final typicalGap = sortedGaps[sortedGaps.length ~/ 2];

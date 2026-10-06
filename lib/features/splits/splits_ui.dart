@@ -1,3 +1,5 @@
+import '../../shared/widgets/text_button_styles.dart';
+import '../../core/money_format.dart';
 import 'package:flutter/material.dart';
 
 import '../../shared/widgets/centered_dialog_card.dart';
@@ -11,9 +13,7 @@ import '../../core/db/small_repositories.dart';
 import '../../shared/widgets/glass_background.dart';
 import '../../shared/widgets/glass_surface.dart';
 
-final _money = NumberFormat.currency(
-  locale: 'en_IN',
-  symbol: '₹',
+NumberFormat get _money => appCurrency(symbol: '₹',
   decimalDigits: 2,
 );
 
@@ -128,6 +128,8 @@ class _SplitSheetState extends ConsumerState<_SplitSheet> {
                       title: Text(s.personName),
                       subtitle: Text(_money.format(s.shareMinor / 100)),
                       trailing: IconButton(
+                        tooltip: 'Remove',
+                        color: dangerColor(context),
                         icon: const Icon(Icons.close_rounded),
                         onPressed: () =>
                             ref.read(splitsRepositoryProvider).delete(s.id),

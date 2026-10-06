@@ -1,3 +1,4 @@
+import '../../core/money_format.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -353,9 +354,7 @@ class _BudgetRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final formatter = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
+    final formatter = appCurrency(symbol: '₹',
       decimalDigits: 0,
     );
     final hasBudget = budget != null;

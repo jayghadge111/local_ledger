@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -6,6 +8,7 @@ import '../../core/db/app_database.dart';
 import '../../core/db/providers.dart';
 import '../../core/ingest/reconciler.dart';
 import '../../core/intelligence/merchant_normalizer.dart';
+import '../../core/ui/undo.dart';
 
 final transactionsRepositoryProvider = Provider<TransactionsRepository>((ref) {
   return TransactionsRepository(ref.watch(databaseProvider));
@@ -71,6 +74,40 @@ class TransactionsRepository {
     String? accountId,
     bool? isTransfer,
     bool? isCardPayment,
+  }) async => (await updateTransactionUndoable(
+    id,
+    amountMinor: amountMinor,
+    merchant: merchant,
+    categoryId: categoryId,
+    type: type,
+    date: date,
+    isInternational: isInternational,
+    accountId: accountId,
+    isTransfer: isTransfer,
+    isCardPayment: isCardPayment,
+  )).applied;
+
+  /// Like [updateTransaction], also returning how to take back the part that
+  /// touched *other* transactions (see [updateTransaction]).
+  Future<({int applied, UndoAction? undo})> updateTransactionUndoable(
+    String id, {
+    required int amountMinor,
+    required String merchant,
+    required String categoryId,
+    required String type,
+    required DateTime date,
+    bool isInternational = false,
+    String? accountId,
+    bool? isTransfer,
+    bool? isCardPayment,
+
+    /// Teach the app from this edit: remember the merchant name and category
+    /// and apply them to similar transactions. Off for a one-off correction.
+    bool learn = true,
+
+    /// Run the transfer/refund re-check in the background instead of before
+    /// returning (it reads every transaction).
+    bool deferReconcile = false,
   }) async {
     final existing = await (_db.select(
       _db.transactions,
@@ -99,51 +136,67 @@ class TransactionsRepository {
       await setCardPayment(id, isCardPayment && type == 'debit');
     }
 
-    var applied = await _learnAlias(existing, newMerchant, categoryId);
-    if (applied == 0) {
-      applied = await _learnCategory(existing, newMerchant, categoryId);
+    var learned = learn
+        ? await _learnAlias(existing, newMerchant, categoryId)
+        : (applied: 0, undo: null as UndoAction?);
+    if (learn && learned.applied == 0) {
+      learned = await _learnCategory(existing, newMerchant, categoryId);
     }
-    await Reconciler(_db).run();
-    return applied;
+    if (deferReconcile) {
+      unawaited(
+        Reconciler(_db).run().then<void>((_) {}, onError: (Object _) {}),
+      );
+    } else {
+      await Reconciler(_db).run();
+    }
+    return learned;
   }
 
   /// Teaches the app that [existing]'s raw bank text means [newMerchant],
   /// and applies that to every other not-yet-edited transaction with the
   /// same raw text.
-  Future<int> _learnAlias(
+  Future<({int applied, UndoAction? undo})> _learnAlias(
     Transaction existing,
     String newMerchant,
     String categoryId,
   ) async {
+    const none = (applied: 0, undo: null);
     final raw = existing.rawMerchant?.trim();
     if (raw == null || raw.isEmpty || newMerchant == existing.merchant) {
-      return 0;
+      return none;
     }
     // "UPI payment", "NEFT transfer"… are shared by unrelated payments; the
     // user's rename describes this one payment, not all of them.
-    if (isGenericMerchantLabel(raw)) return 0;
+    if (isGenericMerchantLabel(raw)) return none;
 
     final pattern = raw.toLowerCase();
+    Expression<bool> affectedFilter($TransactionsTable t) =>
+        t.rawMerchant.lower().equals(pattern) &
+        t.id.equals(existing.id).not() &
+        t.userEdited.equals(false);
+    final before = await (_db.select(
+      _db.transactions,
+    )..where(affectedFilter)).get();
+    final previousAliases = await (_db.select(
+      _db.merchantAliases,
+    )..where((a) => a.pattern.equals(pattern))).get();
+
     await (_db.delete(
       _db.merchantAliases,
     )..where((a) => a.pattern.equals(pattern))).go();
+    final aliasId = _uuid.v4();
     await _db
         .into(_db.merchantAliases)
         .insert(
           MerchantAliasesCompanion.insert(
-            id: _uuid.v4(),
+            id: aliasId,
             pattern: pattern,
             displayName: newMerchant,
           ),
         );
 
-    return (_db.update(_db.transactions)..where(
-          (t) =>
-              t.rawMerchant.lower().equals(pattern) &
-              t.id.equals(existing.id).not() &
-              t.userEdited.equals(false),
-        ))
-        .write(
+    final applied =
+        await (_db.update(_db.transactions)..where(affectedFilter)).write(
           TransactionsCompanion(
             merchant: Value(newMerchant),
             categoryId: existing.categoryId != categoryId
@@ -151,32 +204,73 @@ class TransactionsRepository {
                 : const Value.absent(),
           ),
         );
+    if (applied == 0) return (applied: 0, undo: null);
+
+    return (
+      applied: applied,
+      undo: () async {
+        await (_db.delete(
+          _db.merchantAliases,
+        )..where((a) => a.id.equals(aliasId))).go();
+        for (final a in previousAliases) {
+          await _db.into(_db.merchantAliases).insertOnConflictUpdate(a);
+        }
+        await _restoreLabels(before);
+      },
+    );
+  }
+
+  /// Puts each of [rows] back to the merchant and category it had.
+  Future<void> _restoreLabels(List<Transaction> rows) async {
+    await _db.batch((b) {
+      for (final t in rows) {
+        b.update(
+          _db.transactions,
+          TransactionsCompanion(
+            merchant: Value(t.merchant),
+            categoryId: Value(t.categoryId),
+          ),
+          where: (x) => x.id.equals(t.id),
+        );
+      }
+    });
   }
 
   /// The user re-categorized a merchant: remember it as a rule for future
   /// imports and apply it to the other, not-yet-edited transactions of the
-  /// same merchant. Returns how many others changed.
-  Future<int> _learnCategory(
+  /// same merchant. Returns how many others changed, and how to take it back.
+  Future<({int applied, UndoAction? undo})> _learnCategory(
     Transaction existing,
     String merchant,
     String categoryId,
   ) async {
-    if (existing.categoryId == categoryId) return 0;
+    const none = (applied: 0, undo: null);
+    if (existing.categoryId == categoryId) return none;
     final pattern = merchant.toLowerCase();
-    if (pattern.length < 3) return 0;
+    if (pattern.length < 3) return none;
     // Same reason: a category chosen for one "UPI payment" says nothing about
     // the next one — only a named payee is worth learning.
-    if (isGenericMerchantLabel(merchant)) return 0;
+    if (isGenericMerchantLabel(merchant)) return none;
+
+    Expression<bool> affectedFilter($TransactionsTable t) =>
+        t.merchant.lower().equals(pattern) &
+        t.id.equals(existing.id).not() &
+        t.userEdited.equals(false);
+    final before = await (_db.select(
+      _db.transactions,
+    )..where(affectedFilter)).get();
 
     final known = await (_db.select(
       _db.rules,
     )..where((r) => r.pattern.equals(pattern))).get();
+    String? newRuleId;
     if (known.isEmpty) {
+      newRuleId = _uuid.v4();
       await _db
           .into(_db.rules)
           .insert(
             RulesCompanion.insert(
-              id: _uuid.v4(),
+              id: newRuleId,
               pattern: pattern,
               categoryId: categoryId,
               source: 'user',
@@ -187,13 +281,25 @@ class TransactionsRepository {
           .write(RulesCompanion(categoryId: Value(categoryId)));
     }
 
-    return (_db.update(_db.transactions)..where(
-          (t) =>
-              t.merchant.lower().equals(pattern) &
-              t.id.equals(existing.id).not() &
-              t.userEdited.equals(false),
-        ))
-        .write(TransactionsCompanion(categoryId: Value(categoryId)));
+    final applied =
+        await (_db.update(_db.transactions)..where(affectedFilter)).write(
+          TransactionsCompanion(categoryId: Value(categoryId)),
+        );
+    if (applied == 0) return (applied: 0, undo: null);
+
+    return (
+      applied: applied,
+      undo: () async {
+        if (newRuleId != null) {
+          await (_db.delete(_db.rules)..where((r) => r.id.equals(newRuleId!)))
+              .go();
+        }
+        for (final r in known) {
+          await _db.into(_db.rules).insertOnConflictUpdate(r);
+        }
+        await _restoreLabels(before);
+      },
+    );
   }
 
   /// Marks a debit as a credit-card bill payment (shown, but not counted as
@@ -269,9 +375,20 @@ class TransactionsRepository {
   /// Soft delete — keeps the row (and its original raw SMS/email text, if
   /// any) so it can be recovered or audited later, just hides it from the
   /// normal transaction list.
-  Future<void> softDelete(String id) {
-    return (_db.update(_db.transactions)..where((t) => t.id.equals(id))).write(
+  ///
+  /// Returns the way back.
+  Future<UndoAction> softDelete(String id) async {
+    await (_db.update(_db.transactions)..where((t) => t.id.equals(id))).write(
       const TransactionsCompanion(isDeleted: Value(true)),
     );
+    return () => restoreDeleted(id);
+  }
+
+  /// Brings a soft-deleted transaction back.
+  Future<void> restoreDeleted(String id) async {
+    await (_db.update(_db.transactions)..where((t) => t.id.equals(id))).write(
+      const TransactionsCompanion(isDeleted: Value(false)),
+    );
+    await Reconciler(_db).run();
   }
 }

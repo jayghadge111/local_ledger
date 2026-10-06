@@ -96,3 +96,6 @@ GoogleService-Info.plist
 # Downloaded OAuth client files (contain client details; the IDs live in code)
 client_secret*.json
 client_*.apps.googleusercontent.com.plist
+
+# Rules signing key: anyone holding it can publish rules to every install.
+rules/signing_key.private

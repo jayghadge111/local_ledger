@@ -1,11 +1,10 @@
+import '../../core/money_format.dart';
 import 'package:intl/intl.dart';
 
 import '../db/app_database.dart';
 import 'obligation_repository.dart';
 
-final _money = NumberFormat.currency(
-  locale: 'en_IN',
-  symbol: '₹',
+NumberFormat get _money => appCurrency(symbol: '₹',
   decimalDigits: 0,
 );
 

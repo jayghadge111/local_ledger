@@ -1,3 +1,4 @@
+import '../../../core/money_format.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -15,9 +16,7 @@ import '../../../shared/widgets/glass_surface.dart';
 import '../../budgets/budgets_screen.dart';
 import '../dashboard_month.dart';
 
-final _money = NumberFormat.currency(
-  locale: 'en_IN',
-  symbol: '₹',
+NumberFormat get _money => appCurrency(symbol: '₹',
   decimalDigits: 0,
 );
 

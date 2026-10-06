@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  NativeSpend keeps everything on the phone, encrypted with a key held in the
+  Android Keystore. That key never leaves the device, so a copy of the
+  database restored to another phone (cloud backup or device-to-device
+  transfer) could not be read. Excluding everything avoids restoring
+  unreadable data; the app's own encrypted "Export backup" is the supported way
+  to move to a new phone.
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="root" />
+        <exclude domain="file" />
+        <exclude domain="database" />
+        <exclude domain="sharedpref" />
+        <exclude domain="external" />
+    </device-transfer>
+</data-extraction-rules>

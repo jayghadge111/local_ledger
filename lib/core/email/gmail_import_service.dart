@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:google_sign_in/google_sign_in.dart' show GoogleSignInAccount;
 import 'package:http/http.dart' as http;
 
+import '../diagnostics/diagnostic_log.dart';
 import '../import_window.dart';
 import '../db/settings_repository.dart';
 import '../import_progress.dart';
@@ -116,6 +117,9 @@ class GmailImportService {
             .timeout(_requestTimeout);
       }
 
+      if (listResponse.statusCode == 401) {
+        throw const GmailAccessException('401');
+      }
       if (listResponse.statusCode != 200) {
         throw StateError(
           'Gmail list request failed (${listResponse.statusCode}: ${_errorReason(listResponse)})',
@@ -256,6 +260,12 @@ class GmailImportService {
         response = null; // timeout / network blip — try again
       }
       if (response != null && response.statusCode == 200) break;
+      // The sign-in stopped working part-way (access revoked, token expired):
+      // stop and say so, rather than counting every remaining email as
+      // unreadable.
+      if (response != null && response.statusCode == 401) {
+        throw const GmailAccessException('401');
+      }
       final rateLimited =
           response != null &&
           (response.statusCode == 429 ||
@@ -268,7 +278,22 @@ class GmailImportService {
     }
     if (response == null || response.statusCode != 200) return null;
 
-    final json = jsonDecode(response.body) as Map<String, dynamic>;
+    try {
+      return _readMessage(response.body);
+    } catch (error, stack) {
+      // One email in an unexpected shape must not stop the import.
+      DiagnosticLog.instance.record(
+        'gmail',
+        error,
+        stack,
+        'reading an email ($id)',
+      );
+      return null;
+    }
+  }
+
+  (String, int, String)? _readMessage(String responseBody) {
+    final json = jsonDecode(responseBody) as Map<String, dynamic>;
     final payload = json['payload'] as Map<String, dynamic>?;
     if (payload == null) return null;
 

@@ -2,7 +2,22 @@
 
 **Goal.** Once NativeSpend is live, be able to change the strings that decide *what a message is* — bank sender codes, bank email domains, parser regexes, category keywords, merchant/brand names — **without shipping a new app version**.
 
-**Status (3 Oct 2026):** **P1 and P2 are done** — every matcher/parser string now lives in `rules/rules.bundled.json` and the app reads it through `ParserRules` (no network). **P3–P5 (fetch, verify, publish) are deliberately not started**: we decided not to use remote config for now. This file is the plan for if/when we do. Appendix A shows the real JSON as it is today.
+**Status (6 Oct 2026):** **Built.** P1–P5 are done: the app downloads one signed file, checks it, keeps the previous version, and can roll back. Everything below is the original plan; this block says what shipped.
+
+## How to publish a rules fix (no app release)
+
+1. Edit `rules/rules.bundled.json` and raise `"packVersion"`. Add a sample message for the new wording to `"canaries"` (the app refuses a pack that misreads its own samples).
+2. `dart run tool/gen_bundled_rules.dart && flutter test test/rules_test.dart`
+3. `dart run tool/sign_rules.dart` — signs with `rules/signing_key.private` (first time: `--generate-key`; already done once, public key is in `lib/core/rules/rules_config.dart`). It refuses to sign if a canary fails.
+4. Commit `rules/rules.signed.json` and push to `main`. Installed apps fetch it from `kRulesUrl` (raw.githubusercontent.com) at most once a day.
+
+**The private key** is `rules/signing_key.private` (git-ignored). Whoever holds it can change how every installed app reads messages — keep a backup somewhere private and never commit it. To rotate: add the new public key to `kTrustedRulesKeys` in an app update, then sign with the new key id (`--key-id`).
+
+**What the app does with a downloaded pack** (`lib/core/rules/rules_manager.dart`): verifies the Ed25519 signature; requires a format version it understands; requires a `packVersion` newer than what is in force (no downgrades); runs every canary; only then installs it. The previous pack is kept. Verified again on every start. If the app fails to reach its first screen twice in a row with new rules, they are rolled back automatically. It is silent: there is no screen for it and no setting — the app checks at most once a day, on open or resume.
+
+**Privacy:** the only request is an anonymous GET of the public file (the host sees the IP address and time). Describe this in the privacy policy.
+
+---
 
 ---
 

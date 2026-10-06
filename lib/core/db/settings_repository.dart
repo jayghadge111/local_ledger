@@ -28,6 +28,9 @@ abstract class SettingsKeys {
       'budget_review_dismissed'; // month key the review card was put away for
   static const monthSummaryShown =
       'month_summary_shown'; // month key of the last month-end notification
+  static const introTourPending =
+      'intro_tour_pending'; // 'true' until the first-visit tour has been shown
+  static const rulesLastChecked = 'rules_last_checked'; // ISO-8601
 }
 
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {

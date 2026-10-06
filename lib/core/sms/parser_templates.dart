@@ -120,5 +120,14 @@ class ParserTemplateStore {
     }
   }
 
+  /// Ids of every learned template (to tell which ones a `learn` just made).
+  Future<Set<String>> ids() async => {
+    for (final r in await _db.select(_db.parserTemplates).get()) r.id,
+  };
+
+  Future<void> deleteIds(Set<String> ids) => (_db.delete(
+    _db.parserTemplates,
+  )..where((t) => t.id.isIn(ids))).go();
+
   Future<void> clearAll() => _db.delete(_db.parserTemplates).go();
 }

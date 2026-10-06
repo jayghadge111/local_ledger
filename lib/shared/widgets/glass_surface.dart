@@ -62,6 +62,17 @@ class _GlassCardState extends State<GlassCard> {
     );
 
     if (widget.onTap == null) return animated;
+    // A tappable card is one control for TalkBack: it reads everything on the
+    // card together ("Swiggy, Oct 5, minus ₹450") and says it is a button,
+    // instead of leaving an unlabeled tap target next to loose text.
+    return Semantics(
+      button: true,
+      container: true,
+      child: MergeSemantics(child: _tappable(radius, animated)),
+    );
+  }
+
+  Widget _tappable(BorderRadius radius, Widget animated) {
     return GestureDetector(
       onTapDown: (_) => _setPressed(true),
       onTapUp: (_) => _setPressed(false),

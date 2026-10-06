@@ -1,3 +1,4 @@
+import '../../shared/widgets/text_button_styles.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -93,6 +94,8 @@ class _OwnIdentifiersScreenState extends ConsumerState<OwnIdentifiersScreen> {
                       contentPadding: EdgeInsets.zero,
                       title: Text(i.value),
                       trailing: IconButton(
+                        tooltip: 'Remove',
+                        color: dangerColor(context),
                         icon: const Icon(Icons.close_rounded),
                         onPressed: () => ref
                             .read(ownIdentifiersRepositoryProvider)

@@ -1,3 +1,5 @@
+import '../../shared/widgets/text_button_styles.dart';
+import '../../core/ui/undo.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -71,10 +73,15 @@ class RulesScreen extends ConsumerWidget {
                           ),
                         ),
                         IconButton(
+                          tooltip: 'Delete rule',
+                          color: dangerColor(context),
                           icon: const Icon(Icons.delete_outline),
-                          onPressed: () => ref
-                              .read(rulesRepositoryProvider)
-                              .deleteRule(rule.id),
+                          onPressed: () async {
+                            final undo = await ref
+                                .read(rulesRepositoryProvider)
+                                .deleteRule(rule.id);
+                            showUndoSnackBar('Rule removed', undo);
+                          },
                         ),
                       ],
                     ),
@@ -87,6 +94,7 @@ class RulesScreen extends ConsumerWidget {
           error: (e, _) => Center(child: Text('Could not load rules: $e')),
         ),
         floatingActionButton: FloatingActionButton(
+          tooltip: 'Add rule',
           onPressed: () => _showAddRuleDialog(context, ref),
           child: const Icon(Icons.add),
         ),

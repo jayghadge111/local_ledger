@@ -1,7 +1,7 @@
+import '../../../core/money_format.dart';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import '../../../shared/widgets/category_icons.dart';
 import '../../../core/theme/app_theme.dart';
@@ -48,9 +48,7 @@ class CategoryDonutChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final shades = _shadesFor(ChartColors.of(context));
-    final amountFormatter = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
+    final amountFormatter = appCurrency(symbol: '₹',
       decimalDigits: 0,
     );
 

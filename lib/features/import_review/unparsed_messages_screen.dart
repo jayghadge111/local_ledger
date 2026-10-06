@@ -8,6 +8,7 @@ import '../../core/sms/bank_sms_parser.dart';
 import '../../shared/widgets/glass_background.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../transactions/transaction_form_sheet.dart';
+import 'share_message_dialog.dart';
 
 /// Bank messages that quoted an amount but couldn't be read automatically.
 /// The user either adds the transaction by hand (amount prefilled) or
@@ -60,7 +61,10 @@ class UnparsedMessagesScreen extends ConsumerWidget {
                             const SizedBox(height: 6),
                             Text(body, style: theme.textTheme.bodyMedium),
                             const SizedBox(height: 12),
-                            Row(
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
                                 FilledButton(
                                   onPressed: snapshot.hasData
@@ -76,8 +80,9 @@ class UnparsedMessagesScreen extends ConsumerWidget {
                                                   senderCode: m.senderCode,
                                                 ),
                                               );
-                                          if (saved == true)
+                                          if (saved == true) {
                                             await repo.resolve(m.id);
+                                          }
                                         }
                                       : null,
                                   style: FilledButton.styleFrom(
@@ -88,7 +93,6 @@ class UnparsedMessagesScreen extends ConsumerWidget {
                                   ),
                                   child: const Text('Add transaction'),
                                 ),
-                                const SizedBox(width: 8),
                                 OutlinedButton(
                                   onPressed: () => repo.resolve(m.id),
                                   style: OutlinedButton.styleFrom(
@@ -98,6 +102,15 @@ class UnparsedMessagesScreen extends ConsumerWidget {
                                     ),
                                   ),
                                   child: const Text('Dismiss'),
+                                ),
+                                TextButton(
+                                  onPressed: snapshot.hasData
+                                      ? () => showShareMessageDialog(
+                                          context,
+                                          body,
+                                        )
+                                      : null,
+                                  child: const Text('Share for fixing'),
                                 ),
                               ],
                             ),

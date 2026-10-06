@@ -287,8 +287,9 @@ class ParserRules {
 
   factory ParserRules.fromJson(Map<String, dynamic> json) {
     try {
-      if (json['format'] != 'nativespend-rules')
+      if (json['format'] != 'nativespend-rules') {
         throw RulesFormatException('not a rules document');
+      }
       final parserJson = json['parser'] as Map<String, dynamic>;
       final vars = {
         for (final e in (parserJson['vars'] as Map<String, dynamic>).entries)

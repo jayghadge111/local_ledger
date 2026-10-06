@@ -15,6 +15,17 @@ class FlagChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Squeezed narrower than its own padding and icon, a chip is just
+        // clutter; drop it rather than overflow.
+        if (constraints.maxWidth < 44) return const SizedBox.shrink();
+        return _chip();
+      },
+    );
+  }
+
+  Widget _chip() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(

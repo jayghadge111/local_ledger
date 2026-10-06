@@ -1,3 +1,5 @@
+import '../../core/money_format.dart';
+import '../../core/ui/undo.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -14,9 +16,7 @@ import '../../core/lending/lending_messages.dart';
 import '../../core/theme/app_theme.dart';
 import 'lending_share_dialog.dart';
 
-final _money = NumberFormat.currency(
-  locale: 'en_IN',
-  symbol: '₹',
+NumberFormat get _money => appCurrency(symbol: '₹',
   decimalDigits: 0,
 );
 
@@ -934,8 +934,12 @@ class _Detail extends ConsumerWidget {
                       subtitle: Text(DateFormat('d MMM yyyy').format(p.date)),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete_outline_rounded),
+                        color: dangerColor(context),
                         tooltip: 'Remove',
-                        onPressed: () => repo.deletePayment(p.id),
+                        onPressed: () async {
+                          final undo = await repo.deletePayment(p.id);
+                          showUndoSnackBar('Repayment removed', undo);
+                        },
                       ),
                     ),
                   const SizedBox(height: 12),
@@ -1010,7 +1014,8 @@ class _Detail extends ConsumerWidget {
                       TextButton(
                         style: dangerTextButtonStyle(context),
                         onPressed: () async {
-                          await repo.deleteEntry(e.id);
+                          final undo = await repo.deleteEntry(e.id);
+                          showUndoSnackBar('Deleted ${e.person}\'s entry', undo);
                           if (context.mounted) Navigator.of(context).pop();
                         },
                         child: const Text('Delete'),

@@ -4,6 +4,17 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 import 'google_oauth_config.dart';
 
+/// Google refused the saved sign-in: access was revoked, or the token expired
+/// and couldn't be renewed. The user has to connect again; nothing is wrong
+/// with the app. A paused import keeps its checkpoint and can resume then.
+class GmailAccessException implements Exception {
+  const GmailAccessException([this.detail]);
+  final String? detail;
+
+  @override
+  String toString() => 'Gmail access was refused${detail == null ? '' : ' ($detail)'}';
+}
+
 /// Wraps `google_sign_in` for the one thing this app needs: read-only
 /// access to the signed-in user's own Gmail inbox, authenticated directly
 /// against Google — never through any server of ours.
@@ -64,7 +75,7 @@ class GmailAuthService {
       promptIfNecessary: true,
     );
     if (headers == null) {
-      throw StateError('Gmail authorization was not granted');
+      throw const GmailAccessException('authorization was not granted');
     }
     return headers;
   }

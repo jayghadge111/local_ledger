@@ -1,9 +1,9 @@
+import '../../core/money_format.dart';
 import '../../core/lending/lending_repository.dart';
 import '../lending/lending_screen.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../core/db/app_database.dart';
 import '../../core/db/budgets_repository.dart';
@@ -26,9 +26,7 @@ class ManageScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final money = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
+    final money = appCurrency(symbol: '₹',
       decimalDigits: 0,
     );
 

@@ -81,7 +81,9 @@ class AppPalette {
     activeChipText: white,
     inactiveChip: Color(0xFFE0F2FE),
     primaryText: Color(0xFF0C4A6E),
-    secondaryText: Color(0xFF64748B),
+    // Slate, darkened a touch from #64748B so secondary text also reaches
+    // 4.5:1 on the pale-blue page background, not only on white cards.
+    secondaryText: Color(0xFF586A7E),
     ctaBackground: Color(0xFF0C4A6E),
     ctaText: white,
     chartAccent: Color(0xFF0C4A6E),
@@ -177,7 +179,9 @@ class AppTheme {
       onSecondary: activeChipText,
       secondaryContainer: inactiveChip,
       onSecondaryContainer: textColor,
-      error: const Color(0xFFD32F2F),
+      // The standard red is too dim on dark navy (3.3:1); use a lighter one
+      // there.
+      error: isDark ? const Color(0xFFFF8A80) : const Color(0xFFD32F2F),
       onError: AppPalette.white,
       surface: cardColor,
       onSurface: textColor,

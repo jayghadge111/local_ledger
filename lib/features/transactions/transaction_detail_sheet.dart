@@ -1,3 +1,6 @@
+import '../../core/db/rules_repository.dart';
+import '../../core/intelligence/category_reason.dart';
+import '../../core/money_format.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -67,9 +70,7 @@ class TransactionDetailSheet extends ConsumerWidget {
     final isTransfer = t.kind == 'transfer';
     final isCardPayment = t.kind == 'card_payment';
     final isInr = t.currency == 'INR';
-    final money = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: isInr ? '₹' : '${t.currency} ',
+    final money = appCurrency(symbol: isInr ? '₹' : '${t.currency} ',
       decimalDigits: 2,
     );
     final amountColor = (isTransfer || isCardPayment)
@@ -150,6 +151,7 @@ class TransactionDetailSheet extends ConsumerWidget {
                         ),
                       ),
                       IconButton(
+                        tooltip: 'Close',
                         icon: const Icon(Icons.close_rounded),
                         onPressed: () => Navigator.of(context).pop(),
                       ),
@@ -234,6 +236,35 @@ class TransactionDetailSheet extends ConsumerWidget {
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                  if (category != null && !isTransfer)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () => showDialog<void>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Why this category?'),
+                            content: Text(
+                              categoryReason(
+                                t,
+                                rules:
+                                    ref.read(rulesProvider).value ??
+                                    const <Rule>[],
+                                categoryName: category.name,
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('OK'),
+                              ),
+                            ],
+                          ),
+                        ),
+                        icon: const Icon(Icons.help_outline_rounded, size: 18),
+                        label: const Text('Why this category?'),
                       ),
                     ),
                   if (!isCredit) ...[

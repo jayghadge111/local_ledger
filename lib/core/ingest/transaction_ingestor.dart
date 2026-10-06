@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../db/app_database.dart';
+import '../diagnostics/diagnostic_log.dart';
 import '../intelligence/default_category_rules.dart';
 import '../intelligence/merchant_normalizer.dart';
 import '../intelligence/rule_matcher.dart';
@@ -17,7 +18,17 @@ import '../sms/parser_templates.dart';
 import '../sms/template_learning.dart';
 import 'reconciler.dart';
 
-enum IngestOutcome { imported, duplicate, queued, skipped, obligation }
+enum IngestOutcome {
+  imported,
+  duplicate,
+  queued,
+  skipped,
+  obligation,
+
+  /// Something went wrong reading this one message. It was logged and (when
+  /// possible) put in the review queue; the import carried on.
+  failed,
+}
 
 /// The one place SMS and email messages become stored transactions:
 /// parse, drop duplicates, resolve the account, clean the merchant name,
@@ -88,6 +99,10 @@ class IngestSession {
   /// Existing SMS/email pairs found to be one transaction and merged.
   int merged = 0;
 
+  /// Messages that threw while being read. Each is logged, and goes to the
+  /// review queue when it can — one bad message never stops the rest.
+  int failed = 0;
+
   AppDatabase get _db => _owner._db;
 
   String _hash(String source, String body, DateTime date) => sha512
@@ -96,12 +111,51 @@ class IngestSession {
       )
       .toString();
 
+  /// Reads one message. This never throws: whatever goes wrong with a single
+  /// message is logged and the message is set aside for the user to look at,
+  /// so a 1-year scan can't be lost to one odd SMS or email.
   Future<IngestOutcome> add({
     required String source,
     required String sender,
     required String body,
     required DateTime date,
   }) async {
+    try {
+      return await _add(source, sender, body, date);
+    } catch (error, stack) {
+      failed++;
+      DiagnosticLog.instance.record(
+        'ingest',
+        error,
+        stack,
+        'a $source message from ${bankCodeOf(sender)} (${body.length} characters)',
+      );
+      try {
+        return await _queue(
+          source,
+          sender,
+          body,
+          date,
+          _hash(source, body, date),
+        );
+      } catch (queueError, queueStack) {
+        DiagnosticLog.instance.record(
+          'ingest',
+          queueError,
+          queueStack,
+          'setting a message aside for review',
+        );
+        return IngestOutcome.failed;
+      }
+    }
+  }
+
+  Future<IngestOutcome> _add(
+    String source,
+    String sender,
+    String body,
+    DateTime date,
+  ) async {
     final hash = _hash(source, body, date);
 
     // A layout the user told us is not a transaction ("Delete and ignore
@@ -175,15 +229,34 @@ class IngestSession {
       return IngestOutcome.duplicate;
     }
 
-    // The same transaction reported by both SMS and email.
-    final twin = await _findTwin(source, parsed, date);
-    if (twin != null) {
-      await _mergeInto(twin, source, sender, parsed, raw, display, body);
+    // A message already folded into a transaction from another channel.
+    // Without this a second scan would find no match for it (that channel is
+    // already recorded on the transaction) and add the payment again.
+    final folded = await (_db.select(
+      _db.mergedMessages,
+    )..where((m) => m.hash.equals(hash))).getSingleOrNull();
+    if (folded != null) {
       duplicates++;
       return IngestOutcome.duplicate;
     }
 
-    final categoryId = _categoryFor(display, raw, parsed.type);
+    // The same transaction reported by both SMS and email.
+    final twin = await _findTwin(source, parsed, date);
+    if (twin != null) {
+      await _mergeInto(twin, source, sender, parsed, raw, display, body);
+      await _db
+          .into(_db.mergedMessages)
+          .insert(
+            MergedMessagesCompanion.insert(hash: hash, transactionId: twin.id),
+            mode: InsertMode.insertOrIgnore,
+          );
+      duplicates++;
+      return IngestOutcome.duplicate;
+    }
+
+    final categoryId = parsed.selfTransfer
+        ? 'cat_self_transfer'
+        : _categoryFor(display, raw, parsed.type);
 
     await _db
         .into(_db.transactions)
@@ -204,7 +277,11 @@ class IngestSession {
             date: date,
             isInternational: Value(parsed.isInternational),
             refundHint: Value(parsed.refundHint),
-            kind: Value(parsed.cardPayment ? 'card_payment' : 'normal'),
+            kind: Value(
+              parsed.cardPayment
+                  ? 'card_payment'
+                  : (parsed.selfTransfer ? 'transfer' : 'normal'),
+            ),
             sourceHash: Value(hash),
           ),
         );
@@ -415,6 +492,9 @@ class IngestSession {
     );
     await (_db.update(_db.transactions)..where((t) => t.id.equals(drop.id)))
         .write(const TransactionsCompanion(isDeleted: Value(true)));
+    await (_db.update(_db.mergedMessages)
+          ..where((m) => m.transactionId.equals(drop.id)))
+        .write(MergedMessagesCompanion(transactionId: Value(keep.id)));
   }
 
   /// Records that [source] also reported [twin], and fills in anything the
@@ -475,7 +555,9 @@ class IngestSession {
     // Only fill in a category where none was ever chosen — never override one.
     final newCategory =
         existing.categoryId == null || existing.categoryId == 'cat_other'
-        ? _categoryFor(display, raw, parsed.type)
+        ? (parsed.selfTransfer
+              ? 'cat_self_transfer'
+              : _categoryFor(display, raw, parsed.type))
         : existing.categoryId;
     final changed =
         existing.categoryId != newCategory ||
@@ -487,6 +569,7 @@ class IngestSession {
         existing.isInternational != parsed.isInternational ||
         (!existing.kindLocked &&
             ((parsed.cardPayment && existing.kind == 'normal') ||
+                (parsed.selfTransfer && existing.kind == 'normal') ||
                 (!parsed.cardPayment && existing.kind == 'card_payment')));
     if (!changed) return;
 
@@ -511,9 +594,15 @@ class IngestSession {
         kind: existing.kindLocked
             ? const Value.absent()
             : typeChanged
-            ? Value(parsed.cardPayment ? 'card_payment' : 'normal')
+            ? Value(
+                parsed.cardPayment
+                    ? 'card_payment'
+                    : (parsed.selfTransfer ? 'transfer' : 'normal'),
+              )
             : parsed.cardPayment && existing.kind == 'normal'
             ? const Value('card_payment')
+            : parsed.selfTransfer && existing.kind == 'normal'
+            ? const Value('transfer')
             : !parsed.cardPayment && existing.kind == 'card_payment'
             ? const Value('normal')
             : const Value.absent(),
@@ -620,16 +709,36 @@ class IngestSession {
   /// Call once after the last [add]: links transfers and refunds.
   Future<ReconcileResult> finish() async {
     if (_templateHits.isNotEmpty) {
-      await ParserTemplateStore(
-        _db,
-        _owner._encryption,
-      ).recordHits(_templateHits);
+      await _step(
+        'counting learned-layout matches',
+        () => ParserTemplateStore(
+          _db,
+          _owner._encryption,
+        ).recordHits(_templateHits),
+      );
     }
-    await _mergeLateTwins();
+    await _step('merging duplicate messages', _mergeLateTwins);
 
     // Settle upcoming debits against the transactions now in the app: a real
     // debit of the same amount marks its notice paid.
-    await ObligationsRepository(_db).reconcile();
-    return Reconciler(_db).run();
+    await _step(
+      'settling upcoming debits',
+      () => ObligationsRepository(_db).reconcile(),
+    );
+    return await _step('linking transfers and refunds', () {
+          return Reconciler(_db).run();
+        }) ??
+        const ReconcileResult();
+  }
+
+  /// One clean-up step after the import. If it fails the messages are
+  /// already stored, so log it and let the rest of the clean-up run.
+  Future<T?> _step<T>(String what, Future<T> Function() action) async {
+    try {
+      return await action();
+    } catch (error, stack) {
+      DiagnosticLog.instance.record('ingest', error, stack, what);
+      return null;
+    }
   }
 }

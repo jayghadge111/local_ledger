@@ -1,14 +1,17 @@
+import '../../../shared/widgets/text_button_styles.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:intl/intl.dart';
 
 import '../../../core/db/settings_repository.dart';
+import '../../../core/permissions/app_permissions.dart';
 import '../../../core/sync/sync_controller.dart';
 import '../../../shared/widgets/import_progress_view.dart';
-import '../../../core/sms/sms_providers.dart';
 import '../../../shared/widgets/glass_switch_row.dart';
 import '../../../shared/widgets/glass_surface.dart';
+import '../../../shared/widgets/permission_notice.dart';
 
 /// Scan SMS and tune auto-sync. The import itself runs in [SyncController],
 /// so it keeps going if the user leaves this page; this card just reflects it.
@@ -20,9 +23,7 @@ class SmsConnectCard extends ConsumerWidget {
     final theme = Theme.of(context);
     final job = ref.watch(syncControllerProvider).sms;
     final scanning = job.running;
-    final service = ref.read(smsImportServiceProvider);
-
-    if (!service.isSupported) return const SizedBox.shrink();
+    final permission = ref.watch(permissionsProvider)[AppPermission.sms];
 
     return GlassCard(
       child: Column(
@@ -46,21 +47,47 @@ class SmsConnectCard extends ConsumerWidget {
               final last = snapshot.data == null
                   ? null
                   : DateTime.tryParse(snapshot.data!);
-              if (last == null) return const SizedBox.shrink();
+              // Access that worked before and is now off (revoked in system
+              // settings), or one the system has stopped asking about.
+              final off =
+                  permission == PermissionState.blocked ||
+                  (permission == PermissionState.denied && last != null);
+              final notice = off
+                  ? Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: PermissionNotice(
+                        state: permission!,
+                        message: 'SMS access is off, so new bank messages are not being picked up.',
+                        onAllow: () => ref
+                            .read(permissionsProvider.notifier)
+                            .request(AppPermission.sms),
+                        onOpenSettings: () => ref
+                            .read(permissionsProvider.notifier)
+                            .openSettings(),
+                      ),
+                    )
+                  : const SizedBox.shrink();
+              if (last == null) return notice;
               final stale =
                   DateTime.now().difference(last) > const Duration(days: 3);
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  stale
-                      ? 'Last synced ${DateFormat.yMMMd().add_jm().format(last)} — opening the app catches up on anything missed.'
-                      : 'Last synced ${DateFormat.yMMMd().add_jm().format(last)}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: stale
-                        ? theme.colorScheme.error
-                        : theme.colorScheme.onSurfaceVariant,
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  notice,
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      stale
+                          ? 'Last synced ${DateFormat.yMMMd().add_jm().format(last)} — opening the app catches up on anything missed.'
+                          : 'Last synced ${DateFormat.yMMMd().add_jm().format(last)}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: stale
+                            ? theme.colorScheme.error
+                            : theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
                   ),
-                ),
+                ],
               );
             },
           ),
@@ -115,7 +142,9 @@ class SmsConnectCard extends ConsumerWidget {
           ],
           if (job.canResume) ...[
             const SizedBox(height: 10),
-            Row(
+            Wrap(
+              spacing: 8,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 FilledButton.icon(
                   onPressed: ref
@@ -124,11 +153,11 @@ class SmsConnectCard extends ConsumerWidget {
                   icon: const Icon(Icons.play_arrow_rounded),
                   label: const Text('Resume'),
                 ),
-                const SizedBox(width: 8),
                 TextButton(
                   onPressed: ref
                       .read(syncControllerProvider.notifier)
                       .dismissSms,
+                  style: dangerTextButtonStyle(context),
                   child: const Text('Discard'),
                 ),
               ],
@@ -137,6 +166,16 @@ class SmsConnectCard extends ConsumerWidget {
           if (job.message != null && !scanning) ...[
             const SizedBox(height: 14),
             ImportResultNote(ok: !job.failed, text: job.message!),
+            if (job.needsSettings)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton.icon(
+                  onPressed: () =>
+                      ref.read(permissionsProvider.notifier).openSettings(),
+                  icon: const Icon(Icons.settings_outlined),
+                  label: const Text('Open settings'),
+                ),
+              ),
           ],
         ],
       ),

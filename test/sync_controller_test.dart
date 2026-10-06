@@ -4,16 +4,30 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/native.dart';
+import 'package:local_ledger/core/backup/local_snapshots.dart';
+import 'package:local_ledger/core/backup/snapshot_providers.dart';
 import 'package:local_ledger/core/db/app_database.dart';
 import 'package:local_ledger/core/db/providers.dart';
 import 'package:local_ledger/core/db/settings_repository.dart';
 import 'package:local_ledger/core/import_progress.dart';
 import 'package:local_ledger/core/sync/import_checkpoints.dart';
+import 'package:local_ledger/core/permissions/app_permissions.dart';
 import 'package:local_ledger/core/sms/sms_import_service.dart';
 import 'package:local_ledger/core/sms/sms_providers.dart';
 import 'package:local_ledger/core/sync/sync_controller.dart';
 import 'package:local_ledger/core/ui/root_messenger.dart';
 import 'package:local_ledger/shared/widgets/sync_banner.dart';
+
+/// The copy taken before a scan is its own feature (see local_snapshots_test);
+/// here it must not get in the way.
+class _NoSnapshots implements SnapshotService {
+  @override
+  Future<SnapshotInfo?> snapshot(String reason) async => null;
+  @override
+  Future<bool> restore(SnapshotInfo snapshot) async => false;
+  @override
+  bool delete(SnapshotInfo snapshot) => false;
+}
 
 /// A scan the test drives by hand: reports progress, then waits to be released.
 class _FakeSms implements SmsImportService {
@@ -32,7 +46,7 @@ class _FakeSms implements SmsImportService {
   Future<DateTime?> lastSyncedAt() async => null;
 
   @override
-  Future<bool> requestPermission() async => true;
+  Future<PermissionState> requestPermission() async => PermissionState.granted;
 
   @override
   Future<SmsImportResult> importFromInbox({
@@ -66,7 +80,10 @@ void main() {
     (tester) async {
       final fake = _FakeSms();
       final container = ProviderContainer(
-        overrides: [smsImportServiceProvider.overrideWithValue(fake)],
+        overrides: [
+          smsImportServiceProvider.overrideWithValue(fake),
+          snapshotServiceProvider.overrideWithValue(_NoSnapshots()),
+        ],
       );
       addTearDown(container.dispose);
 
@@ -172,6 +189,7 @@ void main() {
         overrides: [
           databaseProvider.overrideWithValue(db),
           smsImportServiceProvider.overrideWithValue(fake),
+          snapshotServiceProvider.overrideWithValue(_NoSnapshots()),
         ],
       );
     });

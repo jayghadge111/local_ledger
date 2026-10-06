@@ -1,10 +1,11 @@
 import 'dart:io';
 
 import 'package:another_telephony/telephony.dart' hide Value;
-import 'package:permission_handler/permission_handler.dart';
 
 import '../db/settings_repository.dart';
+import '../diagnostics/diagnostic_log.dart';
 import '../import_progress.dart';
+import '../permissions/app_permissions.dart';
 import '../import_window.dart';
 import '../sync/import_checkpoints.dart';
 import '../ingest/transaction_ingestor.dart';
@@ -42,10 +43,15 @@ class SmsImportResult {
 /// work never leaves a gap — opening the app catches up on everything still
 /// in the inbox.
 class SmsImportService {
-  SmsImportService(this._ingestor, this._settings);
+  SmsImportService(
+    this._ingestor,
+    this._settings, [
+    this._permissions = const PermissionService(),
+  ]);
 
   final TransactionIngestor _ingestor;
   final SettingsRepository _settings;
+  final PermissionService _permissions;
   final _telephony = Telephony.instance;
 
   bool _listening = false;
@@ -56,14 +62,24 @@ class SmsImportService {
 
   bool get isSupported => Platform.isAndroid;
 
-  Future<bool> requestPermission() async {
-    if (!isSupported) return false;
-    final granted = await _telephony.requestSmsPermissions;
-    return granted ?? false;
+  /// Asks for SMS access. If the system has stopped asking (refused for good,
+  /// or turned off in settings) it says so, rather than failing silently, so
+  /// the UI can send the user to the app's settings page.
+  Future<PermissionState> requestPermission() async {
+    if (!isSupported) return PermissionState.unavailable;
+    final current = await _permissions.status(AppPermission.sms);
+    if (current != PermissionState.denied) return current;
+    try {
+      await _telephony.requestSmsPermissions;
+    } catch (error, stack) {
+      DiagnosticLog.instance.record('sms', error, stack, 'permission request');
+    }
+    return _permissions.status(AppPermission.sms);
   }
 
   Future<bool> get hasPermission async =>
-      isSupported && await Permission.sms.isGranted;
+      isSupported &&
+      await _permissions.status(AppPermission.sms) == PermissionState.granted;
 
   Future<DateTime?> lastSyncedAt() async {
     final raw = await _settings.get(SettingsKeys.smsLastSyncedAt);
@@ -118,13 +134,31 @@ class SmsImportService {
   ) async {
     if (!isSupported || _listening || !await hasPermission) return;
     _listening = true;
-    _telephony.listenIncomingSms(
-      listenInBackground: false,
-      onNewMessage: (_) async {
-        final result = await syncIfDue(force: true);
-        if (result != null && result.imported > 0) onImported(result);
-      },
-    );
+    try {
+      _telephony.listenIncomingSms(
+        listenInBackground: false,
+        onNewMessage: (_) async {
+          try {
+            final result = await syncIfDue(force: true);
+            if (result != null && result.imported > 0) onImported(result);
+          } catch (error, stack) {
+            DiagnosticLog.instance.record('sms', error, stack, 'live sync');
+          }
+        },
+      );
+    } catch (error, stack) {
+      _listening = false;
+      DiagnosticLog.instance.record('sms', error, stack, 'listening');
+    }
+  }
+
+  bool _isBankSender(String sender) {
+    try {
+      return looksLikeBankSender(sender);
+    } catch (error, stack) {
+      DiagnosticLog.instance.record('sms', error, stack, 'checking a sender');
+      return false;
+    }
   }
 
   Future<SmsImportResult> _import({
@@ -170,8 +204,16 @@ class SmsImportService {
       var done = 0;
       var lastMillis = previous?.beforeMillis ?? 0;
       var cancelled = false;
+      // Parsing is plain Dart on the UI isolate, so hand control back
+      // regularly: frames keep drawing and the app stays responsive (and
+      // never trips Android's "not responding" watchdog) on a big inbox.
+      final slice = Stopwatch()..start();
       for (final message in messages) {
         done++;
+        if (slice.elapsedMilliseconds > 12) {
+          await Future<void>.delayed(Duration.zero);
+          slice.reset();
+        }
         lastMillis = message.date ?? lastMillis;
         // Most messages aren't from banks and are skipped instantly, so
         // report (and let the UI redraw) every so often rather than per item.
@@ -205,7 +247,7 @@ class SmsImportService {
         final sender = message.address;
         final body = message.body;
         if (sender == null || body == null) continue;
-        if (!looksLikeBankSender(sender)) continue;
+        if (!_isBankSender(sender)) continue;
         await session.add(
           source: 'sms',
           sender: sender,

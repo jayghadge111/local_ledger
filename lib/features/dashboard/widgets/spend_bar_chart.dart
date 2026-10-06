@@ -1,5 +1,5 @@
+import '../../../core/money_format.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
 import 'chart_buckets.dart';
 import '../../../core/theme/app_theme.dart';
@@ -28,9 +28,7 @@ class SpendBarChart extends StatelessWidget {
         ? 0
         : buckets.fold<int>(0, (sum, b) => sum + b.amountMinor) ~/
               buckets.length;
-    final amountFormatter = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
+    final amountFormatter = appCurrency(symbol: '₹',
       decimalDigits: 0,
     );
     final lineFraction = maxAmount == 0
@@ -106,7 +104,7 @@ class SpendBarChart extends StatelessWidget {
   }
 }
 
-class _Bar extends StatelessWidget {
+class _Bar extends StatefulWidget {
   const _Bar({
     required this.bucket,
     required this.maxAmount,
@@ -118,12 +116,33 @@ class _Bar extends StatelessWidget {
   final ThemeData theme;
 
   @override
+  State<_Bar> createState() => _BarState();
+}
+
+class _BarState extends State<_Bar> {
+  // The full grow-in plays once; later changes (rows landing during an import)
+  // glide briefly from the current height so the chart never looks stuck.
+  bool _updated = false;
+
+  @override
+  void didUpdateWidget(_Bar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.bucket.amountMinor != widget.bucket.amountMinor ||
+        oldWidget.maxAmount != widget.maxAmount) {
+      _updated = true;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     final chart = ChartColors.of(context);
-    final fraction = maxAmount == 0 ? 0.0 : bucket.amountMinor / maxAmount;
+    final bucket = widget.bucket;
+    final fraction = widget.maxAmount == 0
+        ? 0.0
+        : bucket.amountMinor / widget.maxAmount;
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: fraction.clamp(0.02, 1.0)),
-      duration: const Duration(milliseconds: 700),
+      duration: Duration(milliseconds: _updated ? 220 : 700),
       curve: Curves.easeOutCubic,
       builder: (context, value, _) {
         return FractionallySizedBox(

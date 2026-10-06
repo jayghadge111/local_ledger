@@ -1,3 +1,4 @@
+import '../ui/undo.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -447,6 +448,16 @@ class ObligationsRepository {
   }
 
   /// The user removes one (a stale mandate, a notice they don't want).
-  Future<void> delete(String id) =>
-      (_db.delete(_db.obligations)..where((o) => o.id.equals(id))).go();
+  /// Returns the way back.
+  Future<UndoAction> delete(String id) async {
+    final row = await (_db.select(
+      _db.obligations,
+    )..where((o) => o.id.equals(id))).getSingleOrNull();
+    await (_db.delete(_db.obligations)..where((o) => o.id.equals(id))).go();
+    return () async {
+      if (row != null) {
+        await _db.into(_db.obligations).insertOnConflictUpdate(row);
+      }
+    };
+  }
 }

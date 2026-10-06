@@ -39,5 +39,14 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    # permission_handler only compiles in the permissions switched on here.
+    # NativeSpend needs notifications and nothing else, so no other usage
+    # description (camera, contacts, location, …) is needed in Info.plist.
+    target.build_configurations.each do |config|
+      defs = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] || ['$(inherited)']
+      defs = [defs] if defs.is_a?(String)
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = defs + ['PERMISSION_NOTIFICATIONS=1']
+    end
   end
 end

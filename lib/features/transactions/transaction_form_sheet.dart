@@ -1,3 +1,5 @@
+import '../../core/ui/haptics.dart';
+import '../../core/ui/undo.dart';
 import 'package:flutter/material.dart';
 
 import '../../shared/widgets/centered_dialog_card.dart';
@@ -82,9 +84,17 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
   String _type = 'debit';
   late DateTime _date;
   late bool _isInternational;
-  late bool _isTransfer;
-  late bool _isCardPayment;
+
+  static const _selfTransferId = 'cat_self_transfer';
+
+  /// Money moved between the user's own accounts is whatever is filed under
+  /// the Self Transfer category: there is no separate switch for it.
+  bool get _isTransfer => _categoryId == _selfTransferId;
+
   bool _paidInCash = false;
+
+  /// "Remember for next time": teach the app from this edit.
+  bool _remember = true;
 
   /// When the loan is due — asked for (and required) when the category is
   /// Lending money / Borrowing money. Same field as on the Lend & borrow page.
@@ -102,13 +112,14 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
     _merchantController = TextEditingController(
       text: existing?.merchant ?? prefill?.merchant ?? '',
     )..addListener(_tryAutoCategorize);
-    _categoryId = existing?.categoryId;
+    // A transfer is, by definition, a Self Transfer — show it as one.
+    _categoryId = existing?.kind == 'transfer'
+        ? _selfTransferId
+        : existing?.categoryId;
     _categoryIsAutoPicked = existing == null;
     _type = existing?.type ?? prefill?.type ?? 'debit';
     _date = existing?.date ?? prefill?.date ?? DateTime.now();
     _isInternational = existing?.isInternational ?? false;
-    _isTransfer = existing?.kind == 'transfer';
-    _isCardPayment = existing?.kind == 'card_payment';
 
     // Editing a transaction that already made a Lend & borrow entry: start
     // from that entry's due date.
@@ -179,19 +190,35 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
     if (picked != null) setState(() => _date = picked);
   }
 
+  /// True while a save is running, so the button shows progress and a second
+  /// tap can't save twice.
+  bool _saving = false;
+
   Future<void> _submit() async {
+    if (_saving) return;
     if (!_formKey.currentState!.validate()) return;
     if (_categoryId == null) {
       ScaffoldMessenger.of(context)
           .showSnackBar(const SnackBar(content: Text('Pick a category first')));
       return;
     }
+    setState(() => _saving = true);
+    try {
+      await _save();
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _save() async {
 
     final amountMinor = (double.parse(_amountController.text.trim()) * 100)
         .round();
     final repo = ref.read(transactionsRepositoryProvider);
     final messenger = ScaffoldMessenger.of(context);
-    final accountId = _paidInCash ? await repo.cashAccountId() : null;
+    final accountId = _paidInCash
+        ? await repo.cashAccountId()
+        : null;
 
     final merchantText = _merchantController.text.trim();
     final lending = ref.read(lendingRepositoryProvider);
@@ -207,7 +234,6 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
         isInternational: _isInternational,
         accountId: accountId,
         isTransfer: _isTransfer,
-        isCardPayment: _isCardPayment,
       );
       loan = await lending.syncFromTransaction(
         transactionId: newId,
@@ -227,11 +253,13 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
         );
       }
     } else {
-      await _learnFromCorrection(
-        amountMinor: amountMinor,
-        merchant: merchantText,
-      );
-      final renamed = await repo.updateTransaction(
+      if (_remember) {
+        await _learnFromCorrection(
+          amountMinor: amountMinor,
+          merchant: merchantText,
+        );
+      }
+      final learned = await repo.updateTransactionUndoable(
         widget.existing!.id,
         amountMinor: amountMinor,
         merchant: _merchantController.text.trim(),
@@ -241,7 +269,10 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
         isInternational: _isInternational,
         accountId: accountId,
         isTransfer: _isTransfer,
-        isCardPayment: _isCardPayment,
+        learn: _remember,
+        // Re-checking every transaction for transfers and refunds is the slow
+        // part and nothing on this screen waits for it.
+        deferReconcile: true,
       );
       loan = await lending.syncFromTransaction(
         transactionId: widget.existing!.id,
@@ -251,13 +282,12 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
         date: _date,
         dueDate: _dueDate,
       );
-      if (renamed > 0) {
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              'Also updated $renamed similar transaction${renamed == 1 ? '' : 's'}',
-            ),
-          ),
+      final renamed = learned.applied;
+      final undoLearning = learned.undo;
+      if (renamed > 0 && undoLearning != null) {
+        showUndoSnackBar(
+          'Also updated $renamed similar transaction${renamed == 1 ? '' : 's'}',
+          undoLearning,
         );
       }
     }
@@ -271,6 +301,7 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
       messenger.showSnackBar(SnackBar(content: Text(loanNote)));
     }
 
+    Haptics.success();
     if (mounted) Navigator.of(context).pop(true);
   }
 
@@ -360,10 +391,12 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop('delete'),
+              style: dangerTextButtonStyle(context),
               child: const Text('Delete'),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop('ignore'),
+              style: dangerTextButtonStyle(context),
               child: const Text('Delete and ignore similar'),
             ),
           ],
@@ -373,46 +406,48 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
       ignoreSimilar = choice == 'ignore';
     }
 
-    final messenger = ScaffoldMessenger.of(context);
+    final store = ref.read(parserTemplateStoreProvider);
+    var learnedIds = <String>{};
+    var message = 'Transaction deleted';
     if (ignoreSimilar) {
       try {
         final body = await ref
             .read(encryptionServiceProvider)
             .decryptString(existing.rawTextEncrypted!);
-        final learned = await ref
-            .read(parserTemplateStoreProvider)
-            .learn(
-              body: body,
-              type: ignoreTemplateType,
-              amountMinor: existing.amountMinor,
-            );
-        messenger.showSnackBar(
-          SnackBar(
-            content: Text(
-              learned
-                  ? 'Deleted. Messages like this will be ignored from now on.'
-                  : "Deleted. That message was too short to learn from, so similar ones may come back.",
-            ),
-          ),
+        final before = await store.ids();
+        final learned = await store.learn(
+          body: body,
+          type: ignoreTemplateType,
+          amountMinor: existing.amountMinor,
         );
+        learnedIds = (await store.ids()).difference(before);
+        message = learned
+            ? 'Deleted. Messages like this will be ignored from now on.'
+            : "Deleted. That message was too short to learn from, so similar ones may come back.";
       } catch (_) {
         // Learning is a bonus; the delete itself goes through.
       }
     }
 
     final repo = ref.read(transactionsRepositoryProvider);
+    final lending = ref.read(lendingRepositoryProvider);
     // A loan entry made from this transaction goes with it (unless
     // repayments were recorded against it).
-    await ref
-        .read(lendingRepositoryProvider)
-        .syncFromTransaction(
-          transactionId: widget.existing!.id,
-          direction: null,
-          person: '',
-          amountMinor: 0,
-          date: DateTime.now(),
-        );
-    await repo.softDelete(widget.existing!.id);
+    final restoreLoan = await lending.captureForTransaction(existing.id);
+    await lending.syncFromTransaction(
+      transactionId: existing.id,
+      direction: null,
+      person: '',
+      amountMinor: 0,
+      date: DateTime.now(),
+    );
+    final restoreTransaction = await repo.softDelete(existing.id);
+    Haptics.heavy();
+    showUndoSnackBar(message, () async {
+      await restoreTransaction();
+      await restoreLoan();
+      if (learnedIds.isNotEmpty) await store.deleteIds(learnedIds);
+    });
     if (mounted) Navigator.of(context).pop();
   }
 
@@ -573,22 +608,17 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
                       icon: const Icon(Icons.calendar_today_outlined),
                       label: Text(DateFormat.yMMMd().format(_date)),
                     ),
+                    if (isEditing)
+                      GlassSwitchRow(
+                        label: 'Remember for similar transactions',
+                        value: _remember,
+                        onChanged: (v) => setState(() => _remember = v),
+                      ),
                     GlassSwitchRow(
                       label: 'International transaction',
                       value: _isInternational,
                       onChanged: (v) => setState(() => _isInternational = v),
                     ),
-                    GlassSwitchRow(
-                      label: 'Transfer between my own accounts',
-                      value: _isTransfer,
-                      onChanged: (v) => setState(() => _isTransfer = v),
-                    ),
-                    if (_type == 'debit' && !_isTransfer)
-                      GlassSwitchRow(
-                        label: 'Credit card bill payment (not counted)',
-                        value: _isCardPayment,
-                        onChanged: (v) => setState(() => _isCardPayment = v),
-                      ),
                     if (!isEditing && _type == 'debit')
                       GlassSwitchRow(
                         label: 'Paid in cash',
@@ -610,7 +640,9 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
                       children: [
                         Expanded(
                           child: OutlinedButton(
-                            onPressed: () => Navigator.of(context).pop(),
+                            onPressed: _saving
+                                ? null
+                                : () => Navigator.of(context).pop(),
                             child: const Text('Cancel'),
                           ),
                         ),
@@ -618,10 +650,20 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
                         Expanded(
                           flex: 2,
                           child: FilledButton(
-                            onPressed: _submit,
-                            child: Text(
-                              isEditing ? 'Save changes' : 'Add transaction',
-                            ),
+                            onPressed: _saving ? null : _submit,
+                            child: _saving
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2.5,
+                                    ),
+                                  )
+                                : Text(
+                                    isEditing
+                                        ? 'Save changes'
+                                        : 'Add transaction',
+                                  ),
                           ),
                         ),
                       ],
@@ -629,7 +671,7 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
                     if (isEditing) ...[
                       const SizedBox(height: 8),
                       TextButton.icon(
-                        onPressed: _delete,
+                        onPressed: _saving ? null : _delete,
                         icon: const Icon(Icons.delete_outline),
                         label: const Text('Delete'),
                         style: dangerTextButtonStyle(context),

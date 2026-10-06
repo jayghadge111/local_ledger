@@ -1,3 +1,4 @@
+import '../../core/ui/haptics.dart';
 import 'package:flutter/material.dart';
 
 /// A simple numeric PIN pad: dot indicators for entered digits plus a
@@ -110,7 +111,13 @@ class _Keypad extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 for (final d in row) ...[
-                  _KeypadButton(label: d, onTap: () => onDigit(d)),
+                  _KeypadButton(
+                    label: d,
+                    onTap: () {
+                      Haptics.tap();
+                      onDigit(d);
+                    },
+                  ),
                   if (d != row.last) const SizedBox(width: 18),
                 ],
               ],
@@ -123,12 +130,19 @@ class _Keypad extends StatelessWidget {
             children: [
               const SizedBox(width: _buttonSize, height: _buttonSize),
               const SizedBox(width: 18),
-              _KeypadButton(label: '0', onTap: () => onDigit('0')),
+              _KeypadButton(
+                label: '0',
+                onTap: () {
+                  Haptics.tap();
+                  onDigit('0');
+                },
+              ),
               const SizedBox(width: 18),
               SizedBox(
                 width: _buttonSize,
                 height: _buttonSize,
                 child: IconButton(
+                  tooltip: 'Delete',
                   onPressed: onBackspace,
                   icon: const Icon(Icons.backspace_outlined, size: 24),
                 ),

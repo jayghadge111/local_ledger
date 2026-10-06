@@ -1,3 +1,4 @@
+import '../../../core/money_format.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -35,9 +36,7 @@ class TransactionTile extends ConsumerWidget {
     final isRefund = transaction.kind == 'refund';
     final isCardPayment = transaction.kind == 'card_payment';
     final isInr = transaction.currency == 'INR';
-    final amount = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: isInr ? '₹' : '${transaction.currency} ',
+    final amount = appCurrency(symbol: isInr ? '₹' : '${transaction.currency} ',
       decimalDigits: 2,
     ).format(transaction.amountMinor / 100);
     // Transfers aren't income or spending, so they stay neutral.
@@ -137,33 +136,46 @@ class TransactionTile extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                isCredit
-                    ? Icons.arrow_downward_rounded
-                    : Icons.arrow_upward_rounded,
-                size: 14,
-                color: amountColor,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                isCredit ? '+$amount' : '-$amount',
-                style: theme.textTheme.titleMedium?.copyWith(
+          // The amount may take a share of the row, never all of it: with big
+          // system text it scales down instead of pushing the row wider.
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.sizeOf(context).width * 0.42,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  isCredit
+                      ? Icons.arrow_downward_rounded
+                      : Icons.arrow_upward_rounded,
+                  size: 14,
                   color: amountColor,
-                  fontWeight: FontWeight.w600,
                 ),
-              ),
-              if (hasSplit)
-                Text(
-                  'Your share ${NumberFormat.currency(locale: 'en_IN', symbol: isInr ? '₹' : '${transaction.currency} ', decimalDigits: 2).format(myShareMinor(transaction.amountMinor, shares) / 100)}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                const SizedBox(height: 2),
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    isCredit ? '+$amount' : '-$amount',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: amountColor,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
-            ],
+                if (hasSplit)
+                  Text(
+                    'Your share ${appCurrency(symbol: isInr ? '₹' : '${transaction.currency} ', decimalDigits: 2).format(myShareMinor(transaction.amountMinor, shares) / 100)}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
           ),
         ],
       ),

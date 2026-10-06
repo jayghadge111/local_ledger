@@ -1,3 +1,7 @@
+import '../../shared/widgets/text_button_styles.dart';
+import '../../core/money_format.dart';
+import '../../core/ui/undo.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -21,10 +25,14 @@ class ObligationsScreen extends ConsumerWidget {
     final failures = ref.watch(recentFailuresProvider);
     final upcoming = ref.watch(upcomingObligationsProvider);
     final mandates = ref.watch(activeMandatesProvider);
+    // Only this month and last: older history just repeats the same biller.
+    final now = DateTime.now();
+    final earlierFrom = DateTime(now.year, now.month - 1);
     final earlier =
         [
           for (final o in all)
             if (o.kind != 'mandate' &&
+                !(o.dueDate ?? o.receivedAt).isBefore(earlierFrom) &&
                 (o.status == ObligationStatus.paid ||
                     o.status == ObligationStatus.missed ||
                     (o.status == ObligationStatus.failed &&
@@ -107,11 +115,7 @@ Future<void> showObligationDetails(
 ) {
   final theme = Theme.of(context);
   final date = DateFormat('d MMM yyyy');
-  final money = NumberFormat.currency(
-    locale: 'en_IN',
-    symbol: '₹',
-    decimalDigits: 0,
-  );
+  final money = appCurrency(symbol: '₹', decimalDigits: 0);
   final rows = <(String, String)>[
     ('Status', _statusText(o)),
     if (o.amountMinor != null)
@@ -174,9 +178,13 @@ Future<void> showObligationDetails(
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () async {
-                  await ref.read(obligationsRepositoryProvider).delete(o.id);
+                  final undo = await ref
+                      .read(obligationsRepositoryProvider)
+                      .delete(o.id);
+                  showUndoSnackBar('Removed', undo);
                   if (sheet.mounted) Navigator.of(sheet).pop();
                 },
+                style: dangerTextButtonStyle(context),
                 child: const Text('Remove'),
               ),
             ),

@@ -1,6 +1,6 @@
-import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
+import '../diagnostics/diagnostic_log.dart';
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'package:timezone/timezone.dart' as tz;
 
@@ -14,7 +14,17 @@ class NotificationService {
   /// Safe to call from several places at once (the Alerts screen and the
   /// budget watcher both do): they all share one initialisation, so the
   /// system permission dialog is requested exactly once.
-  Future<void> init() => _initFuture ??= _init();
+  Future<void> init() => _initFuture ??= _initSafely();
+
+  /// Setting up notifications is a nicety: whatever it throws, the app
+  /// carries on and later calls to schedule or show simply do nothing.
+  Future<void> _initSafely() async {
+    try {
+      await _init();
+    } catch (error, stack) {
+      DiagnosticLog.instance.record('notifications', error, stack, 'init');
+    }
+  }
 
   Future<void> _init() async {
     tz_data.initializeTimeZones();
@@ -48,8 +58,13 @@ class NotificationService {
             AndroidFlutterLocalNotificationsPlugin
           >()
           ?.requestNotificationsPermission();
-    } catch (e) {
-      debugPrint('Notification permission request failed: $e');
+    } catch (e, stack) {
+      DiagnosticLog.instance.record(
+        'notifications',
+        e,
+        stack,
+        'permission request',
+      );
     }
   }
 
@@ -58,8 +73,8 @@ class NotificationService {
   Future<void> _safely(String what, Future<void> Function() action) async {
     try {
       await action();
-    } catch (e) {
-      debugPrint('Notification $what failed: $e');
+    } catch (e, stack) {
+      DiagnosticLog.instance.record('notifications', e, stack, what);
     }
   }
 

@@ -1,3 +1,4 @@
+import '../ui/undo.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -89,8 +90,15 @@ class BudgetsRepository {
         .go();
   }
 
-  Future<void> deleteBudget(String id) {
-    return (_db.delete(_db.budgets)..where((b) => b.id.equals(id))).go();
+  /// Returns the way back.
+  Future<UndoAction> deleteBudget(String id) async {
+    final row = await (_db.select(
+      _db.budgets,
+    )..where((b) => b.id.equals(id))).getSingleOrNull();
+    await (_db.delete(_db.budgets)..where((b) => b.id.equals(id))).go();
+    return () async {
+      if (row != null) await _db.into(_db.budgets).insertOnConflictUpdate(row);
+    };
   }
 }
 

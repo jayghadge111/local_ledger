@@ -12,7 +12,7 @@ void main() {
       expect(scheme.surface, const Color(0xFFFFFFFF));
       expect(scheme.outline, const Color(0xFFBAE6FD));
       expect(scheme.onSurface, const Color(0xFF0C4A6E));
-      expect(scheme.onSurfaceVariant, const Color(0xFF64748B));
+      expect(scheme.onSurfaceVariant, const Color(0xFF586A7E));
       expect(scheme.primary, const Color(0xFF0C4A6E));
       expect(scheme.onPrimary, const Color(0xFFFFFFFF));
       expect(scheme.secondary, const Color(0xFF0C4A6E));

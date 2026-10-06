@@ -1,10 +1,19 @@
+import 'dart:async' show TimeoutException;
+import 'dart:io' show SocketException;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:http/http.dart' show ClientException;
 
+import '../backup/snapshot_providers.dart';
+import '../diagnostics/diagnostic_log.dart';
 import '../email/email_providers.dart';
+import '../email/gmail_auth_service.dart' show GmailAccessException;
 import '../email/gmail_import_service.dart';
 import '../db/settings_repository.dart';
 import '../import_progress.dart';
+import '../permissions/app_permissions.dart';
+import 'connectivity.dart';
 import 'import_checkpoints.dart';
 import '../sms/sms_import_service.dart';
 import '../sms/sms_providers.dart';
@@ -20,6 +29,8 @@ class SyncJob {
     this.message,
     this.resumable = false,
     this.stopping = false,
+    this.needsSettings = false,
+    this.needsReconnect = false,
   });
 
   final SyncStatus status;
@@ -34,6 +45,14 @@ class SyncJob {
 
   /// The outcome of the last run, shown on the settings card.
   final String? message;
+
+  /// It failed because Google no longer accepts the saved sign-in (access
+  /// removed or expired): the card offers "Reconnect Gmail".
+  final bool needsReconnect;
+
+  /// It failed because a permission is switched off for good, so the card
+  /// should offer "Open settings" — asking again would do nothing.
+  final bool needsSettings;
 
   bool get running => status == SyncStatus.running;
   bool get failed => status == SyncStatus.failed;
@@ -281,6 +300,20 @@ class SyncController extends Notifier<SyncState> {
       ),
     );
     try {
+      // Say so at once when there is no connection, instead of a spinner.
+      if (!await ref.read(internetCheckProvider)()) {
+        _setGmail(
+          SyncJob(
+            status: SyncStatus.failed,
+            message: _offlineText,
+            resumable: await _store.gmail() != null,
+          ),
+        );
+        return;
+      }
+      if (!resume) {
+        await ref.read(snapshotServiceProvider).snapshot('before-gmail-scan');
+      }
       final auth = ref.read(gmailAuthServiceProvider);
       final account = fresh
           ? await auth.signInFresh()
@@ -329,7 +362,7 @@ class SyncController extends Notifier<SyncState> {
             ? 'Gmail sync complete — added ${result.imported} transaction${result.imported == 1 ? '' : 's'}'
             : 'Gmail sync complete — nothing new to add',
       );
-    } catch (e) {
+    } catch (e, stack) {
       if (e is GoogleSignInException &&
           e.code == GoogleSignInExceptionCode.canceled) {
         _setGmail(
@@ -340,10 +373,12 @@ class SyncController extends Notifier<SyncState> {
         );
         return;
       }
+      DiagnosticLog.instance.record('gmail', e, stack, 'importing from Gmail');
       _setGmail(
         SyncJob(
           status: SyncStatus.failed,
-          message: 'Gmail import failed: $e',
+          message: describeGmailFailure(e),
+          needsReconnect: e is GmailAccessException,
           resumable: await _store.gmail() != null,
         ),
       );
@@ -389,13 +424,10 @@ class SyncController extends Notifier<SyncState> {
   Future<void> startSms({bool resume = false}) async {
     if (_smsBusy) return;
     final service = ref.read(smsImportServiceProvider);
-    if (!await service.requestPermission()) {
-      _setSms(
-        const SyncJob(
-          status: SyncStatus.failed,
-          message: 'SMS permission was not granted, so nothing was scanned. You can allow it later in Settings.',
-        ),
-      );
+    final permission = await service.requestPermission();
+    if (permission != PermissionState.granted) {
+      _setSms(_smsPermissionJob(permission));
+      ref.read(permissionsProvider.notifier).refresh();
       return;
     }
     _smsBusy = true;
@@ -409,6 +441,10 @@ class SyncController extends Notifier<SyncState> {
       ),
     );
     try {
+      // A full scan can touch thousands of rows: keep a copy to go back to.
+      if (!resume) {
+        await ref.read(snapshotServiceProvider).snapshot('before-sms-scan');
+      }
       final result = await service.importFromInbox(
         onProgress: _smsProgress,
         cancel: token,
@@ -446,7 +482,8 @@ class SyncController extends Notifier<SyncState> {
             : 'SMS sync complete — nothing new to add',
       );
       await service.listenForNewMessages(_onLiveSms);
-    } catch (e) {
+    } catch (e, stack) {
+      DiagnosticLog.instance.record('sms', e, stack, 'scanning the inbox');
       _setSms(
         SyncJob(
           status: SyncStatus.failed,
@@ -484,7 +521,8 @@ class SyncController extends Notifier<SyncState> {
         _announceNewSms(result);
       }
       await service.listenForNewMessages(_onLiveSms);
-    } catch (e) {
+    } catch (e, stack) {
+      DiagnosticLog.instance.record('sms', e, stack, 'catching up on SMS');
       _setSms(
         SyncJob(status: SyncStatus.failed, message: 'SMS sync failed: $e'),
       );
@@ -505,6 +543,67 @@ class SyncController extends Notifier<SyncState> {
     ];
     showRootSnackBar(parts.join(' · '));
   }
+}
+
+/// What to tell the user when the SMS permission isn't there.
+SyncJob _smsPermissionJob(PermissionState state) => switch (state) {
+  PermissionState.blocked => const SyncJob(
+    status: SyncStatus.failed,
+    needsSettings: true,
+    message:
+        'SMS access is switched off for NativeSpend, so nothing was scanned. '
+        'Turn on "SMS" under Permissions in the app\'s system settings, then '
+        'come back and scan again.',
+  ),
+  PermissionState.unavailable => const SyncJob(
+    status: SyncStatus.failed,
+    message: "This phone doesn't allow SMS access for NativeSpend.",
+  ),
+  _ => const SyncJob(
+    status: SyncStatus.failed,
+    message:
+        'SMS permission was not granted, so nothing was scanned. Tap Scan SMS '
+        'inbox to try again.',
+  ),
+};
+
+const _offlineText =
+    "Couldn't reach Gmail. Check your internet connection and try again — "
+    'it carries on from where it stopped.';
+
+/// A plain-words reason for a failed Gmail import, whatever threw.
+String describeGmailFailure(Object error) {
+  if (error is GmailAccessException) {
+    return 'Google stopped letting NativeSpend read this Gmail account — '
+        'access was removed or has expired. Tap Connect Gmail to sign in '
+        'again. What was already read is saved.';
+  }
+  if (error is SocketException ||
+      error is TimeoutException ||
+      error is ClientException) {
+    return _offlineText;
+  }
+  if (error is GoogleSignInException) {
+    return switch (error.code) {
+      GoogleSignInExceptionCode.interrupted =>
+        'Google sign-in was interrupted. Please try again.',
+      GoogleSignInExceptionCode.uiUnavailable =>
+        "Google sign-in can't be shown right now. Bring the app to the front "
+            'and try again.',
+      GoogleSignInExceptionCode.providerConfigurationError
+          when (error.description ?? '').toLowerCase().contains('keychain') =>
+        "Google signed you in, but this device wouldn't let the app save it "
+            'securely (keychain error). Try again, or restart the app.',
+      GoogleSignInExceptionCode.clientConfigurationError ||
+      GoogleSignInExceptionCode.providerConfigurationError =>
+        "Google sign-in isn't set up correctly for this build of the app.",
+      GoogleSignInExceptionCode.userMismatch =>
+        'That is a different Google account from the one connected. Use '
+            'Connect Gmail to switch accounts.',
+      _ => 'Google sign-in failed. Please try again.',
+    };
+  }
+  return 'Gmail import failed: $error';
 }
 
 /// Android reports a misconfigured sign-in (e.g. this build's signing

@@ -108,22 +108,32 @@ class _JobCard extends StatelessWidget {
                     onPressed: job.stopping ? null : onStop,
                     style: dangerTextButtonStyle(context),
                     child: const Text('Stop'),
-                  )
-                else ...[
-                  TextButton(
-                    onPressed: onDismiss,
-                    child: const Text('Dismiss'),
                   ),
-                  FilledButton(
-                    onPressed: onResume,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size(0, 36),
-                    ),
-                    child: const Text('Resume'),
-                  ),
-                ],
               ],
             ),
+            if (!running)
+              // Below the title, not beside it: two buttons plus a title
+              // don't fit across a narrow screen or large text.
+              Align(
+                alignment: Alignment.centerRight,
+                child: Wrap(
+                  spacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: onDismiss,
+                      child: const Text('Dismiss'),
+                    ),
+                    FilledButton(
+                      onPressed: onResume,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 36),
+                      ),
+                      child: const Text('Resume'),
+                    ),
+                  ],
+                ),
+              ),
             const SizedBox(height: 8),
             Padding(
               padding: const EdgeInsets.only(right: 6),

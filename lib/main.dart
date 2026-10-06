@@ -1,8 +1,8 @@
-import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app.dart';
+import 'core/diagnostics/app_guard.dart';
 
-void main() {
-  runApp(const ProviderScope(child: NativeSpendApp()));
-}
+Future<void> main() => runGuarded(
+  () => const ProviderScope(child: NativeSpendApp()),
+);

@@ -1901,7 +1901,9 @@ class Transaction extends DataClass implements Insertable<Transaction> {
   final String? rawMerchant;
 
   /// normal | transfer (between the user's own accounts — not spending or
-  /// income) | refund (a credit that reverses an earlier debit).
+  /// income) | refund (a credit that reverses an earlier debit) |
+  /// card_payment (a credit-card bill paid from a bank account: shown in the
+  /// list but not counted as spending, the swipes were counted already).
   final String kind;
 
   /// True once the user set [kind] by hand, so auto-detection never
@@ -8217,6 +8219,230 @@ class ObligationsCompanion extends UpdateCompanion<Obligation> {
   }
 }
 
+class $MergedMessagesTable extends MergedMessages
+    with TableInfo<$MergedMessagesTable, MergedMessage> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MergedMessagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _hashMeta = const VerificationMeta('hash');
+  @override
+  late final GeneratedColumn<String> hash = GeneratedColumn<String>(
+    'hash',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _transactionIdMeta = const VerificationMeta(
+    'transactionId',
+  );
+  @override
+  late final GeneratedColumn<String> transactionId = GeneratedColumn<String>(
+    'transaction_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [hash, transactionId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'merged_messages';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<MergedMessage> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('hash')) {
+      context.handle(
+        _hashMeta,
+        hash.isAcceptableOrUnknown(data['hash']!, _hashMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_hashMeta);
+    }
+    if (data.containsKey('transaction_id')) {
+      context.handle(
+        _transactionIdMeta,
+        transactionId.isAcceptableOrUnknown(
+          data['transaction_id']!,
+          _transactionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_transactionIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {hash};
+  @override
+  MergedMessage map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return MergedMessage(
+      hash: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}hash'],
+      )!,
+      transactionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}transaction_id'],
+      )!,
+    );
+  }
+
+  @override
+  $MergedMessagesTable createAlias(String alias) {
+    return $MergedMessagesTable(attachedDatabase, alias);
+  }
+}
+
+class MergedMessage extends DataClass implements Insertable<MergedMessage> {
+  /// Same hash as `Transactions.sourceHash`.
+  final String hash;
+
+  /// The transaction it was folded into.
+  final String transactionId;
+  const MergedMessage({required this.hash, required this.transactionId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['hash'] = Variable<String>(hash);
+    map['transaction_id'] = Variable<String>(transactionId);
+    return map;
+  }
+
+  MergedMessagesCompanion toCompanion(bool nullToAbsent) {
+    return MergedMessagesCompanion(
+      hash: Value(hash),
+      transactionId: Value(transactionId),
+    );
+  }
+
+  factory MergedMessage.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return MergedMessage(
+      hash: serializer.fromJson<String>(json['hash']),
+      transactionId: serializer.fromJson<String>(json['transactionId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'hash': serializer.toJson<String>(hash),
+      'transactionId': serializer.toJson<String>(transactionId),
+    };
+  }
+
+  MergedMessage copyWith({String? hash, String? transactionId}) =>
+      MergedMessage(
+        hash: hash ?? this.hash,
+        transactionId: transactionId ?? this.transactionId,
+      );
+  MergedMessage copyWithCompanion(MergedMessagesCompanion data) {
+    return MergedMessage(
+      hash: data.hash.present ? data.hash.value : this.hash,
+      transactionId: data.transactionId.present
+          ? data.transactionId.value
+          : this.transactionId,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MergedMessage(')
+          ..write('hash: $hash, ')
+          ..write('transactionId: $transactionId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(hash, transactionId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is MergedMessage &&
+          other.hash == this.hash &&
+          other.transactionId == this.transactionId);
+}
+
+class MergedMessagesCompanion extends UpdateCompanion<MergedMessage> {
+  final Value<String> hash;
+  final Value<String> transactionId;
+  final Value<int> rowid;
+  const MergedMessagesCompanion({
+    this.hash = const Value.absent(),
+    this.transactionId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  MergedMessagesCompanion.insert({
+    required String hash,
+    required String transactionId,
+    this.rowid = const Value.absent(),
+  }) : hash = Value(hash),
+       transactionId = Value(transactionId);
+  static Insertable<MergedMessage> custom({
+    Expression<String>? hash,
+    Expression<String>? transactionId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (hash != null) 'hash': hash,
+      if (transactionId != null) 'transaction_id': transactionId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  MergedMessagesCompanion copyWith({
+    Value<String>? hash,
+    Value<String>? transactionId,
+    Value<int>? rowid,
+  }) {
+    return MergedMessagesCompanion(
+      hash: hash ?? this.hash,
+      transactionId: transactionId ?? this.transactionId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (hash.present) {
+      map['hash'] = Variable<String>(hash.value);
+    }
+    if (transactionId.present) {
+      map['transaction_id'] = Variable<String>(transactionId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MergedMessagesCompanion(')
+          ..write('hash: $hash, ')
+          ..write('transactionId: $transactionId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -8249,6 +8475,23 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $ObligationsTable obligations = $ObligationsTable(this);
+  late final $MergedMessagesTable mergedMessages = $MergedMessagesTable(this);
+  late final Index idxTxnLiveDate = Index(
+    'idx_txn_live_date',
+    'CREATE INDEX idx_txn_live_date ON transactions (is_deleted, date)',
+  );
+  late final Index idxTxnAccount = Index(
+    'idx_txn_account',
+    'CREATE INDEX idx_txn_account ON transactions (account_id)',
+  );
+  late final Index idxTxnKind = Index(
+    'idx_txn_kind',
+    'CREATE INDEX idx_txn_kind ON transactions (kind)',
+  );
+  late final Index idxTxnSourceHash = Index(
+    'idx_txn_source_hash',
+    'CREATE INDEX idx_txn_source_hash ON transactions (source_hash)',
+  );
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -8271,6 +8514,11 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     parserTemplates,
     budgetOverrides,
     obligations,
+    mergedMessages,
+    idxTxnLiveDate,
+    idxTxnAccount,
+    idxTxnKind,
+    idxTxnSourceHash,
   ];
 }
 
@@ -14534,6 +14782,162 @@ typedef $$ObligationsTableProcessedTableManager =
       Obligation,
       PrefetchHooks Function()
     >;
+typedef $$MergedMessagesTableCreateCompanionBuilder =
+    MergedMessagesCompanion Function({
+      required String hash,
+      required String transactionId,
+      Value<int> rowid,
+    });
+typedef $$MergedMessagesTableUpdateCompanionBuilder =
+    MergedMessagesCompanion Function({
+      Value<String> hash,
+      Value<String> transactionId,
+      Value<int> rowid,
+    });
+
+class $$MergedMessagesTableFilterComposer
+    extends Composer<_$AppDatabase, $MergedMessagesTable> {
+  $$MergedMessagesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get hash => $composableBuilder(
+    column: $table.hash,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get transactionId => $composableBuilder(
+    column: $table.transactionId,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$MergedMessagesTableOrderingComposer
+    extends Composer<_$AppDatabase, $MergedMessagesTable> {
+  $$MergedMessagesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get hash => $composableBuilder(
+    column: $table.hash,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get transactionId => $composableBuilder(
+    column: $table.transactionId,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$MergedMessagesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $MergedMessagesTable> {
+  $$MergedMessagesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get hash =>
+      $composableBuilder(column: $table.hash, builder: (column) => column);
+
+  GeneratedColumn<String> get transactionId => $composableBuilder(
+    column: $table.transactionId,
+    builder: (column) => column,
+  );
+}
+
+class $$MergedMessagesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $MergedMessagesTable,
+          MergedMessage,
+          $$MergedMessagesTableFilterComposer,
+          $$MergedMessagesTableOrderingComposer,
+          $$MergedMessagesTableAnnotationComposer,
+          $$MergedMessagesTableCreateCompanionBuilder,
+          $$MergedMessagesTableUpdateCompanionBuilder,
+          (
+            MergedMessage,
+            BaseReferences<_$AppDatabase, $MergedMessagesTable, MergedMessage>,
+          ),
+          MergedMessage,
+          PrefetchHooks Function()
+        > {
+  $$MergedMessagesTableTableManager(
+    _$AppDatabase db,
+    $MergedMessagesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$MergedMessagesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$MergedMessagesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$MergedMessagesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> hash = const Value.absent(),
+                Value<String> transactionId = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => MergedMessagesCompanion(
+                hash: hash,
+                transactionId: transactionId,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String hash,
+                required String transactionId,
+                Value<int> rowid = const Value.absent(),
+              }) => MergedMessagesCompanion.insert(
+                hash: hash,
+                transactionId: transactionId,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$MergedMessagesTable, MergedMessage>(table),
+                  BaseReferences<
+                    _$AppDatabase,
+                    $MergedMessagesTable,
+                    MergedMessage
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$MergedMessagesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $MergedMessagesTable,
+      MergedMessage,
+      $$MergedMessagesTableFilterComposer,
+      $$MergedMessagesTableOrderingComposer,
+      $$MergedMessagesTableAnnotationComposer,
+      $$MergedMessagesTableCreateCompanionBuilder,
+      $$MergedMessagesTableUpdateCompanionBuilder,
+      (
+        MergedMessage,
+        BaseReferences<_$AppDatabase, $MergedMessagesTable, MergedMessage>,
+      ),
+      MergedMessage,
+      PrefetchHooks Function()
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -14572,4 +14976,6 @@ class $AppDatabaseManager {
       $$BudgetOverridesTableTableManager(_db, _db.budgetOverrides);
   $$ObligationsTableTableManager get obligations =>
       $$ObligationsTableTableManager(_db, _db.obligations);
+  $$MergedMessagesTableTableManager get mergedMessages =>
+      $$MergedMessagesTableTableManager(_db, _db.mergedMessages);
 }

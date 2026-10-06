@@ -1,10 +1,11 @@
+import '../../core/money_format.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../core/analytics/analytics_providers.dart';
 import '../../core/analytics/budget_status.dart';
 import '../../core/db/app_database.dart';
+import '../../core/diagnostics/app_guard.dart';
 import '../../core/db/budgets_repository.dart';
 import '../../core/db/providers.dart';
 import '../../core/lending/lending_math.dart';
@@ -12,9 +13,11 @@ import '../../core/lending/lending_repository.dart';
 import '../../core/intelligence/intelligence_providers.dart';
 import '../../core/intelligence/recurring_detector.dart';
 import '../../core/notifications/notification_providers.dart';
+import '../../core/permissions/app_permissions.dart';
 import '../../core/obligations/obligation_repository.dart';
 import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_surface.dart';
+import '../../shared/widgets/permission_notice.dart';
 import '../../shared/widgets/placeholder_body.dart';
 import '../budgets/budgets_screen.dart';
 import '../dashboard/widgets/home_budgets_card.dart';
@@ -37,7 +40,10 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
     _syncReminders();
   }
 
-  Future<void> _syncReminders() async {
+  Future<void> _syncReminders() =>
+      guarded('alert reminders', _scheduleReminders);
+
+  Future<void> _scheduleReminders() async {
     final insights = ref.read(recurringInsightsProvider);
     if (insights.isEmpty) return;
     final notifications = ref.read(notificationServiceProvider);
@@ -48,9 +54,7 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
         id: id,
         merchant: insight.merchant,
         dueDate: insight.nextExpectedDate,
-        amountLabel: NumberFormat.currency(
-          locale: 'en_IN',
-          symbol: '₹',
+        amountLabel: appCurrency(symbol: '₹',
           decimalDigits: 0,
         ).format(insight.expectedAmountMinor / 100),
       );
@@ -81,6 +85,9 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
     final lendingDue = dueSoon(ref.watch(lendingBalancesProvider), now);
     final failedDebits = ref.watch(recentFailuresProvider);
     final upcomingDebits = ref.watch(upcomingObligationsProvider);
+    final notificationState = ref.watch(
+      permissionsProvider,
+    )[AppPermission.notifications];
 
     if (failedDebits.isEmpty &&
         upcomingDebits.isEmpty &&
@@ -99,6 +106,19 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
       children: [
+        if (notificationState == PermissionState.denied ||
+            notificationState == PermissionState.blocked) ...[
+          PermissionNotice(
+            state: notificationState!,
+            message: 'Notifications are off, so reminders only show here, not as phone alerts.',
+            onAllow: () => ref
+                .read(permissionsProvider.notifier)
+                .request(AppPermission.notifications),
+            onOpenSettings: () =>
+                ref.read(permissionsProvider.notifier).openSettings(),
+          ),
+          const SizedBox(height: 12),
+        ],
         if (failedDebits.isNotEmpty) ...[
           Text(
             'Auto-debit failed',
@@ -288,9 +308,7 @@ class _RecurringCard extends StatelessWidget {
         : daysUntil == 0
         ? 'Due today'
         : 'Due in ${daysUntil}d';
-    final amount = NumberFormat.currency(
-      locale: 'en_IN',
-      symbol: '₹',
+    final amount = appCurrency(symbol: '₹',
       decimalDigits: 0,
     ).format(insight.expectedAmountMinor / 100);
 

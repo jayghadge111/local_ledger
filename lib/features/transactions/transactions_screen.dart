@@ -201,6 +201,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             Center(child: Text('Could not load transactions: $error')),
       ),
       floatingActionButton: FloatingActionButton(
+        tooltip: 'Add transaction',
         onPressed: () => showTransactionFormSheet(context),
         child: const Icon(Icons.add),
       ),
@@ -273,6 +274,7 @@ class _SearchBar extends StatelessWidget {
                     suffixIcon: controller.text.isEmpty
                         ? null
                         : IconButton(
+                            tooltip: 'Clear search',
                             icon: const Icon(Icons.close, size: 18),
                             onPressed: () {
                               controller.clear();

@@ -1,3 +1,4 @@
+import '../../core/money_format.dart';
 import 'package:intl/intl.dart';
 
 import 'lending_math.dart';
@@ -21,9 +22,7 @@ enum BorrowerUpdate {
 /// when there are paise.
 String rupees(int minor) {
   final whole = minor % 100 == 0;
-  return NumberFormat.currency(
-    locale: 'en_IN',
-    symbol: '₹',
+  return appCurrency(symbol: '₹',
     decimalDigits: whole ? 0 : 2,
   ).format(minor / 100);
 }

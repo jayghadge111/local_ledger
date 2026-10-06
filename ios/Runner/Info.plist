@@ -26,6 +26,8 @@
 		<string>$(FLUTTER_BUILD_NUMBER)</string>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
+		<key>ITSAppUsesNonExemptEncryption</key>
+		<false/>
 		<key>NSFaceIDUsageDescription</key>
 		<string>Use Face ID to quickly unlock NativeSpend instead of typing your PIN.</string>
 		<key>GIDClientID</key>

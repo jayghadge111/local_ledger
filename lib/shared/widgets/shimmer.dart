@@ -138,3 +138,60 @@ class TransactionListSkeleton extends StatelessWidget {
     );
   }
 }
+
+/// What Home looks like while its numbers are still being read: the same
+/// blocks in the same places, so nothing jumps when the real content arrives.
+class HomeSkeleton extends StatelessWidget {
+  const HomeSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget card(double height, {Widget? child}) => GlassCard(
+      borderRadius: 20,
+      padding: const EdgeInsets.all(16),
+      child: Shimmer(
+        child: SizedBox(height: height, width: double.infinity, child: child),
+      ),
+    );
+
+    return ListView(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
+      children: [
+        const Shimmer(child: _Bone(width: 180, height: 22)),
+        const SizedBox(height: 8),
+        const Shimmer(child: _Bone(width: 120, height: 12)),
+        const SizedBox(height: 18),
+        const Shimmer(child: _Bone(width: double.infinity, height: 44)),
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              child: card(
+                44,
+                child: const Align(
+                  alignment: Alignment.centerLeft,
+                  child: _Bone(width: 90, height: 22),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: card(
+                44,
+                child: const Align(
+                  alignment: Alignment.centerLeft,
+                  child: _Bone(width: 90, height: 22),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        card(160),
+        const SizedBox(height: 14),
+        card(120),
+      ],
+    );
+  }
+}

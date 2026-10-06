@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:local_ledger/core/sms/sms_providers.dart';
 
 import '../../core/db/mock_data_seeder.dart';
 import '../../core/db/providers.dart';
@@ -12,7 +13,8 @@ import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/glass_switch_row.dart';
 import '../lock/pin_setup_screen.dart';
 import '../update/update_test_card.dart';
-import 'widgets/backup_card.dart';
+import 'backup_screen.dart';
+import 'diagnostics_screen.dart';
 import 'widgets/email_connect_card.dart';
 import 'widgets/message_tools_section.dart';
 import 'widgets/profile_card.dart';
@@ -25,6 +27,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final themeMode = ref.watch(themeModeProvider).value ?? ThemeMode.system;
+    final service = ref.read(smsImportServiceProvider);
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
@@ -67,15 +70,23 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: 16),
+        if (service.isSupported) ...[
+          FadeSlideIn(
+            delay: const Duration(milliseconds: 15),
+            child: const _SecurityCard(),
+          ),
+          const SizedBox(height: 16),
+        ],
         FadeSlideIn(
-          delay: const Duration(milliseconds: 15),
-          child: const _SecurityCard(),
+          delay: const Duration(milliseconds: 50),
+          child: const SmsConnectCard(),
         ),
         const SizedBox(height: 16),
         FadeSlideIn(
-          delay: const Duration(milliseconds: 26),
-          child: const BackupCard(),
+          delay: const Duration(milliseconds: 55),
+          child: const EmailConnectCard(),
         ),
+
         // Sample/test data tools exist only in debug builds.
         if (kDebugMode) ...[
           const SizedBox(height: 16),
@@ -131,23 +142,24 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
         ],
-        const SizedBox(height: 16),
-        FadeSlideIn(
-          delay: const Duration(milliseconds: 50),
-          child: const SmsConnectCard(),
-        ),
-        const SizedBox(height: 16),
-        FadeSlideIn(
-          delay: const Duration(milliseconds: 55),
-          child: const EmailConnectCard(),
-        ),
+
         const SizedBox(height: 16),
         const FadeSlideIn(
           delay: Duration(milliseconds: 60),
           child: MessageToolsSection(),
         ),
-        const SizedBox(height: 40),
-        const _MadeInIndia(),
+        const SizedBox(height: 16),
+        FadeSlideIn(
+          delay: const Duration(milliseconds: 28),
+          child: const DiagnosticsEntryCard(),
+        ),
+        const SizedBox(height: 16),
+        FadeSlideIn(
+          delay: const Duration(milliseconds: 26),
+          child: const BackupEntryCard(),
+        ),
+        // const SizedBox(height: 40),
+        // const _MadeInIndia(),
         const SizedBox(height: 15),
       ],
     );
@@ -282,24 +294,24 @@ class _SecurityCard extends ConsumerWidget {
   }
 }
 
-/// The sign-off at the very bottom of Settings.
-class _MadeInIndia extends StatelessWidget {
-  const _MadeInIndia();
+// /// The sign-off at the very bottom of Settings.
+// class _MadeInIndia extends StatelessWidget {
+//   const _MadeInIndia();
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Center(
-      child: Text(
-        'MADE WITH ❤️ IN INDIA',
-        textAlign: TextAlign.center,
-        style: theme.textTheme.titleMedium?.copyWith(
-          color: theme.colorScheme.onSurfaceVariant,
-          fontSize: 18,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 1.2,
-        ),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     final theme = Theme.of(context);
+//     return Center(
+//       child: Text(
+//         'MADE WITH ❤️ IN INDIA',
+//         textAlign: TextAlign.center,
+//         style: theme.textTheme.titleMedium?.copyWith(
+//           color: theme.colorScheme.onSurfaceVariant,
+//           fontSize: 18,
+//           fontWeight: FontWeight.w700,
+//           letterSpacing: 1.2,
+//         ),
+//       ),
+//     );
+//   }
+// }

@@ -25,6 +25,13 @@ class Categories extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// The lists, totals and de-duplication all filter on these, so they are
+/// indexed: without them a phone with thousands of transactions re-reads the
+/// whole table for every screen and every incoming message.
+@TableIndex(name: 'idx_txn_live_date', columns: {#isDeleted, #date})
+@TableIndex(name: 'idx_txn_account', columns: {#accountId})
+@TableIndex(name: 'idx_txn_kind', columns: {#kind})
+@TableIndex(name: 'idx_txn_source_hash', columns: {#sourceHash})
 class Transactions extends Table {
   TextColumn get id => text()();
   TextColumn get accountId => text().nullable().references(Accounts, #id)();
@@ -55,7 +62,9 @@ class Transactions extends Table {
   TextColumn get rawMerchant => text().nullable()();
 
   /// normal | transfer (between the user's own accounts — not spending or
-  /// income) | refund (a credit that reverses an earlier debit).
+  /// income) | refund (a credit that reverses an earlier debit) |
+  /// card_payment (a credit-card bill paid from a bank account: shown in the
+  /// list but not counted as spending, the swipes were counted already).
   TextColumn get kind => text().withDefault(const Constant('normal'))();
 
   /// True once the user set [kind] by hand, so auto-detection never
@@ -325,4 +334,20 @@ class BudgetOverrides extends Table {
 
   @override
   Set<Column> get primaryKey => {id};
+}
+
+/// A message that was recognised as a repeat of a transaction already stored
+/// from another channel (the same payment reported by SMS and by email) and
+/// folded into it. Only the transaction keeps a row, so without this note
+/// reading the message again — a second Gmail scan, a re-scan of the inbox —
+/// would not recognise it and add the payment a second time.
+class MergedMessages extends Table {
+  /// Same hash as `Transactions.sourceHash`.
+  TextColumn get hash => text()();
+
+  /// The transaction it was folded into.
+  TextColumn get transactionId => text()();
+
+  @override
+  Set<Column> get primaryKey => {hash};
 }
