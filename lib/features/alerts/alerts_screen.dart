@@ -16,6 +16,7 @@ import '../../core/notifications/notification_providers.dart';
 import '../../core/permissions/app_permissions.dart';
 import '../../core/obligations/obligation_repository.dart';
 import '../../shared/widgets/fade_slide_in.dart';
+import '../../shared/widgets/glass_background.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/permission_notice.dart';
 import '../../shared/widgets/placeholder_body.dart';
@@ -25,6 +26,22 @@ import '../lending/lending_screen.dart';
 import '../obligations/obligation_card.dart';
 import '../obligations/obligations_screen.dart';
 import '../transactions/widgets/transaction_tile.dart';
+
+/// The Alerts screen as its own page, opened from the bell on Home.
+class AlertsPage extends StatelessWidget {
+  const AlertsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(title: const Text('Alerts')),
+        body: const AlertsScreen(),
+      ),
+    );
+  }
+}
 
 class AlertsScreen extends ConsumerStatefulWidget {
   const AlertsScreen({super.key});

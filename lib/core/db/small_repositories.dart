@@ -103,6 +103,39 @@ class SplitsRepository {
         );
   }
 
+  /// Makes the shares of [transactionId] exactly [shares]. A person who was
+  /// already in the split keeps their settled mark.
+  Future<void> replaceShares(
+    String transactionId,
+    List<({String name, int shareMinor})> shares,
+  ) {
+    return _db.transaction(() async {
+      final old = await (_db.select(
+        _db.splitShares,
+      )..where((t) => t.transactionId.equals(transactionId))).get();
+      final settled = {
+        for (final o in old)
+          if (o.settled) o.personName.toLowerCase(),
+      };
+      await (_db.delete(
+        _db.splitShares,
+      )..where((t) => t.transactionId.equals(transactionId))).go();
+      for (final s in shares) {
+        await _db
+            .into(_db.splitShares)
+            .insert(
+              SplitSharesCompanion.insert(
+                id: _uuid.v4(),
+                transactionId: transactionId,
+                personName: s.name.trim(),
+                shareMinor: s.shareMinor,
+                settled: Value(settled.contains(s.name.trim().toLowerCase())),
+              ),
+            );
+      }
+    });
+  }
+
   Future<void> setSettled(String id, bool settled) =>
       (_db.update(_db.splitShares)..where((t) => t.id.equals(id))).write(
         SplitSharesCompanion(settled: Value(settled)),

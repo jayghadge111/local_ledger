@@ -8,29 +8,42 @@ class IntroStep {
   final String body;
 }
 
-/// The five main sections, in the order they sit in the navigation bar.
+/// The six stops, in the order the tour visits them: Home, the alerts bell
+/// beside the greeting on Home, then the bottom bar from left to right.
 const introSteps = [
   IntroStep(
     title: 'Home',
     body: 'Your month at a glance: what came in, what went out, where it went, and how your budgets are doing.',
   ),
   IntroStep(
+    title: 'Alerts',
+    body: 'Tap the bell for bills coming up, budgets running out and unusual payments.',
+  ),
+  IntroStep(
     title: 'Transactions',
     body: 'Every payment in one list. Search or filter it, and tap one to see its details or fix it.',
   ),
   IntroStep(
-    title: 'Manage',
-    body: 'Budgets, shared expenses, money you lent or borrowed, and auto-pay dues — kept together.',
+    title: 'Split',
+    body: 'A bill you paid for a group? Add your friends, split it, and see who still owes you.',
   ),
   IntroStep(
-    title: 'Alerts',
-    body: 'Bills coming up, budgets running out and unusual payments show up here.',
+    title: 'Lend',
+    body: 'Money you actually gave or took as a loan, with a reminder when it is due.',
   ),
   IntroStep(
     title: 'Settings',
-    body: 'Bring in your bank messages, lock the app with a PIN, back up your data and change how it looks.',
+    body: 'Bring in your bank messages, set budgets and rules, lock the app with a PIN and back up your data.',
   ),
 ];
+
+/// The tour step of each bottom-bar item (Home, Transactions, Split, Lend,
+/// Settings), and of the alerts bell on Home.
+const introNavStep = [0, 2, 3, 4, 5];
+const introBellStep = 1;
+
+/// The bell on Home is one fixed widget, so its tour target is one fixed key.
+final introBellKey = GlobalKey(debugLabel: 'introBell');
 
 /// Registers the tour (the `showcaseview` package) for this screen. Call once;
 /// [onEnd] runs when it is finished or skipped. Pair with [endIntroShowcase].
@@ -65,6 +78,14 @@ Widget introShowcase({
   required GlobalKey showcaseKey,
   required Widget child,
   required bool wide,
+
+  /// Overrides where the tooltip sits (the bell on Home opens downwards).
+  TooltipPosition? position,
+
+  /// Overrides the glow around the target (a round bell needs less than a
+  /// bottom-bar item with its label).
+  EdgeInsets? targetPadding,
+  ShapeBorder? targetShape,
 }) {
   final theme = Theme.of(context);
   final step = introSteps[index];
@@ -89,14 +110,17 @@ Widget introShowcase({
     ),
     tooltipBackgroundColor: theme.colorScheme.surface,
     textColor: theme.colorScheme.onSurface,
-    tooltipPosition: wide ? TooltipPosition.right : TooltipPosition.top,
+    tooltipPosition:
+        position ?? (wide ? TooltipPosition.right : TooltipPosition.top),
     tooltipPadding: const EdgeInsets.fromLTRB(10, 12, 10, 8),
     tooltipBorderRadius: BorderRadius.circular(20),
-    targetShapeBorder: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.all(Radius.circular(20)),
-    ),
+    targetShapeBorder:
+        targetShape ??
+        const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(20)),
+        ),
     // The icon plus its label and the pill behind it.
-    targetPadding: const EdgeInsets.fromLTRB(22, 10, 22, 26),
+    targetPadding: targetPadding ?? const EdgeInsets.fromLTRB(22, 10, 22, 26),
     disableDefaultTargetGestures: true,
     disableBarrierInteraction: true,
     tooltipActionConfig: const TooltipActionConfig(

@@ -10,7 +10,7 @@ import 'package:local_ledger/features/intro/intro_showcase.dart';
 import 'package:local_ledger/shared/widgets/nav_svg_icon.dart';
 import 'package:showcaseview/showcaseview.dart';
 
-const _icons = ['home', 'transaction', 'filter', 'bell-ringing', 'settings'];
+const _icons = ['home', 'transaction', 'split', 'lend', 'settings'];
 
 /// A bottom bar built the way the app shell builds it during the tour.
 class _Harness extends StatefulWidget {
@@ -22,7 +22,10 @@ class _Harness extends StatefulWidget {
 }
 
 class _HarnessState extends State<_Harness> {
-  final keys = List.generate(introSteps.length, (_) => GlobalKey());
+  final keys = [
+    for (var i = 0; i < introSteps.length; i++)
+      i == introBellStep ? introBellKey : GlobalKey(),
+  ];
 
   @override
   void initState() {
@@ -49,16 +52,16 @@ class _HarnessState extends State<_Harness> {
                 ? NavSvgIcon(n)
                 : introShowcase(
                     context: context,
-                    index: i,
-                    showcaseKey: keys[i],
+                    index: introNavStep[i],
+                    showcaseKey: keys[introNavStep[i]],
                     wide: false,
                     child: NavSvgIcon(n),
                   ),
             selectedIcon: i == 0
                 ? introShowcase(
                     context: context,
-                    index: i,
-                    showcaseKey: keys[i],
+                    index: introNavStep[i],
+                    showcaseKey: keys[introNavStep[i]],
                     wide: false,
                     child: NavSvgIcon(n),
                   )
@@ -68,11 +71,35 @@ class _HarnessState extends State<_Harness> {
       ],
     );
     return Scaffold(
-      body: Center(
-        child: TextButton(
-          onPressed: () => ShowcaseView.get().startShowCase(keys),
-          child: const Text('Start tour'),
-        ),
+      body: Column(
+        children: [
+          // The alerts bell, as on Home, is the tour's second stop.
+          Align(
+            alignment: Alignment.centerRight,
+            child: introShowcase(
+              context: context,
+              index: introBellStep,
+              showcaseKey: introBellKey,
+              wide: false,
+              position: TooltipPosition.bottom,
+              targetPadding: const EdgeInsets.all(8),
+              targetShape: const CircleBorder(),
+              child: IconButton(
+                tooltip: 'Alerts',
+                onPressed: () {},
+                icon: const NavSvgIcon('bell-ringing'),
+              ),
+            ),
+          ),
+          Expanded(
+            child: Center(
+              child: TextButton(
+                onPressed: () => ShowcaseView.get().startShowCase(keys),
+                child: const Text('Start tour'),
+              ),
+            ),
+          ),
+        ],
       ),
       bottomNavigationBar: bar,
     );
@@ -89,7 +116,7 @@ Future<void> settle(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('walks through the five sections, then finishes', (tester) async {
+  testWidgets('walks through the six stops, then finishes', (tester) async {
     var ended = 0;
     await tester.pumpWidget(
       MaterialApp(home: _Harness(onEnd: () => ended++)),
@@ -99,7 +126,7 @@ void main() {
 
     for (final (i, step) in introSteps.indexed) {
       expect(find.text(step.title), findsOneWidget, reason: 'step ${i + 1}');
-      expect(find.text('${i + 1} of 5'), findsOneWidget);
+      expect(find.text('${i + 1} of 6'), findsOneWidget);
       expect(find.text(step.body), findsOneWidget);
       if (i < introSteps.length - 1) {
         expect(find.text('Skip'), findsOneWidget);
@@ -127,7 +154,7 @@ void main() {
       await settle(tester);
       for (var i = 0; i < introSteps.length; i++) {
         expect(tester.takeException(), isNull, reason: 'step ${i + 1}');
-        expect(find.text('${i + 1} of 5'), findsOneWidget);
+        expect(find.text('${i + 1} of 6'), findsOneWidget);
         if (i < introSteps.length - 1) {
           await tester.tap(find.text('Next'));
           await settle(tester);
@@ -166,7 +193,7 @@ void main() {
     await tester.tapAt(const Offset(400, 200));
     await settle(tester);
     // Still on the first step: the tour did not move or close.
-    expect(find.text('1 of 5'), findsOneWidget);
+    expect(find.text('1 of 6'), findsOneWidget);
     expect(pressed, 0);
   });
 

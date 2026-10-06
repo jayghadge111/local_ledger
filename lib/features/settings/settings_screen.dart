@@ -12,6 +12,7 @@ import '../../shared/widgets/fade_slide_in.dart';
 import '../../shared/widgets/glass_surface.dart';
 import '../../shared/widgets/glass_switch_row.dart';
 import '../lock/pin_setup_screen.dart';
+import '../manage/planning_cards.dart';
 import '../update/update_test_card.dart';
 import 'backup_screen.dart';
 import 'diagnostics_screen.dart';
@@ -86,7 +87,29 @@ class SettingsScreen extends ConsumerWidget {
           delay: const Duration(milliseconds: 55),
           child: const EmailConnectCard(),
         ),
+        const SizedBox(height: 16),
+        const FadeSlideIn(
+          delay: Duration(milliseconds: 58),
+          child: PlanningCards(),
+        ),
 
+        const SizedBox(height: 16),
+        const FadeSlideIn(
+          delay: Duration(milliseconds: 60),
+          child: MessageToolsSection(),
+        ),
+        const SizedBox(height: 16),
+        FadeSlideIn(
+          delay: const Duration(milliseconds: 28),
+          child: const DiagnosticsEntryCard(),
+        ),
+        const SizedBox(height: 16),
+        FadeSlideIn(
+          delay: const Duration(milliseconds: 26),
+          child: const BackupEntryCard(),
+        ),
+        // const SizedBox(height: 40),
+        // const _MadeInIndia(),
         // Sample/test data tools exist only in debug builds.
         if (kDebugMode) ...[
           const SizedBox(height: 16),
@@ -142,24 +165,6 @@ class SettingsScreen extends ConsumerWidget {
             ),
           ),
         ],
-
-        const SizedBox(height: 16),
-        const FadeSlideIn(
-          delay: Duration(milliseconds: 60),
-          child: MessageToolsSection(),
-        ),
-        const SizedBox(height: 16),
-        FadeSlideIn(
-          delay: const Duration(milliseconds: 28),
-          child: const DiagnosticsEntryCard(),
-        ),
-        const SizedBox(height: 16),
-        FadeSlideIn(
-          delay: const Duration(milliseconds: 26),
-          child: const BackupEntryCard(),
-        ),
-        // const SizedBox(height: 40),
-        // const _MadeInIndia(),
         const SizedBox(height: 15),
       ],
     );

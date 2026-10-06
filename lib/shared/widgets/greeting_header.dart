@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:showcaseview/showcaseview.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
 import '../../core/db/settings_repository.dart';
 import '../../core/profile/greeting.dart';
 import '../../features/settings/widgets/edit_name_dialog.dart';
 import '../../core/theme/app_theme.dart';
+import '../../features/alerts/alert_count_provider.dart';
+import '../../features/alerts/alerts_screen.dart';
+import '../../features/intro/intro_providers.dart';
+import '../../features/intro/intro_showcase.dart';
+import 'nav_svg_icon.dart';
 
 /// The artwork for each part of the day (full-colour SVGs in
 /// `assets/icons/daypart/`): sunrise for morning and evening, sun for the
@@ -78,7 +83,7 @@ class NameAvatar extends StatelessWidget {
 }
 
 /// The top of the Home screen: monogram, a time-of-day greeting and the
-/// user's first name, with today's date on the right. Tapping it when no
+/// user's first name, with the alerts bell on the right. Tapping it when no
 /// name is saved yet invites them to add one.
 class GreetingHeader extends ConsumerWidget {
   const GreetingHeader({super.key});
@@ -101,7 +106,7 @@ class GreetingHeader extends ConsumerWidget {
         child: LayoutBuilder(
           builder: (context, box) {
             if (box.maxWidth < 120) return const SizedBox(height: 52);
-            final showDate = box.maxWidth >= 300;
+            final showBell = box.maxWidth >= 200;
             return Row(
               children: [
                 NameAvatar(name: name),
@@ -141,32 +146,55 @@ class GreetingHeader extends ConsumerWidget {
                     ],
                   ),
                 ),
-                if (showDate) ...[
+                if (showBell) ...[
                   const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 7,
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(
-                        color: theme.colorScheme.outlineVariant,
-                      ),
-                    ),
-                    child: Text(
-                      DateFormat('EEE, d MMM').format(now),
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                  ),
+                  const _AlertsBell(),
                 ],
               ],
             );
           },
         ),
       ),
+    );
+  }
+}
+
+/// The bell that opens Alerts, with a count of what needs attention. During
+/// the first-visit tour it is one of the stops.
+class _AlertsBell extends ConsumerWidget {
+  const _AlertsBell();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final count = ref.watch(alertCountProvider);
+    final touring = ref.watch(introTourPendingProvider).value ?? false;
+    final bell = Badge(
+      isLabelVisible: count > 0,
+      label: Text(count > 9 ? '9+' : '$count'),
+      child: IconButton(
+        tooltip: count > 0
+            ? 'Alerts, $count need attention'
+            : 'Alerts',
+        onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const AlertsPage()),
+        ),
+        style: IconButton.styleFrom(
+          side: BorderSide(color: theme.colorScheme.outlineVariant),
+        ),
+        icon: const NavSvgIcon('bell-ringing', scale: 1.1),
+      ),
+    );
+    if (!touring) return bell;
+    return introShowcase(
+      context: context,
+      index: introBellStep,
+      showcaseKey: introBellKey,
+      wide: false,
+      position: TooltipPosition.bottom,
+      targetPadding: const EdgeInsets.all(8),
+      targetShape: const CircleBorder(),
+      child: bell,
     );
   }
 }

@@ -4,13 +4,14 @@ import '../../features/intro/intro_providers.dart';
 import '../../features/intro/intro_showcase.dart';
 import '../rules/rules_providers.dart';
 import '../diagnostics/app_guard.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_adaptive_scaffold/flutter_adaptive_scaffold.dart';
 
-import '../../features/alerts/alerts_screen.dart';
 import '../../features/dashboard/dashboard_screen.dart';
-import '../../features/manage/manage_screen.dart';
+import '../../features/lending/lending_screen.dart';
+import '../../features/splits/splits_ui.dart';
 import '../../features/settings/settings_screen.dart';
 import '../../features/transactions/transactions_screen.dart';
 import '../../shared/widgets/glass_background.dart';
@@ -49,7 +50,11 @@ class _AppShellState extends ConsumerState<AppShell>
   /// setting has had time to come back.
   bool _tourEnded = false;
   bool _tourStarted = false;
-  final _tourKeys = List.generate(introSteps.length, (_) => GlobalKey());
+  // One key per stop, in tour order. The bell on Home owns its own.
+  final _tourKeys = [
+    for (var i = 0; i < introSteps.length; i++)
+      i == introBellStep ? introBellKey : GlobalKey(),
+  ];
 
   @override
   void initState() {
@@ -68,7 +73,10 @@ class _AppShellState extends ConsumerState<AppShell>
         'update check',
         () async => ref.read(updateControllerProvider.notifier).check(),
       );
-      guarded('rules check', ref.read(rulesControllerProvider.notifier).maybeCheck);
+      guarded(
+        'rules check',
+        ref.read(rulesControllerProvider.notifier).maybeCheck,
+      );
     });
   }
 
@@ -82,7 +90,10 @@ class _AppShellState extends ConsumerState<AppShell>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      guarded('rules check', ref.read(rulesControllerProvider.notifier).maybeCheck);
+      guarded(
+        'rules check',
+        ref.read(rulesControllerProvider.notifier).maybeCheck,
+      );
       _syncSms();
       guarded(
         'update check',
@@ -108,12 +119,12 @@ class _AppShellState extends ConsumerState<AppShell>
   static const _navItems = [
     (icon: 'home', scale: 1.0, label: 'Home'),
     (icon: 'transaction', scale: 1.05, label: 'Transactions'),
-    (icon: 'filter', scale: 1.15, label: 'Manage'),
-    (icon: 'bell-ringing', scale: 1.15, label: 'Alerts'),
+    (icon: 'split', scale: 1.1, label: 'Split'),
+    (icon: 'lend', scale: 1.1, label: 'Lend/Borrow'),
     (icon: 'settings', scale: 0.98, label: 'Settings'),
   ];
 
-  /// The five navigation items. While the first-visit tour runs each icon is
+  /// The navigation items. While the first-visit tour runs each icon is
   /// wrapped so it can be lit up. The bar draws `selectedIcon` for the
   /// selected item and `icon` for the others, so the wrapper goes on whichever
   /// is drawn (a target must appear exactly once).
@@ -128,8 +139,8 @@ class _AppShellState extends ConsumerState<AppShell>
           icon: touring && i != _selectedIndex
               ? introShowcase(
                   context: context,
-                  index: i,
-                  showcaseKey: _tourKeys[i],
+                  index: introNavStep[i],
+                  showcaseKey: _tourKeys[introNavStep[i]],
                   wide: wide,
                   child: NavSvgIcon(item.icon, scale: item.scale),
                 )
@@ -137,8 +148,8 @@ class _AppShellState extends ConsumerState<AppShell>
           selectedIcon: touring && i == _selectedIndex
               ? introShowcase(
                   context: context,
-                  index: i,
-                  showcaseKey: _tourKeys[i],
+                  index: introNavStep[i],
+                  showcaseKey: _tourKeys[introNavStep[i]],
                   wide: wide,
                   child: NavSvgIcon(item.icon, scale: item.scale),
                 )
@@ -151,8 +162,8 @@ class _AppShellState extends ConsumerState<AppShell>
   static const _screens = [
     DashboardScreen(),
     TransactionsScreen(),
-    ManageScreen(),
-    AlertsScreen(),
+    SplitsScreen(),
+    LendingScreen(),
     SettingsScreen(),
   ];
 
@@ -160,7 +171,7 @@ class _AppShellState extends ConsumerState<AppShell>
   Widget build(BuildContext context) {
     // Budget alerts and lending reminders run while the app is open.
     ref.watch(alertWatcherProvider);
-    // A new install is walked through the five sections, once, on Home.
+    // A new install is walked through the main sections, once, on Home.
     final showTour =
         !_tourEnded &&
         _selectedIndex == 0 &&

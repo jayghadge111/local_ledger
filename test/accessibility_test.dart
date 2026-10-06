@@ -11,7 +11,7 @@ import 'package:local_ledger/features/budgets/budgets_screen.dart';
 import 'package:local_ledger/features/calendar/calendar_screen.dart';
 import 'package:local_ledger/features/dashboard/dashboard_screen.dart';
 import 'package:local_ledger/features/lending/lending_screen.dart';
-import 'package:local_ledger/features/manage/manage_screen.dart';
+import 'package:local_ledger/features/splits/splits_ui.dart';
 import 'package:local_ledger/features/settings/settings_screen.dart';
 import 'package:local_ledger/features/transactions/transactions_screen.dart';
 
@@ -70,7 +70,7 @@ void main() {
       'Home': const DashboardScreen(),
       'Transactions': const TransactionsScreen(),
       'Alerts': const AlertsScreen(),
-      'Manage': const ManageScreen(),
+      'Split': const SplitsScreen(),
       'Settings': const SettingsScreen(),
       'Budgets': const BudgetsScreen(),
       'Lend & borrow': const LendingScreen(),
