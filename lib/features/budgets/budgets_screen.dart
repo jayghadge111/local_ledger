@@ -1,4 +1,5 @@
 import '../../core/money_format.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -7,6 +8,8 @@ import '../../core/analytics/analytics_providers.dart';
 import '../../core/db/app_database.dart';
 import '../../core/db/budgets_repository.dart';
 import '../../core/db/providers.dart';
+import '../../core/ui/undo.dart';
+import '../../shared/widgets/text_button_styles.dart';
 import '../../shared/widgets/category_icons.dart';
 import '../../shared/widgets/centered_dialog_card.dart';
 import '../../shared/widgets/fade_slide_in.dart';
@@ -37,6 +40,12 @@ class BudgetsScreen extends ConsumerWidget {
     final customThisMonth = {
       for (final o in overrides)
         if (o.monthKey == key) o.categoryId,
+    };
+    // A limit of 0 for the month is "no budget this month", not a custom
+    // limit, so it gets no "Oct only" badge.
+    final badgedThisMonth = {
+      for (final o in overrides)
+        if (o.monthKey == key && o.limitMinor > 0) o.categoryId,
     };
 
     final spendByCategory = <String, int>{};
@@ -77,9 +86,13 @@ class BudgetsScreen extends ConsumerWidget {
                   category: categories[i],
                   budget: budgetByCategory[categories[i].id],
                   spentMinor: spendByCategory[categories[i].id] ?? 0,
-                  customForMonth: customThisMonth.contains(categories[i].id),
+                  customForMonth: badgedThisMonth.contains(categories[i].id),
                   month: month,
                   locked: past,
+                  onRemove: budgetByCategory[categories[i].id] == null
+                      ? null
+                      : () =>
+                            _confirmRemove(context, ref, categories[i], month),
                   onTap: () async {
                     if (past && !await _confirmEditPast(context, month)) return;
                     if (!context.mounted) return;
@@ -107,6 +120,42 @@ class BudgetsScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+/// Takes a budget away for [month] only, after asking, with an undo. Other
+/// months keep theirs.
+Future<void> _confirmRemove(
+  BuildContext context,
+  WidgetRef ref,
+  Category category,
+  DateTime month,
+) async {
+  final name = DateFormat('MMMM yyyy').format(month);
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Remove ${category.name} budget?'),
+      content: Text(
+        'This removes it for $name only. Other months keep theirs.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(true),
+          style: dangerTextButtonStyle(context),
+          child: const Text('Remove'),
+        ),
+      ],
+    ),
+  );
+  if (ok != true) return;
+  final undo = await ref
+      .read(budgetsRepositoryProvider)
+      .removeBudget(categoryId: category.id, month: month, fromHere: false);
+  showUndoSnackBar('${category.name} budget removed', undo);
 }
 
 /// Asks before touching a month that is over.
@@ -200,6 +249,18 @@ class _BudgetDialogState extends ConsumerState<_BudgetDialog> {
       );
     }
     if (mounted) Navigator.of(context).pop();
+  }
+
+  Future<void> _remove() async {
+    final undo = await ref
+        .read(budgetsRepositoryProvider)
+        .removeBudget(
+          categoryId: widget.category.id,
+          month: widget.month,
+          fromHere: !widget.pastMonth && _scope == _Scope.fromHere,
+        );
+    if (mounted) Navigator.of(context).pop();
+    showUndoSnackBar('${widget.category.name} budget removed', undo);
   }
 
   @override
@@ -309,6 +370,17 @@ class _BudgetDialogState extends ConsumerState<_BudgetDialog> {
                       ),
                     ],
                   ),
+                  if (widget.current != null)
+                    TextButton.icon(
+                      onPressed: _remove,
+                      icon: const Icon(Icons.delete_outline),
+                      label: Text(
+                        widget.pastMonth || _scope == _Scope.thisMonth
+                            ? 'Remove budget for $monthName'
+                            : 'Remove budget from $monthName on',
+                      ),
+                      style: dangerTextButtonStyle(context),
+                    ),
                   if (widget.customForMonth)
                     TextButton(
                       onPressed: () async {
@@ -339,6 +411,7 @@ class _BudgetRow extends StatelessWidget {
     required this.month,
     required this.locked,
     required this.onTap,
+    this.onRemove,
   });
 
   final Category category;
@@ -351,12 +424,13 @@ class _BudgetRow extends StatelessWidget {
   final bool locked;
   final VoidCallback onTap;
 
+  /// Takes the budget away; null when there is none to remove.
+  final VoidCallback? onRemove;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final formatter = appCurrency(symbol: '₹',
-      decimalDigits: 0,
-    );
+    final formatter = appCurrency(symbol: '₹', decimalDigits: 0);
     final hasBudget = budget != null;
     final fraction = hasBudget
         ? (spentMinor / budget!.monthlyLimitMinor).clamp(0.0, 1.5)
@@ -435,6 +509,13 @@ class _BudgetRow extends StatelessWidget {
               ],
             ),
           ),
+          if (onRemove != null)
+            IconButton(
+              tooltip: 'Remove ${category.name} budget',
+              color: dangerColor(context),
+              icon: const Icon(Icons.delete_outline_rounded),
+              onPressed: onRemove,
+            ),
           Icon(locked ? Icons.lock_outline_rounded : Icons.chevron_right),
         ],
       ),

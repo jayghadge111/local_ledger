@@ -1,4 +1,5 @@
 import '../ui/undo.dart';
+
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
@@ -90,6 +91,102 @@ class BudgetsRepository {
         .go();
   }
 
+  /// Takes the budget for [categoryId] away: for [month] only, or from
+  /// [month] on (later months too; earlier ones keep theirs). A limit of 0 is
+  /// how "no budget" is recorded where an earlier limit would otherwise carry
+  /// forward. Returns the way back.
+  Future<UndoAction> removeBudget({
+    required String categoryId,
+    required DateTime month,
+    required bool fromHere,
+  }) async {
+    final key = monthKeyOf(month);
+    final budgets = await (_db.select(
+      _db.budgets,
+    )..where((b) => b.categoryId.equals(categoryId))).get();
+    final overrides = await (_db.select(
+      _db.budgetOverrides,
+    )..where((o) => o.categoryId.equals(categoryId))).get();
+
+    await _db.transaction(() async {
+      // The latest standing limit that has started before this month.
+      final before = budgets
+          .where((b) => b.fromMonthKey.compareTo(key) < 0)
+          .fold<Budget?>(
+            null,
+            (a, b) => a == null || b.fromMonthKey.compareTo(a.fromMonthKey) > 0
+                ? b
+                : a,
+          );
+      final carriesIn = before != null && before.monthlyLimitMinor > 0;
+
+      if (fromHere) {
+        await (_db.delete(_db.budgets)..where(
+              (b) =>
+                  b.categoryId.equals(categoryId) &
+                  b.fromMonthKey.isBiggerOrEqualValue(key),
+            ))
+            .go();
+        await (_db.delete(_db.budgetOverrides)..where(
+              (o) =>
+                  o.categoryId.equals(categoryId) &
+                  o.monthKey.isBiggerOrEqualValue(key),
+            ))
+            .go();
+        if (carriesIn) {
+          await _db
+              .into(_db.budgets)
+              .insert(
+                BudgetsCompanion.insert(
+                  id: _uuid.v4(),
+                  categoryId: categoryId,
+                  monthlyLimitMinor: 0,
+                  fromMonthKey: Value(key),
+                ),
+              );
+        }
+        return;
+      }
+
+      // This month only. A standing limit that applies needs a "none" for
+      // the month; otherwise the month's own limit is simply dropped.
+      final inForce = budgets
+          .where((b) => b.fromMonthKey.compareTo(key) <= 0)
+          .fold<Budget?>(
+            null,
+            (a, b) => a == null || b.fromMonthKey.compareTo(a.fromMonthKey) > 0
+                ? b
+                : a,
+          );
+      final standingApplies = inForce != null && inForce.monthlyLimitMinor > 0;
+      await clearMonthBudget(categoryId: categoryId, month: month);
+      if (standingApplies) {
+        await setMonthBudget(
+          categoryId: categoryId,
+          month: month,
+          limitMinor: 0,
+        );
+      }
+    });
+
+    return () async {
+      await _db.transaction(() async {
+        await (_db.delete(
+          _db.budgets,
+        )..where((b) => b.categoryId.equals(categoryId))).go();
+        await (_db.delete(
+          _db.budgetOverrides,
+        )..where((o) => o.categoryId.equals(categoryId))).go();
+        for (final b in budgets) {
+          await _db.into(_db.budgets).insert(b);
+        }
+        for (final o in overrides) {
+          await _db.into(_db.budgetOverrides).insert(o);
+        }
+      });
+    };
+  }
+
   /// Returns the way back.
   Future<UndoAction> deleteBudget(String id) async {
     final row = await (_db.select(
@@ -159,7 +256,11 @@ List<Budget> budgetsForMonth(
       ),
     );
   }
-  return result;
+  // A limit of 0 means "no budget" (see [BudgetsRepository.removeBudget]).
+  return [
+    for (final b in result)
+      if (b.monthlyLimitMinor > 0) b,
+  ];
 }
 
 /// Whether [month] is over (before the month containing [now]). Its budgets
