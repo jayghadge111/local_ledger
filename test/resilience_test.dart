@@ -460,7 +460,7 @@ void main() {
     });
   });
 
-  testWidgets('Settings → Share diagnostic log shows the count and the buttons',
+  testWidgets('Settings → Email diagnostic log shows the count and the buttons',
       (tester) async {
     late Directory dir;
     late DiagnosticLog log;
@@ -486,7 +486,7 @@ void main() {
     }
 
     expect(find.text('1 problem noted.'), findsOneWidget);
-    expect(find.text('Share diagnostic log'), findsOneWidget);
+    expect(find.text('Email diagnostic log'), findsOneWidget);
 
     expect(find.text('Clear'), findsOneWidget);
     await tester.runAsync(() => dir.delete(recursive: true));

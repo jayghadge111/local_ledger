@@ -374,6 +374,46 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.3.3+1"
+  flutter_email_sender:
+    dependency: "direct main"
+    description:
+      name: flutter_email_sender
+      sha256: "29eda6e312ddaebf155839a48c1cb0d680079b4986fd466bc24bc927148f0086"
+      url: "https://pub.dev"
+    source: hosted
+    version: "11.1.0"
+  flutter_email_sender_linux:
+    dependency: transitive
+    description:
+      name: flutter_email_sender_linux
+      sha256: d10724fa5c1a4c597837e3ad77f50b2be1fc161fdd64e8e516228ecdb6357c58
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
+  flutter_email_sender_method_channel:
+    dependency: transitive
+    description:
+      name: flutter_email_sender_method_channel
+      sha256: "83cfea68187f00e929f13e8422758d67bb9b1b82525a5bbe165e57aeada67625"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.0.0"
+  flutter_email_sender_platform_interface:
+    dependency: transitive
+    description:
+      name: flutter_email_sender_platform_interface
+      sha256: d6825b9e91b2243619a0d22e41f5ff483b0760521302c18eadb4c150ffdee278
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.1.0"
+  flutter_email_sender_web:
+    dependency: transitive
+    description:
+      name: flutter_email_sender_web
+      sha256: "628f38bb73ad5c40fcb68fb1feedb0da3a21850ea21d5005e08548997a6f6106"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.1"
   flutter_launcher_icons:
     dependency: "direct dev"
     description:
@@ -1250,6 +1290,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.3.1"
+  url_launcher:
+    dependency: transitive
+    description:
+      name: url_launcher
+      sha256: e8cc955c97e06df9879140a1fe301f3d493f01b7c62dec7f46834be31d7e9fda
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.3.3"
+  url_launcher_android:
+    dependency: transitive
+    description:
+      name: url_launcher_android
+      sha256: "611e87fb320b70d1dd721dc46af89c98aceccea9b31fde49e084591414e0c610"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.3.33"
+  url_launcher_ios:
+    dependency: transitive
+    description:
+      name: url_launcher_ios
+      sha256: "8faa1aab294f1ab4040b43660c887b0418d5fa4f0cffef76a484e6aa1092eb4a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "6.4.2"
   url_launcher_linux:
     dependency: transitive
     description:
@@ -1258,6 +1322,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.2.3"
+  url_launcher_macos:
+    dependency: transitive
+    description:
+      name: url_launcher_macos
+      sha256: "5e835a3b869c2d70325349c81c5a45c28e20791265b67b2669da6b08c5cd5201"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.2.6"
   url_launcher_platform_interface:
     dependency: transitive
     description:

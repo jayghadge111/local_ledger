@@ -86,12 +86,12 @@ void main() {
     }
     expect(find.text('Diagnostics'), findsOneWidget);
     expect(find.textContaining('1 problem noted'), findsOneWidget);
-    expect(find.text('Share diagnostic log'), findsNothing);
+    expect(find.text('Email diagnostic log'), findsNothing);
 
     await tester.tap(find.byType(GlassCard));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
-    expect(find.text('Share diagnostic log'), findsOneWidget);
+    expect(find.text('Email diagnostic log'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
     await tester.pump(const Duration(milliseconds: 50));

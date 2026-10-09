@@ -53,7 +53,7 @@ class DiagnosticEntry {
 /// It is a plain file rather than a database table because the problems worth
 /// logging include the database failing to open. It never touches the
 /// network; the only way anything leaves the phone is the user pressing
-/// "Share diagnostic log".
+/// "Email diagnostic log".
 ///
 /// What is kept is the error text and stack trace only. Anything that looks
 /// like a phone/account number, an email address or an amount is blanked out

@@ -28,7 +28,7 @@ const introSteps = [
     body: 'A bill you paid for a group? Add your friends, split it, and see who still owes you.',
   ),
   IntroStep(
-    title: 'Lend',
+    title: 'Lend/Borrow',
     body: 'Money you actually gave or took as a loan, with a reminder when it is due.',
   ),
   IntroStep(
@@ -119,8 +119,9 @@ Widget introShowcase({
         const RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(20)),
         ),
-    // The icon plus its label and the pill behind it.
-    targetPadding: targetPadding ?? const EdgeInsets.fromLTRB(22, 10, 22, 26),
+    // The icon plus its label and the pill behind it; wide enough for the
+    // longest labels ("Transactions", "Lend/Borrow").
+    targetPadding: targetPadding ?? const EdgeInsets.fromLTRB(34, 10, 34, 26),
     disableDefaultTargetGestures: true,
     disableBarrierInteraction: true,
     tooltipActionConfig: const TooltipActionConfig(

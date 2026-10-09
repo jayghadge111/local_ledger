@@ -5,7 +5,7 @@ import '../../shared/widgets/glass_background.dart';
 import '../manage/manage_card.dart';
 import 'widgets/diagnostics_card.dart';
 
-/// The problem log and "Share diagnostic log", on their own screen.
+/// The problem log and "Email diagnostic log", on their own screen.
 class DiagnosticsScreen extends StatelessWidget {
   const DiagnosticsScreen({super.key, this.log});
 
