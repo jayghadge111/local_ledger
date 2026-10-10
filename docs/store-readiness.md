@@ -23,7 +23,7 @@ Scheduled reminders need the two `flutter_local_notifications` receivers in the 
 1. **Permissions Declaration Form for SMS.** Play only allows `READ_SMS`/`RECEIVE_SMS` for apps whose core function needs it, and expense tracking from bank SMS is not on Google's list of automatic exceptions. Prepare: a screen recording of the permission prompt and the feature, a plain-language justification ("reads only bank transaction alerts, on-device, never uploaded"), and the privacy policy link. **Approval is not guaranteed** — have the Gmail-only mode ready as a fallback listing.
 2. **Data safety form:** no data collected or shared by the developer; data is processed on-device. Gmail access is read-only (`gmail.readonly`) and stays on the phone.
 3. **Google OAuth consent screen:** `gmail.readonly` is a *restricted scope*. Publishing the app to the public needs Google's OAuth verification (and possibly a security assessment). Testing mode is limited to 100 listed test users.
-4. A **privacy policy URL** (required). It should mention: on-device storage, encryption, Gmail read-only, SMS read, and the anonymous rules-file download.
+4. A **privacy policy URL** (required). It should mention: on-device storage, encryption, Gmail read-only, SMS read, and the anonymous rules-file download. **Gmail is also checked automatically when the app opens** (new bank emails only, at most every 3 hours, only for an account the user connected; a switch on the Gmail card turns it off) — say so in the policy and the Data safety answers.
 
 ## iOS
 

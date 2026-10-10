@@ -75,13 +75,28 @@ class GmailImportService {
     /// Carry on from where a stopped or interrupted run left off, skipping
     /// the emails it already handled.
     bool resume = false,
+
+    /// Only mail from about this time on (a catch-up), not the whole window.
+    DateTime? since,
+
+    /// A scan the user didn't ask for: shows no Google screen, and keeps no
+    /// checkpoint (it is short, and not worth a "resume" card).
+    bool quiet = false,
   }) async {
-    onProgress?.call(const ImportProgress('Signing in to Google…'));
+    onProgress?.call(
+      ImportProgress(quiet ? 'Checking for new bank emails…' : 'Signing in to Google…'),
+    );
     final signedIn =
         account ?? await _auth.currentAccount() ?? await _auth.signIn();
-    var headers = await _auth.authHeaders(signedIn);
+    var headers = await _auth.authHeaders(signedIn, interactive: !quiet);
 
-    final cutoff = importCutoff();
+    var cutoff = importCutoff();
+    if (since != null) {
+      // Gmail's `after:` works on whole days; a day of overlap is harmless
+      // because anything already stored is recognised and skipped.
+      final from = DateTime(since.year, since.month, since.day - 1);
+      if (from.isAfter(cutoff)) cutoff = from;
+    }
     final afterDate =
         '${cutoff.year}/${cutoff.month.toString().padLeft(2, '0')}/${cutoff.day.toString().padLeft(2, '0')}';
     final extraDomains =
@@ -110,7 +125,7 @@ class GmailImportService {
       if ((listResponse.statusCode == 401 || listResponse.statusCode == 403) &&
           !reauthorized) {
         reauthorized = true;
-        headers = await _auth.authHeaders(signedIn);
+        headers = await _auth.authHeaders(signedIn, interactive: !quiet);
         await Future<void>.delayed(const Duration(seconds: 2));
         listResponse = await http
             .get(listUri, headers: headers)
@@ -139,8 +154,8 @@ class GmailImportService {
 
     final total = messageRefs.length;
     final store = CheckpointStore(_settings);
-    final previous = resume ? await store.gmail() : null;
-    if (!resume) await store.clearGmail();
+    final previous = resume && !quiet ? await store.gmail() : null;
+    if (!resume && !quiet) await store.clearGmail();
     final doneIds = <String>{...?previous?.doneIds};
     final pending = [
       for (final r in messageRefs)
@@ -186,14 +201,16 @@ class GmailImportService {
         );
       }
       doneIds.addAll(chunk.map((r) => r['id'] as String));
-      await store.saveGmail(
-        GmailCheckpoint(
-          doneIds: doneIds,
-          total: total,
-          found: foundBefore + session.imported,
-          savedAt: DateTime.now(),
-        ),
-      );
+      if (!quiet) {
+        await store.saveGmail(
+          GmailCheckpoint(
+            doneIds: doneIds,
+            total: total,
+            found: foundBefore + session.imported,
+            savedAt: DateTime.now(),
+          ),
+        );
+      }
       onProgress?.call(
         ImportProgress(
           'Reading bank emails',
@@ -214,7 +231,7 @@ class GmailImportService {
       );
     }
     await session.finish();
-    if (!cancelled) await store.clearGmail();
+    if (!cancelled && !quiet) await store.clearGmail();
 
     return EmailImportResult(
       cancelled: cancelled,
@@ -225,6 +242,27 @@ class GmailImportService {
       notRecognised: session.skipped,
       unreadable: unreadable,
       duplicates: session.duplicates,
+    );
+  }
+
+  /// The quiet catch-up for app open: reads only mail that arrived since
+  /// [since], using the sign-in Google already holds. Returns null when it
+  /// can't do that without asking the user (no saved sign-in), and throws
+  /// [GmailAccessException] when Google now wants consent again — it never
+  /// shows a sign-in or consent screen itself.
+  Future<EmailImportResult?> importSince(
+    DateTime since, {
+    ImportProgressCallback? onProgress,
+    ImportCancelToken? cancel,
+  }) async {
+    final account = await _auth.currentAccount();
+    if (account == null) return null;
+    return importRecent(
+      account: account,
+      since: since,
+      quiet: true,
+      onProgress: onProgress,
+      cancel: cancel,
     );
   }
 

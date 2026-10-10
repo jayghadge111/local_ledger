@@ -31,6 +31,7 @@ class SyncJob {
     this.stopping = false,
     this.needsSettings = false,
     this.needsReconnect = false,
+    this.background = false,
   });
 
   final SyncStatus status;
@@ -53,6 +54,10 @@ class SyncJob {
   /// It failed because a permission is switched off for good, so the card
   /// should offer "Open settings" — asking again would do nothing.
   final bool needsSettings;
+
+  /// The app started this by itself (the quiet Gmail catch-up), so it is
+  /// shown small and without a result note when nothing came of it.
+  final bool background;
 
   bool get running => status == SyncStatus.running;
   bool get failed => status == SyncStatus.failed;
@@ -91,6 +96,12 @@ class SyncState {
     );
   }
 }
+
+/// The quiet Gmail catch-up runs when the app opens, but at most this often.
+const kGmailAutoGap = Duration(hours: 3);
+
+/// Without a record of the last scan, a catch-up looks back this far.
+const kGmailCatchUpDefault = Duration(days: 14);
 
 /// During onboarding, the user may move on once running imports pass this.
 const kOnboardingContinueAtPercent = 25;
@@ -174,6 +185,7 @@ String describeSmsResult(SmsImportResult r) {
 /// app — leaves a checkpoint, so it can be resumed rather than redone.
 class SyncController extends Notifier<SyncState> {
   bool _smsBusy = false;
+  bool _gmailAutoBusy = false;
   ImportCancelToken? _gmailCancel;
   ImportCancelToken? _smsCancel;
 
@@ -351,6 +363,7 @@ class SyncController extends Notifier<SyncState> {
         showRootSnackBar('Gmail sync stopped — you can resume it anytime');
         return;
       }
+      await _markGmailScanned();
       _setGmail(
         SyncJob(
           status: SyncStatus.succeeded,
@@ -386,14 +399,117 @@ class SyncController extends Notifier<SyncState> {
     }
   }
 
+  Future<void> _markGmailScanned() => ref
+      .read(settingsRepositoryProvider)
+      .set(SettingsKeys.gmailLastScannedAt, DateTime.now().toIso8601String());
+
+  /// Quiet catch-up for app open/resume: picks up bank emails that arrived
+  /// since the last scan, so nobody has to remember to tap Scan now.
+  ///
+  /// It only ever runs for an account the user connected, can be switched off
+  /// on the Gmail card, and never shows a Google screen — if Google wants the
+  /// user to sign in again, it stays out of the way and the card offers
+  /// Reconnect. Shows nothing unless it finds something.
+  Future<void> syncGmailIfDue({bool force = false}) async {
+    if (_gmailAutoBusy || state.gmail.running || state.gmail.paused) return;
+    final settings = ref.read(settingsRepositoryProvider);
+    if (!force && await settings.get(SettingsKeys.gmailAutoScan) == 'false') {
+      return;
+    }
+    final account = await settings.get(SettingsKeys.gmailAccount);
+    if (account == null || account.isEmpty) return;
+    // A full scan the user stopped waits for them to resume it.
+    if (await _store.gmail() != null) return;
+
+    final now = DateTime.now();
+    final lastTry = DateTime.tryParse(
+      await settings.get(SettingsKeys.gmailLastAutoCheck) ?? '',
+    );
+    if (!force && lastTry != null && now.difference(lastTry) < kGmailAutoGap) {
+      return;
+    }
+    if (!await ref.read(internetCheckProvider)()) return;
+
+    _gmailAutoBusy = true;
+    // Recorded up front: an attempt that fails must not be retried on every
+    // app open.
+    await settings.set(SettingsKeys.gmailLastAutoCheck, now.toIso8601String());
+    final lastScan = DateTime.tryParse(
+      await settings.get(SettingsKeys.gmailLastScannedAt) ?? '',
+    );
+    final since = lastScan ?? now.subtract(kGmailCatchUpDefault);
+    final token = _gmailCancel = ImportCancelToken();
+    final before = state.gmail;
+    try {
+      _setGmail(
+        SyncJob(
+          status: SyncStatus.running,
+          background: true,
+          progress: const ImportProgress('Checking for new bank emails…'),
+        ),
+      );
+      final result = await ref
+          .read(gmailImportServiceProvider)
+          .importSince(
+            since,
+            cancel: token,
+            onProgress: (p) => _setGmail(
+              SyncJob(
+                status: SyncStatus.running,
+                background: true,
+                progress: p,
+                stopping: state.gmail.stopping,
+              ),
+            ),
+          );
+      if (result == null || result.cancelled) {
+        // Nothing was done (no saved sign-in, or the user stopped it): put
+        // back whatever the card was showing.
+        _setGmail(before);
+        return;
+      }
+      await _markGmailScanned();
+      _setGmail(const SyncJob());
+      if (result.imported > 0 || result.queued > 0 || result.obligations > 0) {
+        final parts = [
+          if (result.imported > 0)
+            '${result.imported} new transaction${result.imported == 1 ? '' : 's'}',
+          if (result.queued > 0)
+            '${result.queued} email${result.queued == 1 ? '' : 's'} to review',
+          if (result.obligations > 0)
+            '${result.obligations} auto-debit notice${result.obligations == 1 ? '' : 's'}',
+        ];
+        showRootSnackBar('From Gmail: ${parts.join(' · ')}');
+      }
+    } on GmailAccessException {
+      // Google wants the user to approve again. Say so on the Gmail card,
+      // quietly: nobody asked for this scan, so no pop-up and no snackbar.
+      _setGmail(
+        const SyncJob(
+          status: SyncStatus.failed,
+          needsReconnect: true,
+          message:
+              'Google needs you to sign in to Gmail again before new emails can be checked.',
+        ),
+      );
+    } catch (e, stack) {
+      // Offline blip, Gmail hiccup: leave no trace on screen; try again later.
+      DiagnosticLog.instance.record('gmail', e, stack, 'checking Gmail quietly');
+      _setGmail(before);
+    } finally {
+      _gmailAutoBusy = false;
+    }
+  }
+
   Future<void> disconnectGmail() async {
     try {
       await ref.read(gmailAuthServiceProvider).disconnect();
     } catch (_) {}
     await _store.clearGmail();
-    await ref
-        .read(settingsRepositoryProvider)
-        .set(SettingsKeys.gmailAccount, '');
+    final settings = ref.read(settingsRepositoryProvider);
+    await settings.set(SettingsKeys.gmailAccount, '');
+    await settings.remove(SettingsKeys.gmailLastScannedAt);
+    await settings.remove(SettingsKeys.gmailLastAutoCheck);
     state = state.copyWith(
       clearAccount: true,
       gmail: const SyncJob(

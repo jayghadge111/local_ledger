@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:intl/intl.dart';
+
+import '../../../core/db/settings_repository.dart';
 import '../../../core/sync/sync_controller.dart';
 import '../../../shared/widgets/glass_surface.dart';
+import '../../../shared/widgets/glass_switch_row.dart';
 import '../../../shared/widgets/import_progress_view.dart';
 import '../../../shared/widgets/text_button_styles.dart';
 
@@ -73,6 +77,44 @@ class _EmailConnectCardState extends ConsumerState<EmailConnectCard> {
                   ),
                 ),
               ],
+            ),
+            StreamBuilder<String?>(
+              stream: ref
+                  .read(settingsRepositoryProvider)
+                  .watch(SettingsKeys.gmailLastScannedAt),
+              builder: (context, snapshot) {
+                final at = DateTime.tryParse(snapshot.data ?? '');
+                if (at == null) return const SizedBox.shrink();
+                return Padding(
+                  padding: const EdgeInsets.only(top: 4, left: 26),
+                  child: Text(
+                    'Last checked ${DateFormat.MMMd().add_jm().format(at)}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 4),
+            StreamBuilder<String?>(
+              stream: ref
+                  .read(settingsRepositoryProvider)
+                  .watch(SettingsKeys.gmailAutoScan),
+              builder: (context, snapshot) => GlassSwitchRow(
+                label: 'Check for new bank emails when the app opens',
+                value: snapshot.data != 'false',
+                onChanged: (v) => ref
+                    .read(settingsRepositoryProvider)
+                    .set(SettingsKeys.gmailAutoScan, v.toString()),
+              ),
+            ),
+            Text(
+              'Reads only new bank emails, at most every few hours, and only '
+              'while you are connected. Nothing is changed in your mailbox.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
           const SizedBox(height: 14),

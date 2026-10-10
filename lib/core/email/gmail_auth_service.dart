@@ -69,10 +69,17 @@ class GmailAuthService {
 
   /// Bearer-token header for direct Gmail REST calls, re-prompting for
   /// consent if needed.
-  Future<Map<String, String>> authHeaders(GoogleSignInAccount account) async {
+  ///
+  /// With [interactive] false it never shows anything: if consent would be
+  /// needed it throws [GmailAccessException] instead, so a scan the user did
+  /// not ask for can't pop up a Google screen.
+  Future<Map<String, String>> authHeaders(
+    GoogleSignInAccount account, {
+    bool interactive = true,
+  }) async {
     final headers = await account.authorizationClient.authorizationHeaders(
       scopes,
-      promptIfNecessary: true,
+      promptIfNecessary: interactive,
     );
     if (headers == null) {
       throw const GmailAccessException('authorization was not granted');

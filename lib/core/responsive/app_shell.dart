@@ -69,6 +69,7 @@ class _AppShellState extends ConsumerState<AppShell>
         ref.read(syncControllerProvider.notifier).checkInterrupted,
       );
       _syncSms();
+      _syncGmail();
       guarded(
         'update check',
         () async => ref.read(updateControllerProvider.notifier).check(),
@@ -95,6 +96,7 @@ class _AppShellState extends ConsumerState<AppShell>
         ref.read(rulesControllerProvider.notifier).maybeCheck,
       );
       _syncSms();
+      _syncGmail();
       guarded(
         'update check',
         () async => ref.read(updateControllerProvider.notifier).check(),
@@ -108,6 +110,13 @@ class _AppShellState extends ConsumerState<AppShell>
   void _syncSms() => guarded(
     'SMS catch-up',
     ref.read(syncControllerProvider.notifier).syncSmsIfDue,
+  );
+
+  /// Quiet Gmail catch-up on open/resume, for an account the user connected
+  /// (and only if the Gmail card's switch is on). At most every few hours.
+  void _syncGmail() => guarded(
+    'Gmail catch-up',
+    ref.read(syncControllerProvider.notifier).syncGmailIfDue,
   );
 
   void _onTourEnded() {

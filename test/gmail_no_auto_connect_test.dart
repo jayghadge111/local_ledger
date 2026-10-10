@@ -14,8 +14,10 @@ import 'package:local_ledger/core/sync/connectivity.dart';
 import 'package:local_ledger/core/sync/sync_controller.dart';
 import 'package:local_ledger/features/settings/widgets/email_connect_card.dart';
 
-/// Records every call into Google. Any of them means the app reached out to
-/// Google — which must only ever happen after the user taps something.
+/// Records every call into Google. Merely showing the Gmail card (or opening
+/// Settings) must never make one: sign-in and scanning start from a tap. (The
+/// separate, switchable catch-up when the app opens is `syncGmailIfDue`; it
+/// is tested in gmail_auto_scan_test.dart.)
 class _SpyAuth extends GmailAuthService {
   final calls = <String>[];
 

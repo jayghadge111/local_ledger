@@ -31,6 +31,11 @@ abstract class SettingsKeys {
   static const introTourPending =
       'intro_tour_pending'; // 'true' until the first-visit tour has been shown
   static const rulesLastChecked = 'rules_last_checked'; // ISO-8601
+  static const gmailAutoScan = 'gmail_auto_scan'; // 'true' | 'false' (on)
+  static const gmailLastScannedAt =
+      'gmail_last_scanned_at'; // ISO-8601, end of the last finished scan
+  static const gmailLastAutoCheck =
+      'gmail_last_auto_check'; // ISO-8601, when the app last tried by itself
 }
 
 final settingsRepositoryProvider = Provider<SettingsRepository>((ref) {
