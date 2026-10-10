@@ -79,7 +79,7 @@ class LendingStatusCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   const Text(
-                    'NativeSpend',
+                    'TrueLedger',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w700,

@@ -7,7 +7,7 @@ import 'package:intl/intl.dart';
 import '../../../core/backup/local_snapshots.dart';
 import '../../../core/backup/snapshot_providers.dart';
 
-/// The copy NativeSpend keeps by itself: when it was made, and a one-tap way
+/// The copy TrueLedger keeps by itself: when it was made, and a one-tap way
 /// back to it. Shown inside the Backup card.
 class AutoBackupSection extends ConsumerStatefulWidget {
   const AutoBackupSection({super.key});
@@ -122,7 +122,7 @@ class _AutoBackupSectionState extends ConsumerState<AutoBackupSection> {
         Text('Kept on this phone', style: theme.textTheme.titleSmall),
         const SizedBox(height: 4),
         Text(
-          'NativeSpend saves a copy of your data on this phone before app '
+          'TrueLedger saves a copy of your data on this phone before app '
           'updates and big imports. Each new copy replaces the last. If '
           'something goes wrong, restore it.',
           style: muted,

@@ -1,4 +1,4 @@
-# NativeSpend — merchant & bank logo audit
+# TrueLedger — merchant & bank logo audit
 
 Every brand in `lib/shared/widgets/merchant_badge.dart` (the `_brands` list), with what it shows today and what a replacement could be.
 

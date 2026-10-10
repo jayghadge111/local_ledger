@@ -60,13 +60,13 @@ const _failed = SyncJob(
   status: SyncStatus.failed,
   needsReconnect: true,
   message:
-      'Google stopped letting NativeSpend read this Gmail account — access was removed or has expired. Tap Connect Gmail to sign in again. What was already read is saved.',
+      'Google stopped letting TrueLedger read this Gmail account — access was removed or has expired. Tap Connect Gmail to sign in again. What was already read is saved.',
 );
 const _blocked = SyncJob(
   status: SyncStatus.failed,
   needsSettings: true,
   message:
-      'SMS access is switched off for NativeSpend, so nothing was scanned. Turn on "SMS" under Permissions in the app\'s system settings, then come back and scan again.',
+      'SMS access is switched off for TrueLedger, so nothing was scanned. Turn on "SMS" under Permissions in the app\'s system settings, then come back and scan again.',
 );
 
 void main() {

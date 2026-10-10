@@ -84,7 +84,7 @@ class BackupService {
       RegExp(r'[:.]'),
       '-',
     );
-    final file = File('${dir.path}/nativespend_backup_$timestamp.llbackup');
+    final file = File('${dir.path}/trueledger_backup_$timestamp.llbackup');
     await file.writeAsString(envelope);
     return file;
   }
@@ -94,7 +94,7 @@ class BackupService {
   Future<void> importEncrypted(File file, String passphrase) async {
     final envelope = jsonDecode(await file.readAsString());
     if (envelope is! Map || envelope['format'] != _backupFormat) {
-      throw const FormatException('Not a NativeSpend backup file');
+      throw const FormatException('Not a TrueLedger backup file');
     }
 
     final salt = base64Decode(envelope['salt'] as String);

@@ -4,5 +4,5 @@ import 'app.dart';
 import 'core/diagnostics/app_guard.dart';
 
 Future<void> main() => runGuarded(
-  () => const ProviderScope(child: NativeSpendApp()),
+  () => const ProviderScope(child: TrueLedgerApp()),
 );

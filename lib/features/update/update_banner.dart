@@ -59,7 +59,7 @@ class _Card extends ConsumerWidget {
       UpdateStage.installing => (
         Icons.autorenew_rounded,
         'Installing…',
-        'NativeSpend will restart shortly',
+        'TrueLedger will restart shortly',
       ),
       UpdateStage.installed => (
         Icons.check_circle_rounded,

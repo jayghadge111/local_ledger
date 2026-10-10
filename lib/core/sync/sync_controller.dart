@@ -398,7 +398,7 @@ class SyncController extends Notifier<SyncState> {
       clearAccount: true,
       gmail: const SyncJob(
         message:
-            'Disconnected. NativeSpend can no longer read this Gmail account.',
+            'Disconnected. TrueLedger can no longer read this Gmail account.',
       ),
     );
   }
@@ -551,13 +551,13 @@ SyncJob _smsPermissionJob(PermissionState state) => switch (state) {
     status: SyncStatus.failed,
     needsSettings: true,
     message:
-        'SMS access is switched off for NativeSpend, so nothing was scanned. '
+        'SMS access is switched off for TrueLedger, so nothing was scanned. '
         'Turn on "SMS" under Permissions in the app\'s system settings, then '
         'come back and scan again.',
   ),
   PermissionState.unavailable => const SyncJob(
     status: SyncStatus.failed,
-    message: "This phone doesn't allow SMS access for NativeSpend.",
+    message: "This phone doesn't allow SMS access for TrueLedger.",
   ),
   _ => const SyncJob(
     status: SyncStatus.failed,
@@ -574,7 +574,7 @@ const _offlineText =
 /// A plain-words reason for a failed Gmail import, whatever threw.
 String describeGmailFailure(Object error) {
   if (error is GmailAccessException) {
-    return 'Google stopped letting NativeSpend read this Gmail account — '
+    return 'Google stopped letting TrueLedger read this Gmail account — '
         'access was removed or has expired. Tap Connect Gmail to sign in '
         'again. What was already read is saved.';
   }

@@ -1,11 +1,11 @@
 {
-    "name": "NativeSpend",
-    "short_name": "NativeSpend",
+    "name": "TrueLedger",
+    "short_name": "TrueLedger",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#F8FAFC",
-    "theme_color": "#111111",
-    "description": "A new Flutter project.",
+    "background_color": "#102131",
+    "theme_color": "#102131",
+    "description": "Kharcha track karo, bina kisi chinta ke.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

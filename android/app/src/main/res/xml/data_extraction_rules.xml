@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  NativeSpend keeps everything on the phone, encrypted with a key held in the
+  TrueLedger keeps everything on the phone, encrypted with a key held in the
   Android Keystore. That key never leaves the device, so a copy of the
   database restored to another phone (cloud backup or device-to-device
   transfer) could not be read. Excluding everything avoids restoring

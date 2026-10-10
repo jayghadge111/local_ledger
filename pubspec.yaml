@@ -56,24 +56,29 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/icon/icon_master.png"
-  adaptive_icon_background: "#E2E6EA"
+  adaptive_icon_background: "#102131"
   adaptive_icon_foreground: "assets/icon/icon_foreground.png"
   adaptive_icon_monochrome: "assets/icon/icon_monochrome.png"
   remove_alpha_ios: true
   web:
     generate: true
     image_path: "assets/icon/web_icon.png"
-    background_color: "#F8FAFC"
-    theme_color: "#111111"
+    background_color: "#102131"
+    theme_color: "#102131"
 
 # Native launch screen (shown before Flutter draws its first frame).
 flutter_native_splash:
-  color: "#F8FAFC"
+  color: "#F0F9FF"
+  color_dark: "#06131F"
   image: assets/icon/splash_mark.png
+  image_dark: assets/icon/splash_mark.png
   android_12:
-    color: "#F8FAFC"
-    image: assets/icon/icon_foreground.png
-    icon_background_color: "#E2E6EA"
+    color: "#F0F9FF"
+    color_dark: "#06131F"
+    image: assets/icon/splash_android12.png
+    image_dark: assets/icon/splash_android12.png
+    icon_background_color: "#102131"
+    icon_background_color_dark: "#102131"
 
 
 

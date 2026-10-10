@@ -381,7 +381,7 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
           title: const Text('Delete this transaction?'),
           content: const Text(
             'If the message behind it was not really money moving — for '
-            'example a lender confirming your payment — NativeSpend can ignore '
+            'example a lender confirming your payment — TrueLedger can ignore '
             'messages like it from now on.',
           ),
           actions: [

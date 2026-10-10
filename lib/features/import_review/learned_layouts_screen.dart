@@ -35,7 +35,7 @@ class LearnedLayoutsScreen extends ConsumerWidget {
                   const SizedBox(height: 8),
                   Text(
                     'When you fix a transaction that came from a bank message, or add one from “Messages to review”, '
-                    'NativeSpend remembers how that message was laid out — where the amount and the payee sit — so the '
+                    'TrueLedger remembers how that message was laid out — where the amount and the payee sit — so the '
                     'next message like it is read correctly on its own. It also remembers messages you chose to ignore '
                     'when deleting a transaction, so they stop appearing.\n\n'
                     'Layouts are stored encrypted on this device and never leave it.',

@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- NativeSpend keeps everything on the device: no tracking, no analytics,
+	<!-- TrueLedger keeps everything on the device: no tracking, no analytics,
 	     and no data collected by us or sent to us. -->
 	<key>NSPrivacyTracking</key>
 	<false/>

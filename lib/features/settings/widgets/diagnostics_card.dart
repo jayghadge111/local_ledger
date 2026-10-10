@@ -56,7 +56,7 @@ class _DiagnosticsCardState extends ConsumerState<DiagnosticsCard> {
         },
       );
       final dir = await getTemporaryDirectory();
-      final file = File(p.join(dir.path, 'nativespend-diagnostics.txt'));
+      final file = File(p.join(dir.path, 'trueledger-diagnostics.txt'));
       await file.writeAsString(text);
       await _send(file.path, messenger);
     } catch (error, stack) {
@@ -77,9 +77,9 @@ class _DiagnosticsCardState extends ConsumerState<DiagnosticsCard> {
       await FlutterEmailSender.send(
         Email(
           recipients: const [kSupportEmail],
-          subject: 'NativeSpend diagnostic log',
+          subject: 'TrueLedger diagnostic log',
           body:
-              'Hi,\n\nThe diagnostic log from NativeSpend is attached. '
+              'Hi,\n\nThe diagnostic log from TrueLedger is attached. '
               'It has error details only — no transactions, messages or '
               'account numbers.\n\n(Add anything you were doing when it '
               'went wrong here.)\n',
@@ -107,8 +107,8 @@ class _DiagnosticsCardState extends ConsumerState<DiagnosticsCard> {
     await SharePlus.instance.share(
       ShareParams(
         files: [XFile(path, mimeType: 'text/plain')],
-        subject: 'NativeSpend diagnostic log',
-        text: 'NativeSpend diagnostic log',
+        subject: 'TrueLedger diagnostic log',
+        text: 'TrueLedger diagnostic log',
         sharePositionOrigin: shareOrigin(),
       ),
     );

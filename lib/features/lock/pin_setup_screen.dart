@@ -127,7 +127,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Used to unlock NativeSpend — never leaves this device',
+                  'Used to unlock TrueLedger — never leaves this device',
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),

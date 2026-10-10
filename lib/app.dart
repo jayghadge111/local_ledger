@@ -8,8 +8,8 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_provider.dart';
 import 'core/ui/root_messenger.dart';
 
-class NativeSpendApp extends ConsumerWidget {
-  const NativeSpendApp({super.key});
+class TrueLedgerApp extends ConsumerWidget {
+  const TrueLedgerApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

@@ -41,7 +41,7 @@ post_install do |installer|
     flutter_additional_ios_build_settings(target)
 
     # permission_handler only compiles in the permissions switched on here.
-    # NativeSpend needs notifications and nothing else, so no other usage
+    # TrueLedger needs notifications and nothing else, so no other usage
     # description (camera, contacts, location, …) is needed in Info.plist.
     target.build_configurations.each do |config|
       defs = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] || ['$(inherited)']

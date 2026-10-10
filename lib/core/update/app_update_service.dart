@@ -65,7 +65,7 @@ abstract class AppUpdateService {
 }
 
 /// Google Play flexible updates: the download happens in the background
-/// inside Play, while NativeSpend shows its progress, then the user chooses
+/// inside Play, while TrueLedger shows its progress, then the user chooses
 /// when to restart.
 ///
 /// Only works for an install that came from Google Play, so it cannot be

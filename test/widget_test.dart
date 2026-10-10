@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:local_ledger/core/brand.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
@@ -34,11 +35,11 @@ Future<void> pumpFrames(WidgetTester tester) async {
 void main() {
   PathProviderPlatform.instance = _FakePathProviderPlatform();
 
-  testWidgets('Splash screen shows the NativeSpend brand', (tester) async {
-    await tester.pumpWidget(const ProviderScope(child: NativeSpendApp()));
+  testWidgets('Splash screen shows the TrueLedger brand', (tester) async {
+    await tester.pumpWidget(const ProviderScope(child: TrueLedgerApp()));
 
-    expect(find.text('NativeSpend'), findsOneWidget);
-    expect(find.text('Your money, your device, zero cloud.'), findsOneWidget);
+    expect(find.text('TrueLedger'), findsOneWidget);
+    expect(find.text(kTagline), findsOneWidget);
     expect(find.text('100% OFFLINE'), findsOneWidget);
 
     // Leave the app running past the splash's hand-off timer so the test

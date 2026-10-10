@@ -1,6 +1,6 @@
 # Plan: updatable matcher & parser rules ("Rules Pack")
 
-**Goal.** Once NativeSpend is live, be able to change the strings that decide *what a message is* — bank sender codes, bank email domains, parser regexes, category keywords, merchant/brand names — **without shipping a new app version**.
+**Goal.** Once TrueLedger is live, be able to change the strings that decide *what a message is* — bank sender codes, bank email domains, parser regexes, category keywords, merchant/brand names — **without shipping a new app version**.
 
 **Status (6 Oct 2026):** **Built.** P1–P5 are done: the app downloads one signed file, checks it, keeps the previous version, and can roll back. Everything below is the original plan; this block says what shipped.
 
@@ -23,7 +23,7 @@
 
 ## 0. The constraint that shapes everything
 
-NativeSpend's promise is *"Your money, your device, zero cloud"*: no servers of ours, nothing leaves the phone. A normal "remote config" product breaks that promise, so the design has to be **download-only and anonymous**:
+TrueLedger's promise is *"Your money, your device, zero cloud"*: no servers of ours, nothing leaves the phone. A normal "remote config" product breaks that promise, so the design has to be **download-only and anonymous**:
 
 - The app only ever **GETs one small public file**. It sends no user data, no device/installation ID, no analytics.
 - The rules are **data** (lists and regex strings), never code. Nothing is executed from the network.
@@ -355,7 +355,7 @@ flutter analyze && flutter test                               # expect clean + a
 
 Context that isn't obvious from the code:
 
-- The package/bundle id is still `com.localledger.*` on purpose (changing it breaks Google sign-in); the display name is **NativeSpend**.
+- The package/bundle id is still `com.localledger.*` on purpose (changing it breaks Google sign-in); the display name is **TrueLedger**.
 - Database schema is **v7**. Add new tables via `MigrationStrategy.onUpgrade` in `lib/core/db/app_database.dart`.
 - The parser has a large regression corpus: `test/message_corpus_test.dart`, `bank_sms_parser_test.dart`, `email_parsing_test.dart`. Any refactor in P2 must keep those green.
 - `lib/core/sms/template_learning.dart` (user-taught message layouts) is a *separate, user-local* mechanism and must stay independent of the remote pack.

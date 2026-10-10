@@ -20,7 +20,7 @@ final merchantAliasesProvider = StreamProvider<List<MerchantAliase>>((ref) {
   )..orderBy([(a) => OrderingTerm.asc(a.pattern)])).watch();
 });
 
-/// Everything NativeSpend has learned from the user's corrections, in one
+/// Everything TrueLedger has learned from the user's corrections, in one
 /// place, each item removable (with Undo): merchant names, categories and
 /// message layouts. The app learns by being corrected; this is how to take a
 /// lesson back.
@@ -79,7 +79,7 @@ class LearnedScreen extends ConsumerWidget {
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
           children: [
             Text(
-              'NativeSpend learns when you fix something: a merchant name, a '
+              'TrueLedger learns when you fix something: a merchant name, a '
               'category, a message it misread. Everything stays on this phone. '
               'Remove a lesson here and the app goes back to its own guess.',
               style: muted,

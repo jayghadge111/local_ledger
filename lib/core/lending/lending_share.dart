@@ -17,7 +17,7 @@ final lendingShareProvider = Provider<ShareMessage>(
     final files = <XFile>[];
     if (png != null) {
       final file = File(
-        '${Directory.systemTemp.path}/nativespend_status_'
+        '${Directory.systemTemp.path}/trueledger_status_'
         '${DateTime.now().millisecondsSinceEpoch}.png',
       );
       await file.writeAsBytes(png, flush: true);

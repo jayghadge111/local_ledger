@@ -65,7 +65,7 @@ class BackupCard extends ConsumerWidget {
       await SharePlus.instance.share(
         ShareParams(
           files: [XFile(file.path)],
-          text: 'NativeSpend backup',
+          text: 'TrueLedger backup',
           sharePositionOrigin: shareOrigin(),
         ),
       );

@@ -42,5 +42,5 @@ GitHub secrets and builds the signed APK/AAB.
 $ANDROID_HOME/build-tools/<version>/apksigner verify --print-certs \
   build/app/outputs/flutter-apk/app-release.apk
 ```
-The signer should be `CN=NativeSpend`, not `Android Debug`. (`keytool
+The signer should be `CN=TrueLedger`, not `Android Debug`. (`keytool
 -printcert -jarfile` cannot read v2/v3 signatures.)
