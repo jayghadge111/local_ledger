@@ -59,6 +59,12 @@ class MerchantAvatar extends StatelessWidget {
               asset,
               fit: badge.wordmark ? BoxFit.contain : BoxFit.cover,
               filterQuality: FilterQuality.medium,
+              // Decode at the size it is drawn (the files are up to 330px for
+              // a 40px circle): less memory and no work spent on pixels that
+              // are thrown away.
+              cacheWidth:
+                  (radius * 2 * MediaQuery.devicePixelRatioOf(context)).ceil(),
+              gaplessPlayback: true,
               errorBuilder: (_, _, _) => Center(
                 child: Text(
                   badge.initial,

@@ -40,6 +40,51 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   int _visible = kFirstPage;
   bool _loadingMore = false;
   Timer? _pageTimer;
+  Timer? _searchTimer;
+
+  // The filtered list is rebuilt only when what it depends on changes, not on
+  // every paging step or scroll-triggered rebuild.
+  List<Transaction>? _filteredFrom;
+  String _filteredQuery = '';
+  TransactionFilters? _filteredWith;
+  List<Transaction> _filtered = const [];
+
+  List<Transaction> _filteredFor(List<Transaction> all) {
+    final query = _query.trim().toLowerCase();
+    if (identical(all, _filteredFrom) &&
+        query == _filteredQuery &&
+        identical(_filters, _filteredWith)) {
+      return _filtered;
+    }
+    _filteredFrom = all;
+    _filteredQuery = query;
+    _filteredWith = _filters;
+    return _filtered = [
+      for (final t in all)
+        if ((query.isEmpty || t.merchant.toLowerCase().contains(query)) &&
+            _filters.matches(t))
+          t,
+    ];
+  }
+
+  /// Typing filters after a short pause, so each keystroke doesn't re-filter
+  /// and rebuild the list while the user is still typing.
+  void _onQueryChanged(String value) {
+    _searchTimer?.cancel();
+    void apply() {
+      if (!mounted) return;
+      setState(() {
+        _query = value;
+        _resetPaging();
+      });
+    }
+
+    if (value.isEmpty) {
+      apply();
+    } else {
+      _searchTimer = Timer(const Duration(milliseconds: 160), apply);
+    }
+  }
 
   @override
   void initState() {
@@ -50,6 +95,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
   @override
   void dispose() {
     _pageTimer?.cancel();
+    _searchTimer?.cancel();
     _scroll.dispose();
     _searchController.dispose();
     super.dispose();
@@ -113,13 +159,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
             );
           }
 
-          final query = _query.trim().toLowerCase();
-          final filtered = allTransactions.where((t) {
-            if (query.isNotEmpty && !t.merchant.toLowerCase().contains(query)) {
-              return false;
-            }
-            return _filters.matches(t);
-          }).toList();
+          final filtered = _filteredFor(allTransactions);
 
           final shown = filtered.length < _visible ? filtered.length : _visible;
           final hasMore = shown < filtered.length;
@@ -135,10 +175,7 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
                   controller: _searchController,
                   filters: _filters,
                   categoriesById: categoriesById,
-                  onQueryChanged: (v) => setState(() {
-                    _query = v;
-                    _resetPaging();
-                  }),
+                  onQueryChanged: _onQueryChanged,
                   onOpenFilters: () => _openFilters(categories),
                   onClearCategory: () => setState(() {
                     _filters = _filters.copyWith(clearCategory: true);

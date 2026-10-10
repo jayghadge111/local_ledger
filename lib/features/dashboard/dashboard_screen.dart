@@ -1,4 +1,5 @@
 import '../../shared/widgets/shimmer.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,11 +13,11 @@ import '../../shared/widgets/greeting_header.dart';
 import '../../shared/widgets/placeholder_body.dart';
 import '../update/update_banner.dart';
 import 'dashboard_month.dart';
+import 'dashboard_summary.dart';
 import 'expense_detail_screen.dart';
 import 'widgets/home_budgets_card.dart';
 import 'widgets/month_selector.dart';
 import 'widgets/category_donut_chart.dart';
-import 'widgets/chart_buckets.dart';
 import 'widgets/spend_bar_chart.dart';
 import 'widgets/budget_review_card.dart';
 
@@ -56,52 +57,15 @@ class DashboardScreen extends ConsumerWidget {
           );
         }
 
+        final summary = ref.watch(dashboardSummaryProvider(month));
+        final spent = summary.spentMinor;
+        final received = summary.receivedMinor;
+        final categorySlices = summary.slices;
+        final buckets = summary.buckets;
+        final hasTrendData = summary.hasTrendData;
         final categoriesById = {
           for (final c in categoriesAsync.value ?? <Category>[]) c.id: c,
         };
-
-        final thisMonth = analytics
-            .where(
-              (t) => t.date.year == month.year && t.date.month == month.month,
-            )
-            .toList();
-        final spent = thisMonth
-            .where((t) => t.type == 'debit')
-            .fold<int>(0, (sum, t) => sum + t.amountMinor);
-        final received = thisMonth
-            .where((t) => t.type == 'credit')
-            .fold<int>(0, (sum, t) => sum + t.amountMinor);
-
-        final byCategory = <String, int>{};
-        for (final t in thisMonth.where((t) => t.type == 'debit')) {
-          byCategory.update(
-            t.categoryId ?? 'cat_other',
-            (v) => v + t.amountMinor,
-            ifAbsent: () => t.amountMinor,
-          );
-        }
-        final topCategories = byCategory.entries.toList()
-          ..sort((a, b) => b.value.compareTo(a.value));
-        final categorySlices = [
-          for (final entry in topCategories.take(5))
-            CategorySlice(
-              label: categoriesById[entry.key]?.name ?? 'Uncategorized',
-              iconKey: categoriesById[entry.key]?.icon,
-              amountMinor: entry.value,
-              fraction: spent == 0 ? 0 : entry.value / spent,
-            ),
-        ];
-
-        // The trend ends at the month on screen (its last day for a past month).
-        final anchor = isCurrentMonth(month)
-            ? DateTime.now()
-            : DateTime(month.year, month.month + 1, 0);
-        final buckets = buildExpenseBuckets(
-          analytics,
-          DateRangeFilter.sixMonths,
-          anchor,
-        );
-        final hasTrendData = buckets.any((b) => b.amountMinor > 0);
 
         return ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),

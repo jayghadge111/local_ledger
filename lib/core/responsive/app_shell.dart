@@ -202,22 +202,13 @@ class _AppShellState extends ConsumerState<AppShell>
               children: [
                 const SyncBanner(),
                 Expanded(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 280),
-                    transitionBuilder: (child, animation) => FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0, 0.02),
-                          end: Offset.zero,
-                        ).animate(animation),
-                        child: child,
-                      ),
-                    ),
-                    child: KeyedSubtree(
-                      key: ValueKey(_selectedIndex),
-                      child: _screens[_selectedIndex],
-                    ),
+                  // Only the visible tab exists. A cross-fade (AnimatedSwitcher)
+                  // kept the old and the new screen both built and both
+                  // composited for the whole transition; this swaps at once
+                  // and fades the new one in.
+                  child: _TabFade(
+                    key: ValueKey(_selectedIndex),
+                    child: _screens[_selectedIndex],
                   ),
                 ),
               ],
@@ -227,4 +218,45 @@ class _AppShellState extends ConsumerState<AppShell>
       ),
     );
   }
+}
+
+/// Fades its [child] in once, quickly. Placed under a key per tab so each tab
+/// change starts a new fade.
+class _TabFade extends StatefulWidget {
+  const _TabFade({super.key, required this.child});
+  final Widget child;
+
+  @override
+  State<_TabFade> createState() => _TabFadeState();
+}
+
+class _TabFadeState extends State<_TabFade>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 160),
+  );
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _controller.value = 1;
+    } else {
+      _controller.forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) =>
+      FadeTransition(opacity: _controller, child: widget.child);
 }

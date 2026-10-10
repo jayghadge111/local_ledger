@@ -1,4 +1,5 @@
 import '../../../core/money_format.dart';
+
 import 'package:flutter/material.dart';
 
 import 'chart_buckets.dart';
@@ -28,9 +29,7 @@ class SpendBarChart extends StatelessWidget {
         ? 0
         : buckets.fold<int>(0, (sum, b) => sum + b.amountMinor) ~/
               buckets.length;
-    final amountFormatter = appCurrency(symbol: '₹',
-      decimalDigits: 0,
-    );
+    final amountFormatter = appCurrency(symbol: '₹', decimalDigits: 0);
     final lineFraction = maxAmount == 0
         ? null
         : (average / maxAmount).clamp(0.0, 1.0);
@@ -44,21 +43,25 @@ class SpendBarChart extends StatelessWidget {
             fit: StackFit.expand,
             clipBehavior: Clip.none,
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  for (final bucket in buckets)
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: _Bar(
-                          bucket: bucket,
-                          maxAmount: maxAmount,
-                          theme: theme,
+              // The bars animate on their own layer, so growing them does not
+              // repaint the rest of the page.
+              RepaintBoundary(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    for (final bucket in buckets)
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: _Bar(
+                            bucket: bucket,
+                            maxAmount: maxAmount,
+                            theme: theme,
+                          ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
               // Painted after the bars so the dashed average line and its
               // label stay visible even when a bar is tall enough to reach
@@ -142,7 +145,9 @@ class _BarState extends State<_Bar> {
         : bucket.amountMinor / widget.maxAmount;
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: fraction.clamp(0.02, 1.0)),
-      duration: Duration(milliseconds: _updated ? 220 : 700),
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : Duration(milliseconds: _updated ? 220 : 700),
       curve: Curves.easeOutCubic,
       builder: (context, value, _) {
         return FractionallySizedBox(

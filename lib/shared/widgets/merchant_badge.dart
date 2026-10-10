@@ -39,11 +39,28 @@ class MerchantBadgeData {
 /// Instamart before Swiggy, Amazon Pay and Prime Video before Amazon) — the
 /// first match wins. Logos are bundled with the app; nothing is fetched.
 BrandRule? brandFor(String merchantName) {
-  for (final brand in ParserRules.current.brands) {
-    if (brand.regex.hasMatch(merchantName)) return brand;
+  final rules = ParserRules.current;
+  // Every row of a list asks this on every build, and an unrecognised name
+  // means trying every brand's pattern, so the answer is remembered. It is
+  // dropped when a new rule set comes into force.
+  if (!identical(_brandCacheRules, rules)) {
+    _brandCache.clear();
+    _brandCacheRules = rules;
   }
-  return null;
+  if (_brandCache.containsKey(merchantName)) return _brandCache[merchantName];
+  BrandRule? found;
+  for (final brand in rules.brands) {
+    if (brand.regex.hasMatch(merchantName)) {
+      found = brand;
+      break;
+    }
+  }
+  if (_brandCache.length > 4000) _brandCache.clear();
+  return _brandCache[merchantName] = found;
 }
+
+final _brandCache = <String, BrandRule?>{};
+Object? _brandCacheRules;
 
 /// Badge for [merchantName] (e.g. "Swiggy Instamart" → Swiggy's logo on its
 /// orange). Null for anything unrecognised, so callers can fall back to the

@@ -1,4 +1,5 @@
 import '../../../core/money_format.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -10,6 +11,22 @@ import '../transaction_title.dart';
 import '../../../shared/widgets/flag_chip.dart';
 import '../../../shared/widgets/glass_surface.dart';
 import '../../../shared/widgets/merchant_avatar.dart';
+
+final _tileDate = DateFormat.yMMMd();
+
+/// A list of splits compared by its contents, so `select` can tell a row's
+/// splits really changed (a plain list compares by identity).
+class _SharesValue {
+  const _SharesValue(this.items);
+  final List<SplitShare> items;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _SharesValue && listEquals(items, other.items);
+
+  @override
+  int get hashCode => Object.hashAll(items);
+}
 
 class TransactionTile extends ConsumerWidget {
   const TransactionTile({
@@ -26,10 +43,19 @@ class TransactionTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final account = ref.watch(accountsByIdProvider)[transaction.accountId];
+    // Watch only this row's own account and splits: a change to some other
+    // transaction's split must not rebuild every row in the list.
+    final account = ref.watch(
+      accountsByIdProvider.select((m) => m[transaction.accountId]),
+    );
     final cardLabel = _cardChipLabel(account);
-    final shares =
-        ref.watch(splitsByTxnProvider)[transaction.id] ?? const <SplitShare>[];
+    final shares = ref
+        .watch(
+          splitsByTxnProvider.select(
+            (m) => _SharesValue(m[transaction.id] ?? const <SplitShare>[]),
+          ),
+        )
+        .items;
     final hasSplit = shares.isNotEmpty && transaction.type == 'debit';
     final isCredit = transaction.type == 'credit';
     final isTransfer = transaction.kind == 'transfer';
@@ -72,7 +98,7 @@ class TransactionTile extends ConsumerWidget {
                   children: [
                     Flexible(
                       child: Text(
-                        '${isTransfer || isCardPayment ? 'Not counted' : (category?.name ?? 'Uncategorized')} · ${DateFormat.yMMMd().format(transaction.date)}',
+                        '${isTransfer || isCardPayment ? 'Not counted' : (category?.name ?? 'Uncategorized')} · ${_tileDate.format(transaction.date)}',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),

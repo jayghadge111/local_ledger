@@ -45,7 +45,9 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
     );
 
     _controller.forward();
-    Future.delayed(const Duration(milliseconds: 1600), _navigateNext);
+    // Long enough for the logo and name to settle (the animation is 900 ms),
+    // short enough that nobody feels they are waiting for the app.
+    Future.delayed(const Duration(milliseconds: 1000), _navigateNext);
   }
 
   Future<void> _navigateNext() async {

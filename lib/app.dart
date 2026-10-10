@@ -8,6 +8,11 @@ import 'core/theme/app_theme.dart';
 import 'core/theme/theme_mode_provider.dart';
 import 'core/ui/root_messenger.dart';
 
+// Built once: ThemeData is large, and constructing both on every rebuild of
+// the app root (a theme-mode change) is wasted work.
+final _lightTheme = AppTheme.light();
+final _darkTheme = AppTheme.dark();
+
 class TrueLedgerApp extends ConsumerWidget {
   const TrueLedgerApp({super.key});
 
@@ -18,8 +23,8 @@ class TrueLedgerApp extends ConsumerWidget {
     return MaterialApp.router(
       title: kAppName,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(),
-      darkTheme: AppTheme.dark(),
+      theme: _lightTheme,
+      darkTheme: _darkTheme,
       themeMode: themeMode,
       scaffoldMessengerKey: rootMessengerKey,
       routerConfig: appRouter,

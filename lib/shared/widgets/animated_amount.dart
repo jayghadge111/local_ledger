@@ -30,7 +30,9 @@ class _AnimatedAmountState extends State<AnimatedAmount> {
     final formatter = appCurrency(symbol: '₹', decimalDigits: 0);
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: widget.amountMinor / 100),
-      duration: Duration(milliseconds: _updated ? 220 : 900),
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : Duration(milliseconds: _updated ? 220 : 900),
       curve: Curves.easeOutCubic,
       builder: (context, value, _) {
         return Text(formatter.format(value), style: widget.style);

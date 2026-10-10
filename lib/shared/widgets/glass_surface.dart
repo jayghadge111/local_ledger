@@ -54,6 +54,10 @@ class _GlassCardState extends State<GlassCard> {
       child: widget.child,
     );
 
+    // Most cards are plain containers; only a tappable one needs the press
+    // animation (and the extra layer it brings).
+    if (widget.onTap == null) return content;
+
     final animated = AnimatedScale(
       scale: _pressed ? 0.97 : 1,
       duration: const Duration(milliseconds: 120),
@@ -61,7 +65,6 @@ class _GlassCardState extends State<GlassCard> {
       child: content,
     );
 
-    if (widget.onTap == null) return animated;
     // A tappable card is one control for TalkBack: it reads everything on the
     // card together ("Swiggy, Oct 5, minus ₹450") and says it is a button,
     // instead of leaving an unlabeled tap target next to loose text.

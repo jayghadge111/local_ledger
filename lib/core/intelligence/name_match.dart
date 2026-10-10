@@ -24,7 +24,16 @@ List<String> nameWords(String name) {
 
 enum _Hit { none, initial, full }
 
-_Hit _wordMatch(String a, String b) {
+/// How [a] and [b] relate as words. [aIsLast] / [bIsLast] say whether each is
+/// the final word of its name: a bank cuts a long name off at a fixed length
+/// ("JAYESH BHIKA GHA" for Ghadge), so only the last word can be a stub, and
+/// that is the one place a short prefix is trusted.
+_Hit _wordMatch(
+  String a,
+  String b, {
+  bool aIsLast = false,
+  bool bIsLast = false,
+}) {
   if (a == b) return _Hit.full;
   // "B" for Bhika.
   if (a.length == 1 && b.startsWith(a)) return _Hit.initial;
@@ -33,6 +42,12 @@ _Hit _wordMatch(String a, String b) {
   final shorter = a.length < b.length ? a : b;
   final longer = a.length < b.length ? b : a;
   if (shorter.length >= 4 && longer.startsWith(shorter)) return _Hit.full;
+  // A stub of two or three letters, but only as the final word, and it never
+  // counts as a full agreement (two whole words must still match).
+  final shorterIsLast = identical(shorter, a) ? aIsLast : bIsLast;
+  if (shorterIsLast && shorter.length >= 2 && longer.startsWith(shorter)) {
+    return _Hit.initial;
+  }
   return _Hit.none;
 }
 
@@ -42,11 +57,17 @@ _Hit _wordMatch(String a, String b) {
 int? _fullHitsIfAllCovered(List<String> small, List<String> large) {
   final taken = <int>{};
   var full = 0;
-  for (final word in small) {
+  for (var w = 0; w < small.length; w++) {
+    final word = small[w];
     var found = false;
     for (var i = 0; i < large.length; i++) {
       if (taken.contains(i)) continue;
-      final hit = _wordMatch(word, large[i]);
+      final hit = _wordMatch(
+        word,
+        large[i],
+        aIsLast: w == small.length - 1,
+        bIsLast: i == large.length - 1,
+      );
       if (hit == _Hit.none) continue;
       taken.add(i);
       if (hit == _Hit.full) full++;

@@ -62,17 +62,21 @@ class CategoryDonutChart extends StatelessWidget {
             child: Stack(
               alignment: Alignment.center,
               children: [
-                TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: 1),
-                  duration: const Duration(milliseconds: 800),
-                  curve: Curves.easeOutCubic,
-                  builder: (context, value, _) => CustomPaint(
-                    size: const Size(168, 168),
-                    painter: _DonutPainter(
-                      fractions: [for (final s in slices) s.fraction],
-                      colors: shades,
-                      progress: value,
-                      trackColor: theme.colorScheme.outlineVariant,
+                RepaintBoundary(
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: 1),
+                    duration: MediaQuery.disableAnimationsOf(context)
+                        ? Duration.zero
+                        : const Duration(milliseconds: 800),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, _) => CustomPaint(
+                      size: const Size(168, 168),
+                      painter: _DonutPainter(
+                        fractions: [for (final s in slices) s.fraction],
+                        colors: shades,
+                        progress: value,
+                        trackColor: theme.colorScheme.outlineVariant,
+                      ),
                     ),
                   ),
                 ),

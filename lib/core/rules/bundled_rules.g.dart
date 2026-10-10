@@ -5,7 +5,7 @@
 const kBundledRulesJson = r'''{
   "format": "nativespend-rules",
   "schemaVersion": 1,
-  "packVersion": 1,
+  "packVersion": 2,
   "minAppVersion": "1.0.0",
   "publishedAt": "2026-10-03T00:00:00Z",
   "enabled": true,
@@ -269,7 +269,7 @@ const kBundledRulesJson = r'''{
         "jiohotstar", "disney", "amazon prime", "apple music", "apple tv", "youtube music", "audible",
         "pvr inox", "sony liv", "netflix", "spotify", "hotstar", "primevideo", "prime video",
         "youtube", "bookmyshow", "pvr", "inox", "sonyliv", "zee5", "jiocinema", "gaana", "steam",
-        "playstation", "xbox", "google play", "cinema", "movies", "gaming"
+        "playstation", "xbox", "cinema", "movies", "gaming"
       ]
     },
     {
@@ -285,7 +285,7 @@ const kBundledRulesJson = r'''{
     {
       "category": "cat_investment",
       "words": [
-        "kuvera", "indmoney", "paytm money", "smallcase", "coin by zerodha", "sip", "mutual fund",
+        "cred gold", "credgold", "kuvera", "indmoney", "paytm money", "smallcase", "coin by zerodha", "sip", "mutual fund",
         "mutual funds", "zerodha", "groww", "kuvera", "upstox", "indmoney", "smallcase", "paytm money",
         "coin by zerodha", "icclgrowth", "indian clearing", "nse clearing", "bse star", "bsestar",
         "nps", "ppf", "national pension", "demat", "stock", "stocks", "securities", "wealth",
@@ -304,7 +304,7 @@ const kBundledRulesJson = r'''{
       "words": [
         "jio", "vi prepaid", "vi postpaid", "vi recharge", "vodafone", "vodafone idea", "tata play",
         "tataplay", "tata sky", "dish tv", "dishtv", "act fibernet", "hathway", "tata power",
-        "adani electricity", "cred", "bescom", "mseb", "tneb", "electricity", "airtel", "jio",
+        "adani electricity", "google play", "googleplay", "cred", "bescom", "mseb", "tneb", "electricity", "airtel", "jio",
         "vodafone", "bsnl", "recharge", "broadband", "fibernet", "postpaid", "prepaid recharge", "dth",
         "tata play", "tatasky", "gas", "water bill", "insurance", "lic", "bill", "utility",
         "municipal", "rent", "maintenance", "society"
@@ -357,6 +357,8 @@ const kBundledRulesJson = r'''{
     {"match": "youtube", "name": "YouTube"},
     {"match": "google play", "name": "Google Play"},
     {"match": "googleplay", "name": "Google Play"},
+    {"match": "cred gold", "name": "CRED Gold"},
+    {"match": "credgold", "name": "CRED Gold"},
     {"match": "apple.com/bill", "name": "Apple"},
     {"match": "apple", "name": "Apple"},
     {"match": "jio", "name": "Jio"},
@@ -1890,7 +1892,7 @@ const kBundledRulesJson = r'''{
   "parser": {
     "vars": {
       "currencyCodes": "usd|sar|eur|gbp|aed|sgd|aud|cad|jpy|cny|thb|myr|chf|qar|kwd|bhd|omr|hkd|nzd|idr|lkr|npr",
-      "nameEnd": "(?:\\s+on\\b|\\s+ref(?:no)?\\b|\\s+upi\\b|\\s+from\\b|\\s+via\\b|\\s+using\\b|\\s+avl\\b|\\s+bal\\b|\\s+utr\\b|\\s*\\(|\\.\\s|\\.$|,|$)",
+      "nameEnd": "(?:\\s+on\\b|\\s+ref(?:no)?\\b|\\s+upi\\b|\\s+from\\b|\\s+via\\b|\\s+using\\b|\\s+avl\\b|\\s+bal\\b|\\s+utr\\b|\\s+\\d{1,2}[-/]\\d{1,2}[-/]\\d{2,4}\\b|\\s*\\(|\\.\\s|\\.$|,|$)",
       "fieldLabels": "(?:upi\\s+ref(?:erence)?(?:\\.?\\s*no\\.?)?|from\\s+vpa|payer\\s+name|to\\s+vpa|payee\\s+name|currency|amount|remarks|transaction\\s+(?:date|status|type|id)|reason\\s+for\\s+failure|beneficiary|remitter)"
     },
     "senderCode": {
@@ -1949,11 +1951,11 @@ const kBundledRulesJson = r'''{
       "flags": "i"
     },
     "genericPhrase": {
-      "pattern": "^(?:all|any|every|this|that|these|those|no|our|us|you|me)\\b|\\btimes?$|\\bconvenience$|\\bearliest$|\\bbank(?: ltd\\.?| limited)?$",
+      "pattern": "^(?:all|any|every|this|that|these|those|no|our|us|you|me)\\b|\\btimes?$|\\bconvenience$|\\bearliest$|\\bbank(?: ltd\\.?| limited)?$|^(?:check|view|login|log in|visit|know)\\b|\\bbalance$|^the\\s+\\S+\\s+(?:mobile\\s+)?app(?:lication)?$",
       "flags": "i"
     },
     "refundWords": {
-      "pattern": "\\b(refund(?:ed)?|revers(?:ed|al)|cancell?ed|returned|chargeback)\\b",
+      "pattern": "\\b(refund(?:ed)?|refun|revers(?:ed|al)|cancell?ed|returned|chargeback)\\b",
       "flags": "i"
     },
     "forexWords": {
@@ -2009,6 +2011,10 @@ const kBundledRulesJson = r'''{
       "flags": "i"
     },
     "merchantPatterns": [
+      {
+        "pattern": "\\b(?:payment|charge|debit|subscription|mandate)s?\\s+(?:of\\s+(?:rs\\.?|inr|₹)\\s*[\\d,]+(?:\\.\\d+)?\\s+)?for\\s+([A-Za-z][A-Za-z0-9 .&'\\-]{1,40}?)\\s+(?:has|have|was|is)\\s+(?:been\\s+)?(?:processed|debited|charged|successful|completed|done)\\b",
+        "flags": "i"
+      },
       {
         "pattern": "\\b(?:sender|remitter)(?:\\s+name)?\\s*[:\\-]\\s*([A-Za-z][A-Za-z .'\\-]{1,50}?)(?=\\s*\\(|\\s+(?:vpa|upi|ref|utr|c\\.)\\b|\\s*[,;]|\\.\\s|\\.$|$)",
         "flags": "i"
@@ -2265,6 +2271,14 @@ const kBundledRulesJson = r'''{
     }
   },
   "canaries": [
+    {
+      "text": "Dear Customer, recurring payment of Rs. 299.00 for Google Play has been processed on your Standard Chartered Bank Card XXXXXXXXXXXX9706 on 03/10/2026. Manage your recurring payment with ID YAog8xtibf via https://www.sihub.in/managesi/scb. T&C apply",
+      "expect": {"type": "debit", "amountMinor": 29900, "merchantContains": "google play"}
+    },
+    {
+      "text": "UPI Mandate:\nSent Rs.50.00\nfrom HDFC Bank A/c 0715\nTo CRED GOLD\n10/10/26\nRef 628312340810\nNot You? Call 18002586161/SMS BLOCK UPI to 7308080808",
+      "expect": {"type": "debit", "amountMinor": 5000, "merchantContains": "cred"}
+    },
     {
       "text": "Sent Rs.500.00\nFrom HDFC Bank A/c *1234\nTo SUNRISE CAFE\nOn 02/10/26\nRef 600000000001\nNot You? Call 18002586161/SMS BLOCK UPI to 7308080808",
       "expect": {

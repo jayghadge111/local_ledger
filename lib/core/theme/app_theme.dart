@@ -1,15 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
-/// Placeholder brand font — swap the font passed to `GoogleFonts.x()` here
-/// to change the whole app's typography later. Deliberately not Roboto
-/// (the Flutter/Material default).
-///
-/// Applied via `fontFamily`/`fontFamilyFallback` rather than
-/// `GoogleFonts.xTextTheme()` because the latter now returns a `TextTheme`
-/// from the `material_ui` package, which isn't assignable to Flutter SDK's
-/// own `ThemeData.textTheme`.
-final _brandFont = GoogleFonts.nunito();
+/// The brand font, bundled with the app (`assets/fonts/`, declared in
+/// pubspec.yaml; Nunito, SIL Open Font License). Nothing is downloaded at
+/// runtime, so text is right on the very first frame and works offline.
+const _brandFontFamily = 'Nunito';
 
 /// Colours for charts and progress bars (sky blue tones on navy / ice).
 class ChartColors extends ThemeExtension<ChartColors> {
@@ -206,8 +200,7 @@ class AppTheme {
           softText: t.chartSoftText,
         ),
       ],
-      fontFamily: _brandFont.fontFamily,
-      fontFamilyFallback: _brandFont.fontFamilyFallback,
+      fontFamily: _brandFontFamily,
       scaffoldBackgroundColor: pageColor,
       splashFactory: InkSparkle.splashFactory,
       pageTransitionsTheme: const PageTransitionsTheme(

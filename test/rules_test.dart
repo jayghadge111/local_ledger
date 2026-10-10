@@ -50,8 +50,8 @@ void main() {
           ]),
         );
         expect(r.brands.length, 124);
-        expect(r.aliases.length, 42);
-        expect(r.parser.merchantPatterns.length, 8);
+        expect(r.aliases.length, 44);
+        expect(r.parser.merchantPatterns.length, 9);
       },
     );
 
