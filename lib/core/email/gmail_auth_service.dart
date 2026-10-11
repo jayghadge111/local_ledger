@@ -67,19 +67,41 @@ class GmailAuthService {
     return GoogleSignIn.instance.attemptLightweightAuthentication();
   }
 
-  /// Bearer-token header for direct Gmail REST calls, re-prompting for
-  /// consent if needed.
+  /// Gmail request headers for a scan nobody asked for: taken from what
+  /// Google already holds on this device, and nothing else.
   ///
-  /// With [interactive] false it never shows anything: if consent would be
-  /// needed it throws [GmailAccessException] instead, so a scan the user did
-  /// not ask for can't pop up a Google screen.
-  Future<Map<String, String>> authHeaders(
-    GoogleSignInAccount account, {
-    bool interactive = true,
-  }) async {
+  /// This must never show anything. `attemptLightweightAuthentication` can't
+  /// promise that on Android (it may open Google's account sheet), so there the
+  /// saved authorization is read directly; on iOS restoring the previous
+  /// sign-in is silent. Returns null when no usable authorization is saved
+  /// (access removed, expired, never granted) — the caller then asks the user
+  /// to reconnect, from a tap, instead.
+  Future<Map<String, String>?> silentAuthHeaders() async {
+    await _ensureInitialized();
+    try {
+      if (Platform.isIOS) {
+        final account = await GoogleSignIn.instance
+            .attemptLightweightAuthentication();
+        if (account == null) return null;
+        return await account.authorizationClient.authorizationHeaders(
+          scopes,
+          promptIfNecessary: false,
+        );
+      }
+      return await GoogleSignIn.instance.authorizationClient
+          .authorizationHeaders(scopes, promptIfNecessary: false);
+    } on GoogleSignInException {
+      return null;
+    }
+  }
+
+  /// Bearer-token header for direct Gmail REST calls, re-prompting for
+  /// consent if needed. Only for scans the user started: the app-open
+  /// catch-up uses [silentAuthHeaders] instead.
+  Future<Map<String, String>> authHeaders(GoogleSignInAccount account) async {
     final headers = await account.authorizationClient.authorizationHeaders(
       scopes,
-      promptIfNecessary: interactive,
+      promptIfNecessary: true,
     );
     if (headers == null) {
       throw const GmailAccessException('authorization was not granted');

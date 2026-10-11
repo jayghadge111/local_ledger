@@ -140,6 +140,17 @@ String _dueNotices(int n) => n > 0
     ? ' $n auto-debit notice${n == 1 ? '' : 's'} saved under Auto-pay & dues.'
     : '';
 
+const _gmailReconnectText =
+    'Gmail sync failed — please reconnect Gmail in Settings.';
+
+const _gmailReconnectJob = SyncJob(
+  status: SyncStatus.failed,
+  needsReconnect: true,
+  message:
+      'Gmail sync failed. Google needs you to connect Gmail again before new '
+      'emails can be checked. What was already read is saved.',
+);
+
 String describeGmailResult(EmailImportResult r) {
   if (r.cancelled) return _stoppedText(r.imported);
   if (r.imported > 0) {
@@ -462,9 +473,15 @@ class SyncController extends Notifier<SyncState> {
               ),
             ),
           );
-      if (result == null || result.cancelled) {
-        // Nothing was done (no saved sign-in, or the user stopped it): put
-        // back whatever the card was showing.
+      if (result == null) {
+        // The account was connected, but Google no longer hands out access
+        // without asking. Never ask from here — say what to do instead.
+        _setGmail(_gmailReconnectJob);
+        showRootSnackBar(_gmailReconnectText);
+        return;
+      }
+      if (result.cancelled) {
+        // The user stopped it: put back whatever the card was showing.
         _setGmail(before);
         return;
       }
@@ -482,16 +499,9 @@ class SyncController extends Notifier<SyncState> {
         showRootSnackBar('From Gmail: ${parts.join(' · ')}');
       }
     } on GmailAccessException {
-      // Google wants the user to approve again. Say so on the Gmail card,
-      // quietly: nobody asked for this scan, so no pop-up and no snackbar.
-      _setGmail(
-        const SyncJob(
-          status: SyncStatus.failed,
-          needsReconnect: true,
-          message:
-              'Google needs you to sign in to Gmail again before new emails can be checked.',
-        ),
-      );
+      // Google wants the user to approve again: same answer, no pop-up.
+      _setGmail(_gmailReconnectJob);
+      showRootSnackBar(_gmailReconnectText);
     } catch (e, stack) {
       // Offline blip, Gmail hiccup: leave no trace on screen; try again later.
       DiagnosticLog.instance.record('gmail', e, stack, 'checking Gmail quietly');

@@ -8,7 +8,10 @@ import 'package:local_ledger/core/db/settings_repository.dart';
 import 'package:local_ledger/core/email/email_providers.dart';
 import 'package:local_ledger/core/email/gmail_auth_service.dart';
 import 'package:local_ledger/core/email/gmail_import_service.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:local_ledger/core/import_progress.dart';
+import 'package:local_ledger/core/ingest/transaction_ingestor.dart';
+import 'package:local_ledger/core/security/encryption_service.dart';
 import 'package:local_ledger/core/sync/connectivity.dart';
 import 'package:local_ledger/core/sync/import_checkpoints.dart';
 import 'package:local_ledger/core/sync/sync_controller.dart';
@@ -39,7 +42,71 @@ class _FakeGmail implements GmailImportService {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// A Google sign-in that records what the app asked of it.
+class _SpyAuth extends GmailAuthService {
+  final calls = <String>[];
+  Map<String, String>? headers;
+
+  @override
+  Future<Map<String, String>?> silentAuthHeaders() async {
+    calls.add('silentAuthHeaders');
+    return headers;
+  }
+
+  @override
+  Future<GoogleSignInAccount?> currentAccount() async {
+    calls.add('currentAccount');
+    return null;
+  }
+
+  @override
+  Future<GoogleSignInAccount> signIn() async {
+    calls.add('signIn');
+    throw StateError('must not sign in');
+  }
+
+  @override
+  Future<GoogleSignInAccount> signInFresh() async {
+    calls.add('signInFresh');
+    throw StateError('must not sign in');
+  }
+
+  @override
+  Future<Map<String, String>> authHeaders(GoogleSignInAccount account) async {
+    calls.add('authHeaders');
+    throw StateError('must not prompt');
+  }
+}
+
+class _Enc extends EncryptionService {
+  @override
+  Future<String> encryptString(String p) async => 'enc:$p';
+  @override
+  Future<String> decryptString(String e) async => e.substring(4);
+}
+
 void main() {
+  test(
+    'the quiet scan asks Google for nothing but what is already saved',
+    () async {
+      final db = AppDatabase.forTesting(NativeDatabase.memory());
+      addTearDown(db.close);
+      final auth = _SpyAuth();
+      final service = GmailImportService(
+        TransactionIngestor(db, _Enc()),
+        auth,
+        SettingsRepository(db),
+      );
+
+      final result = await service.importSince(DateTime.now());
+
+      expect(result, isNull);
+      // One question, answered silently: no sign-in, no account lookup, no
+      // consent prompt.
+      expect(auth.calls, ['silentAuthHeaders']);
+    },
+  );
+
   late AppDatabase db;
   late _FakeGmail gmail;
   late ProviderContainer container;
@@ -191,30 +258,34 @@ void main() {
       expect(find.text('From Gmail: 2 new transactions'), findsOneWidget);
     });
 
-    test(
-      'leaves the Gmail card as it was when it could not sign in quietly',
-      () async {
-        await connect();
-        gmail.nothing = true;
-        await controller().syncGmailIfDue();
-        expect(
-          container.read(syncControllerProvider).gmail.status,
-          SyncStatus.idle,
+    for (final (name, arrange) in <(String, void Function(_FakeGmail))>[
+      ('no saved access is left', (g) => g.nothing = true),
+      (
+        'Google refuses the saved access mid-scan',
+        (g) => g.error = const GmailAccessException('401'),
+      ),
+    ]) {
+      testWidgets('says to reconnect in a snackbar when $name', (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            scaffoldMessengerKey: rootMessengerKey,
+            home: const Scaffold(body: SizedBox()),
+          ),
         );
-      },
-    );
+        await tester.runAsync(connect);
+        arrange(gmail);
+        await tester.runAsync(controller().syncGmailIfDue);
+        await tester.pump();
 
-    test(
-      'asks to reconnect, without a pop-up, when Google wants consent again',
-      () async {
-        await connect();
-        gmail.error = const GmailAccessException('401');
-        await controller().syncGmailIfDue();
+        expect(
+          find.text('Gmail sync failed — please reconnect Gmail in Settings.'),
+          findsOneWidget,
+        );
         final job = container.read(syncControllerProvider).gmail;
         expect(job.failed, isTrue);
         expect(job.needsReconnect, isTrue);
-      },
-    );
+      });
+    }
 
     test('a hiccup leaves no trace and is not retried at once', () async {
       await connect();

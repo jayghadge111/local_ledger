@@ -79,16 +79,26 @@ class GmailImportService {
     /// Only mail from about this time on (a catch-up), not the whole window.
     DateTime? since,
 
-    /// A scan the user didn't ask for: shows no Google screen, and keeps no
-    /// checkpoint (it is short, and not worth a "resume" card).
-    bool quiet = false,
+    /// A scan the user didn't ask for: it is given the headers Google already
+    /// holds ([silentHeaders]) and never signs in or asks for consent, and it
+    /// keeps no checkpoint (it is short, and not worth a "resume" card).
+    Map<String, String>? silentHeaders,
   }) async {
+    final quiet = silentHeaders != null;
     onProgress?.call(
-      ImportProgress(quiet ? 'Checking for new bank emails…' : 'Signing in to Google…'),
+      ImportProgress(
+        quiet ? 'Checking for new bank emails…' : 'Signing in to Google…',
+      ),
     );
-    final signedIn =
-        account ?? await _auth.currentAccount() ?? await _auth.signIn();
-    var headers = await _auth.authHeaders(signedIn, interactive: !quiet);
+    GoogleSignInAccount? signedIn;
+    Map<String, String> headers;
+    if (silentHeaders != null) {
+      headers = silentHeaders;
+    } else {
+      signedIn =
+          account ?? await _auth.currentAccount() ?? await _auth.signIn();
+      headers = await _auth.authHeaders(signedIn);
+    }
 
     var cutoff = importCutoff();
     if (since != null) {
@@ -123,9 +133,10 @@ class GmailImportService {
       // A 401/403 right after sign-in usually means the token was issued
       // before the Gmail permission took effect: ask again, once, then retry.
       if ((listResponse.statusCode == 401 || listResponse.statusCode == 403) &&
-          !reauthorized) {
+          !reauthorized &&
+          signedIn != null) {
         reauthorized = true;
-        headers = await _auth.authHeaders(signedIn, interactive: !quiet);
+        headers = await _auth.authHeaders(signedIn);
         await Future<void>.delayed(const Duration(seconds: 2));
         listResponse = await http
             .get(listUri, headers: headers)
@@ -255,12 +266,11 @@ class GmailImportService {
     ImportProgressCallback? onProgress,
     ImportCancelToken? cancel,
   }) async {
-    final account = await _auth.currentAccount();
-    if (account == null) return null;
+    final headers = await _auth.silentAuthHeaders();
+    if (headers == null) return null;
     return importRecent(
-      account: account,
       since: since,
-      quiet: true,
+      silentHeaders: headers,
       onProgress: onProgress,
       cancel: cancel,
     );
