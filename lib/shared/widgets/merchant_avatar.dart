@@ -62,8 +62,10 @@ class MerchantAvatar extends StatelessWidget {
               // Decode at the size it is drawn (the files are up to 330px for
               // a 40px circle): less memory and no work spent on pixels that
               // are thrown away.
+              // (x1.5: the app can be drawn scaled up on a tablet.)
               cacheWidth:
-                  (radius * 2 * MediaQuery.devicePixelRatioOf(context)).ceil(),
+                  (radius * 2 * MediaQuery.devicePixelRatioOf(context) * 1.5)
+                      .ceil(),
               gaplessPlayback: true,
               errorBuilder: (_, _, _) => Center(
                 child: Text(

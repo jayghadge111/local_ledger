@@ -1,4 +1,5 @@
 import '../../core/money_format.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -67,9 +68,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       (m, d) => d.spentMinor > m ? d.spentMinor : m,
     );
     final cells = monthGrid(_month);
-    final money = appCurrency(symbol: '₹',
-      decimalDigits: 0,
-    );
+    final money = appCurrency(symbol: '₹', decimalDigits: 0);
 
     final dayList = _selected == null
         ? const <Transaction>[]

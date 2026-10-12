@@ -1,5 +1,6 @@
 import '../../core/ui/haptics.dart';
 import '../../core/ui/undo.dart';
+
 import 'package:flutter/material.dart';
 
 import '../../shared/widgets/centered_dialog_card.dart';
@@ -211,14 +212,11 @@ class _TransactionFormSheetState extends ConsumerState<TransactionFormSheet> {
   }
 
   Future<void> _save() async {
-
     final amountMinor = (double.parse(_amountController.text.trim()) * 100)
         .round();
     final repo = ref.read(transactionsRepositoryProvider);
     final messenger = ScaffoldMessenger.of(context);
-    final accountId = _paidInCash
-        ? await repo.cashAccountId()
-        : null;
+    final accountId = _paidInCash ? await repo.cashAccountId() : null;
 
     final merchantText = _merchantController.text.trim();
     final lending = ref.read(lendingRepositoryProvider);

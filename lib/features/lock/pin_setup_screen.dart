@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/db/settings_repository.dart';
 import '../../core/security/app_lock_providers.dart';
 import '../../shared/widgets/brand_mark.dart';
+import '../../core/responsive/adaptive_scale.dart';
 import '../../shared/widgets/glass_background.dart';
 import '../../shared/widgets/pin_pad.dart';
 
@@ -114,32 +115,37 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: GlassBackground(
-        child: SafeArea(
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const BrandMark(size: 72),
-                const SizedBox(height: 20),
-                Text(
-                  isConfirm ? 'Confirm your PIN' : 'Set a PIN to lock the app',
-                  style: theme.textTheme.titleLarge,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Used to unlock TrueLedger — never leaves this device',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+        maxContentWidth: kFocusedMaxWidth,
+        child: FocusedBoost(
+          child: SafeArea(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  BrandMark(size: 72 * focusedBoost(context)),
+                  const SizedBox(height: 20),
+                  Text(
+                    isConfirm
+                        ? 'Confirm your PIN'
+                        : 'Set a PIN to lock the app',
+                    style: theme.textTheme.titleLarge,
                   ),
-                ),
-                const SizedBox(height: 28),
-                PinPad(
-                  key: _padKey,
-                  length: 4,
-                  onSubmitted: _onSubmitted,
-                  errorText: _error,
-                ),
-              ],
+                  const SizedBox(height: 4),
+                  Text(
+                    'Used to unlock TrueLedger — never leaves this device',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  PinPad(
+                    key: _padKey,
+                    length: 4,
+                    onSubmitted: _onSubmitted,
+                    errorText: _error,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

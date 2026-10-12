@@ -1,4 +1,5 @@
 import '../../../core/money_format.dart';
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -48,9 +49,7 @@ class CategoryDonutChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final shades = _shadesFor(ChartColors.of(context));
-    final amountFormatter = appCurrency(symbol: '₹',
-      decimalDigits: 0,
-    );
+    final amountFormatter = appCurrency(symbol: '₹', decimalDigits: 0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

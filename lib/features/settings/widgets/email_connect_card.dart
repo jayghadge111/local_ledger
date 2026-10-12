@@ -199,8 +199,9 @@ class _EmailConnectCardState extends ConsumerState<EmailConnectCard> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: TextButton.icon(
-                  onPressed: () =>
-                      controller.startGmail(fresh: job.needsReconnect || !connected),
+                  onPressed: () => controller.startGmail(
+                    fresh: job.needsReconnect || !connected,
+                  ),
                   icon: Icon(
                     job.needsReconnect
                         ? Icons.link_rounded

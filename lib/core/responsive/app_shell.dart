@@ -3,6 +3,7 @@ import 'package:showcaseview/showcaseview.dart';
 import '../../features/intro/intro_providers.dart';
 import '../../features/intro/intro_showcase.dart';
 import '../rules/rules_providers.dart';
+import 'adaptive_scale.dart';
 import '../diagnostics/app_guard.dart';
 
 import 'package:flutter/material.dart';
@@ -83,6 +84,7 @@ class _AppShellState extends ConsumerState<AppShell>
 
   @override
   void dispose() {
+    adaptiveScaleSuspended.value = false;
     endIntroShowcase();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -185,6 +187,14 @@ class _AppShellState extends ConsumerState<AppShell>
         !_tourEnded &&
         _selectedIndex == 0 &&
         (ref.watch(introTourPendingProvider).value ?? false);
+    // The tour is drawn at normal size (see adaptiveScaleSuspended).
+    if (adaptiveScaleSuspended.value != showTour) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (adaptiveScaleSuspended.value != showTour) {
+          adaptiveScaleSuspended.value = showTour;
+        }
+      });
+    }
     if (showTour && !_tourStarted) {
       _tourStarted = true;
       // Let Home settle (and the icons wrap themselves) before it begins.
@@ -197,6 +207,9 @@ class _AppShellState extends ConsumerState<AppShell>
       });
     }
     return GlassBackground(
+      // Full width: the navigation rail sits at the window's edge. The page
+      // column in the body is limited instead (see `ContentWidth` below).
+      maxContentWidth: null,
       child: DisplayFeatureSubScreen(
         child: AdaptiveScaffold(
           selectedIndex: _selectedIndex,
@@ -207,20 +220,22 @@ class _AppShellState extends ConsumerState<AppShell>
             // Only the top inset: the nav bar/rail already sits flush with
             // the bottom edge and handles its own safe-area padding.
             bottom: false,
-            child: Column(
-              children: [
-                const SyncBanner(),
-                Expanded(
-                  // Only the visible tab exists. A cross-fade (AnimatedSwitcher)
-                  // kept the old and the new screen both built and both
-                  // composited for the whole transition; this swaps at once
-                  // and fades the new one in.
-                  child: _TabFade(
-                    key: ValueKey(_selectedIndex),
-                    child: _screens[_selectedIndex],
+            child: ContentWidth(
+              child: Column(
+                children: [
+                  const SyncBanner(),
+                  Expanded(
+                    // Only the visible tab exists. A cross-fade (AnimatedSwitcher)
+                    // kept the old and the new screen both built and both
+                    // composited for the whole transition; this swaps at once
+                    // and fades the new one in.
+                    child: _TabFade(
+                      key: ValueKey(_selectedIndex),
+                      child: _screens[_selectedIndex],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

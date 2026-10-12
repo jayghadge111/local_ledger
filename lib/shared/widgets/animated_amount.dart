@@ -1,4 +1,5 @@
 import '../../core/money_format.dart';
+
 import 'package:flutter/material.dart';
 
 /// Counts up from zero to the given rupee amount (stored as minor units) the

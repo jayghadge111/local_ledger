@@ -1,4 +1,5 @@
 import '../../core/money_format.dart';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -7,9 +8,7 @@ import '../../core/obligations/obligation_repository.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/glass_surface.dart';
 
-NumberFormat get _money => appCurrency(symbol: '₹',
-  decimalDigits: 0,
-);
+NumberFormat get _money => appCurrency(symbol: '₹', decimalDigits: 0);
 
 /// "Today", "Tomorrow", "In 5 days", "2 days ago".
 String dueLabel(DateTime due, DateTime now) {

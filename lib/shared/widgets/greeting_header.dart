@@ -173,12 +173,9 @@ class _AlertsBell extends ConsumerWidget {
       isLabelVisible: count > 0,
       label: Text(count > 9 ? '9+' : '$count'),
       child: IconButton(
-        tooltip: count > 0
-            ? 'Alerts, $count need attention'
-            : 'Alerts',
-        onPressed: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const AlertsPage()),
-        ),
+        tooltip: count > 0 ? 'Alerts, $count need attention' : 'Alerts',
+        onPressed: () => Navigator.of(context)
+            .push(MaterialPageRoute<void>(builder: (_) => const AlertsPage())),
         style: IconButton.styleFrom(
           side: BorderSide(color: theme.colorScheme.outlineVariant),
         ),

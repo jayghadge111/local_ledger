@@ -127,7 +127,9 @@ class _ShareMessageDialogState extends State<_ShareMessageDialog> {
             const SizedBox(height: 12),
             TextField(
               controller: _amount,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               decoration: const InputDecoration(
                 labelText: 'Amount (₹)',
                 border: OutlineInputBorder(),

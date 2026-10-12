@@ -1,4 +1,6 @@
+import '../../core/responsive/adaptive_scale.dart';
 import '../../core/ui/haptics.dart';
+
 import 'package:flutter/material.dart';
 
 /// A simple numeric PIN pad: dot indicators for entered digits plus a
@@ -42,6 +44,7 @@ class PinPadState extends State<PinPad> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final b = focusedBoost(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -52,9 +55,9 @@ class PinPadState extends State<PinPad> {
             return AnimatedContainer(
               duration: const Duration(milliseconds: 150),
               curve: Curves.easeOut,
-              margin: const EdgeInsets.symmetric(horizontal: 10),
-              width: filled ? 20 : 18,
-              height: filled ? 20 : 18,
+              margin: EdgeInsets.symmetric(horizontal: 10 * b),
+              width: (filled ? 20 : 18) * b,
+              height: (filled ? 20 : 18) * b,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: filled
@@ -73,13 +76,13 @@ class PinPadState extends State<PinPad> {
           }),
         ),
         if (widget.errorText != null) ...[
-          const SizedBox(height: 14),
+          SizedBox(height: 14 * b),
           Text(
             widget.errorText!,
             style: TextStyle(color: theme.colorScheme.error, fontSize: 14),
           ),
         ],
-        const SizedBox(height: 36),
+        SizedBox(height: 36 * b),
         _Keypad(onDigit: _onKey, onBackspace: _onBackspace),
       ],
     );
@@ -94,8 +97,14 @@ class _Keypad extends StatelessWidget {
 
   static const _buttonSize = 76.0;
 
+  /// The key size, bigger on a tablet.
+  static double sizeFor(BuildContext context) =>
+      _buttonSize * focusedBoost(context);
+
   @override
   Widget build(BuildContext context) {
+    final size = sizeFor(context);
+    final gap = 18 * focusedBoost(context);
     const rows = [
       ['1', '2', '3'],
       ['4', '5', '6'],
@@ -118,7 +127,7 @@ class _Keypad extends StatelessWidget {
                       onDigit(d);
                     },
                   ),
-                  if (d != row.last) const SizedBox(width: 18),
+                  if (d != row.last) SizedBox(width: gap),
                 ],
               ],
             ),
@@ -128,8 +137,8 @@ class _Keypad extends StatelessWidget {
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const SizedBox(width: _buttonSize, height: _buttonSize),
-              const SizedBox(width: 18),
+              SizedBox(width: size, height: size),
+              SizedBox(width: gap),
               _KeypadButton(
                 label: '0',
                 onTap: () {
@@ -137,14 +146,17 @@ class _Keypad extends StatelessWidget {
                   onDigit('0');
                 },
               ),
-              const SizedBox(width: 18),
+              SizedBox(width: gap),
               SizedBox(
-                width: _buttonSize,
-                height: _buttonSize,
+                width: size,
+                height: size,
                 child: IconButton(
                   tooltip: 'Delete',
                   onPressed: onBackspace,
-                  icon: const Icon(Icons.backspace_outlined, size: 24),
+                  icon: Icon(
+                    Icons.backspace_outlined,
+                    size: 24 * focusedBoost(context),
+                  ),
                 ),
               ),
             ],
@@ -163,9 +175,10 @@ class _KeypadButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final size = _Keypad.sizeFor(context);
     return SizedBox(
-      width: _Keypad._buttonSize,
-      height: _Keypad._buttonSize,
+      width: size,
+      height: size,
       child: Material(
         color: Colors.transparent,
         shape: const CircleBorder(),
@@ -175,6 +188,7 @@ class _KeypadButton extends StatelessWidget {
           child: Center(
             child: Text(
               label,
+              // Grows with the screen's FocusedBoost text scaling.
               style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w500),
             ),
           ),

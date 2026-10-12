@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/security/app_lock_providers.dart';
 import '../../shared/widgets/brand_mark.dart';
+import '../../core/responsive/adaptive_scale.dart';
 import '../../shared/widgets/glass_background.dart';
 import '../../shared/widgets/pin_pad.dart';
 
@@ -70,47 +71,50 @@ class _LockScreenState extends ConsumerState<LockScreen> {
     final showPinPad = !biometricEnabled || _biometricFailed;
 
     return GlassBackground(
-      child: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const BrandMark(size: 72),
-              const SizedBox(height: 20),
-              if (showPinPad) ...[
-                Text('Enter your PIN', style: theme.textTheme.titleLarge),
-                const SizedBox(height: 28),
-                if (_checking)
-                  const CircularProgressIndicator()
-                else
-                  PinPad(
-                    key: _padKey,
-                    length: 4,
-                    onSubmitted: _onSubmitted,
-                    errorText: _error,
+      maxContentWidth: kFocusedMaxWidth,
+      child: FocusedBoost(
+        child: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                BrandMark(size: 72 * focusedBoost(context)),
+                const SizedBox(height: 20),
+                if (showPinPad) ...[
+                  Text('Enter your PIN', style: theme.textTheme.titleLarge),
+                  const SizedBox(height: 28),
+                  if (_checking)
+                    const CircularProgressIndicator()
+                  else
+                    PinPad(
+                      key: _padKey,
+                      length: 4,
+                      onSubmitted: _onSubmitted,
+                      errorText: _error,
+                    ),
+                  if (biometricEnabled) ...[
+                    const SizedBox(height: 20),
+                    TextButton.icon(
+                      onPressed: _tryBiometric,
+                      icon: const Icon(Icons.fingerprint),
+                      label: const Text('Use biometric unlock'),
+                    ),
+                  ],
+                ] else ...[
+                  Text(
+                    'Unlock with Biometrics',
+                    style: theme.textTheme.titleLarge,
                   ),
-                if (biometricEnabled) ...[
+                  const SizedBox(height: 28),
+                  const Icon(Icons.fingerprint, size: 64),
                   const SizedBox(height: 20),
-                  TextButton.icon(
-                    onPressed: _tryBiometric,
-                    icon: const Icon(Icons.fingerprint),
-                    label: const Text('Use biometric unlock'),
+                  TextButton(
+                    onPressed: () => setState(() => _biometricFailed = true),
+                    child: const Text('Use PIN instead'),
                   ),
                 ],
-              ] else ...[
-                Text(
-                  'Unlock with Biometrics',
-                  style: theme.textTheme.titleLarge,
-                ),
-                const SizedBox(height: 28),
-                const Icon(Icons.fingerprint, size: 64),
-                const SizedBox(height: 20),
-                TextButton(
-                  onPressed: () => setState(() => _biometricFailed = true),
-                  child: const Text('Use PIN instead'),
-                ),
               ],
-            ],
+            ),
           ),
         ),
       ),

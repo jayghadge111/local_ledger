@@ -1,4 +1,5 @@
 import '../../core/money_format.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -71,7 +72,8 @@ class _AlertsScreenState extends ConsumerState<AlertsScreen> {
         id: id,
         merchant: insight.merchant,
         dueDate: insight.nextExpectedDate,
-        amountLabel: appCurrency(symbol: '₹',
+        amountLabel: appCurrency(
+          symbol: '₹',
           decimalDigits: 0,
         ).format(insight.expectedAmountMinor / 100),
       );
@@ -325,7 +327,8 @@ class _RecurringCard extends StatelessWidget {
         : daysUntil == 0
         ? 'Due today'
         : 'Due in ${daysUntil}d';
-    final amount = appCurrency(symbol: '₹',
+    final amount = appCurrency(
+      symbol: '₹',
       decimalDigits: 0,
     ).format(insight.expectedAmountMinor / 100);
 

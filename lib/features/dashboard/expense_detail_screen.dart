@@ -1,4 +1,5 @@
 import '../../core/money_format.dart';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -68,9 +69,7 @@ class _ExpenseDetailScreenState extends State<ExpenseDetailScreen> {
     final topMerchants = byMerchant.values.toList()
       ..sort((a, b) => b.amountMinor.compareTo(a.amountMinor));
 
-    final amountFormatter = appCurrency(symbol: '₹',
-      decimalDigits: 0,
-    );
+    final amountFormatter = appCurrency(symbol: '₹', decimalDigits: 0);
 
     return GlassBackground(
       child: SafeArea(

@@ -111,7 +111,9 @@ Widget introShowcase({
     tooltipBackgroundColor: theme.colorScheme.surface,
     textColor: theme.colorScheme.onSurface,
     tooltipPosition:
-        position ?? (wide ? TooltipPosition.right : TooltipPosition.top),
+        // Below the item on a wide screen: beside a rail the package lets the
+        // tooltip run off the right edge of a tablet.
+        position ?? (wide ? TooltipPosition.bottom : TooltipPosition.top),
     tooltipPadding: const EdgeInsets.fromLTRB(10, 12, 10, 8),
     tooltipBorderRadius: BorderRadius.circular(20),
     targetShapeBorder:

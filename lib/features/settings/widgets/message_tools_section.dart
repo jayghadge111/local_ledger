@@ -38,8 +38,7 @@ class MessageToolsSection extends ConsumerWidget {
       ManageItem(
         icon: Icons.auto_fix_high_rounded,
         title: 'What the app learned',
-        subtitle:
-            'Merchant names, categories and message layouts from your corrections — see and undo them',
+        subtitle: 'Merchant names, categories and message layouts from your corrections — see and undo them',
         screen: const LearnedScreen(),
       ),
       ManageItem(

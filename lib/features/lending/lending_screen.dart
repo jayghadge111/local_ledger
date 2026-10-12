@@ -1,5 +1,6 @@
 import '../../core/money_format.dart';
 import '../../core/ui/undo.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -16,9 +17,7 @@ import '../../core/lending/lending_messages.dart';
 import '../../core/theme/app_theme.dart';
 import 'lending_share_dialog.dart';
 
-NumberFormat get _money => appCurrency(symbol: '₹',
-  decimalDigits: 0,
-);
+NumberFormat get _money => appCurrency(symbol: '₹', decimalDigits: 0);
 
 /// Money lent to and borrowed from people — entered by hand, with part
 /// repayments and due dates (which raise reminders).
@@ -1015,7 +1014,10 @@ class _Detail extends ConsumerWidget {
                         style: dangerTextButtonStyle(context),
                         onPressed: () async {
                           final undo = await repo.deleteEntry(e.id);
-                          showUndoSnackBar('Deleted ${e.person}\'s entry', undo);
+                          showUndoSnackBar(
+                            'Deleted ${e.person}\'s entry',
+                            undo,
+                          );
                           if (context.mounted) Navigator.of(context).pop();
                         },
                         child: const Text('Delete'),

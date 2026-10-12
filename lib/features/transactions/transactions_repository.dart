@@ -195,8 +195,8 @@ class TransactionsRepository {
           ),
         );
 
-    final applied =
-        await (_db.update(_db.transactions)..where(affectedFilter)).write(
+    final applied = await (_db.update(_db.transactions)..where(affectedFilter))
+        .write(
           TransactionsCompanion(
             merchant: Value(newMerchant),
             categoryId: existing.categoryId != categoryId
@@ -281,18 +281,17 @@ class TransactionsRepository {
           .write(RulesCompanion(categoryId: Value(categoryId)));
     }
 
-    final applied =
-        await (_db.update(_db.transactions)..where(affectedFilter)).write(
-          TransactionsCompanion(categoryId: Value(categoryId)),
-        );
+    final applied = await (_db.update(_db.transactions)..where(affectedFilter))
+        .write(TransactionsCompanion(categoryId: Value(categoryId)));
     if (applied == 0) return (applied: 0, undo: null);
 
     return (
       applied: applied,
       undo: () async {
         if (newRuleId != null) {
-          await (_db.delete(_db.rules)..where((r) => r.id.equals(newRuleId!)))
-              .go();
+          await (_db.delete(
+            _db.rules,
+          )..where((r) => r.id.equals(newRuleId!))).go();
         }
         for (final r in known) {
           await _db.into(_db.rules).insertOnConflictUpdate(r);

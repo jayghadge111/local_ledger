@@ -1,4 +1,5 @@
 import '../../../core/money_format.dart';
+
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -62,7 +63,8 @@ class TransactionTile extends ConsumerWidget {
     final isRefund = transaction.kind == 'refund';
     final isCardPayment = transaction.kind == 'card_payment';
     final isInr = transaction.currency == 'INR';
-    final amount = appCurrency(symbol: isInr ? '₹' : '${transaction.currency} ',
+    final amount = appCurrency(
+      symbol: isInr ? '₹' : '${transaction.currency} ',
       decimalDigits: 2,
     ).format(transaction.amountMinor / 100);
     // Transfers aren't income or spending, so they stay neutral.

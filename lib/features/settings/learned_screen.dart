@@ -1,4 +1,5 @@
 import '../../shared/widgets/text_button_styles.dart';
+
 import 'package:drift/drift.dart' show OrderingTerm;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -110,30 +111,26 @@ class LearnedScreen extends ConsumerWidget {
                   ),
               ],
             ),
-            section(
-              'Categories',
-              'Merchants you filed under a category.',
-              [
-                for (final r in rules)
-                  ListTile(
-                    title: Text('“${r.pattern}”'),
-                    subtitle: Text(
-                      '→ ${categories[r.categoryId] ?? 'Unknown category'}',
-                    ),
-                    trailing: IconButton(
-                      tooltip: 'Forget',
-                      color: dangerColor(context),
-                      icon: const Icon(Icons.delete_outline_rounded),
-                      onPressed: () async {
-                        final undo = await ref
-                            .read(rulesRepositoryProvider)
-                            .deleteRule(r.id);
-                        showUndoSnackBar('Forgot “${r.pattern}”', undo);
-                      },
-                    ),
+            section('Categories', 'Merchants you filed under a category.', [
+              for (final r in rules)
+                ListTile(
+                  title: Text('“${r.pattern}”'),
+                  subtitle: Text(
+                    '→ ${categories[r.categoryId] ?? 'Unknown category'}',
                   ),
-              ],
-            ),
+                  trailing: IconButton(
+                    tooltip: 'Forget',
+                    color: dangerColor(context),
+                    icon: const Icon(Icons.delete_outline_rounded),
+                    onPressed: () async {
+                      final undo = await ref
+                          .read(rulesRepositoryProvider)
+                          .deleteRule(r.id);
+                      showUndoSnackBar('Forgot “${r.pattern}”', undo);
+                    },
+                  ),
+                ),
+            ]),
             const SizedBox(height: 16),
             GlassCard(
               onTap: () => Navigator.of(context).push(

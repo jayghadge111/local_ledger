@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'core/brand.dart';
+import 'core/responsive/adaptive_scale.dart';
 import 'core/router/app_router.dart';
 import 'core/security/app_lifecycle_lock_gate.dart';
 import 'core/theme/app_theme.dart';
@@ -28,7 +29,10 @@ class TrueLedgerApp extends ConsumerWidget {
       themeMode: themeMode,
       scaffoldMessengerKey: rootMessengerKey,
       routerConfig: appRouter,
-      builder: (context, child) => AppLifecycleLockGate(child: child!),
+      // On a tablet the whole app is drawn larger, in proportion (see
+      // AdaptiveScale); on a phone this changes nothing.
+      builder: (context, child) =>
+          AdaptiveScale(child: AppLifecycleLockGate(child: child!)),
     );
   }
 }

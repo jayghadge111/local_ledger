@@ -1,6 +1,7 @@
 import '../../core/db/rules_repository.dart';
 import '../../core/intelligence/category_reason.dart';
 import '../../core/money_format.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -70,7 +71,8 @@ class TransactionDetailSheet extends ConsumerWidget {
     final isTransfer = t.kind == 'transfer';
     final isCardPayment = t.kind == 'card_payment';
     final isInr = t.currency == 'INR';
-    final money = appCurrency(symbol: isInr ? '₹' : '${t.currency} ',
+    final money = appCurrency(
+      symbol: isInr ? '₹' : '${t.currency} ',
       decimalDigits: 2,
     );
     final amountColor = (isTransfer || isCardPayment)

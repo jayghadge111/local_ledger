@@ -44,6 +44,11 @@ void main() {
   });
 
   testWidgets('still fits with the keyboard open', (tester) async {
+    // A real phone with the keyboard up (the test window is otherwise
+    // 800x600, which leaves only 300 points above a 300-point keyboard).
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await pump(tester, keyboard: 300);
     expect(tester.takeException(), isNull);
     expect(find.text('Why we ask'), findsOneWidget);

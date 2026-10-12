@@ -1,4 +1,5 @@
 import '../../../core/money_format.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -16,9 +17,7 @@ import '../../../shared/widgets/glass_surface.dart';
 import '../../budgets/budgets_screen.dart';
 import '../dashboard_month.dart';
 
-NumberFormat get _money => appCurrency(symbol: '₹',
-  decimalDigits: 0,
-);
+NumberFormat get _money => appCurrency(symbol: '₹', decimalDigits: 0);
 
 /// At the start of a month: "September: 3 budgets went over — raise them for
 /// October, or keep them?" One tap raises a limit to a figure that would have
